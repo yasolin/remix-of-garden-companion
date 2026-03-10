@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      plants: {
+        Row: {
+          created_at: string
+          current_stage: number | null
+          days_to_harvest: number | null
+          fertilizer: string | null
+          humidity: string | null
+          id: string
+          name: string
+          needs_watering: boolean | null
+          notes: string | null
+          photo_url: string | null
+          placement: string | null
+          planted_date: string | null
+          scientific_name: string | null
+          soil_type: string | null
+          sunlight: string | null
+          temperature: string | null
+          updated_at: string
+          user_id: string
+          water_frequency: string | null
+          wind_sensitivity: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_stage?: number | null
+          days_to_harvest?: number | null
+          fertilizer?: string | null
+          humidity?: string | null
+          id?: string
+          name: string
+          needs_watering?: boolean | null
+          notes?: string | null
+          photo_url?: string | null
+          placement?: string | null
+          planted_date?: string | null
+          scientific_name?: string | null
+          soil_type?: string | null
+          sunlight?: string | null
+          temperature?: string | null
+          updated_at?: string
+          user_id: string
+          water_frequency?: string | null
+          wind_sensitivity?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_stage?: number | null
+          days_to_harvest?: number | null
+          fertilizer?: string | null
+          humidity?: string | null
+          id?: string
+          name?: string
+          needs_watering?: boolean | null
+          notes?: string | null
+          photo_url?: string | null
+          placement?: string | null
+          planted_date?: string | null
+          scientific_name?: string | null
+          soil_type?: string | null
+          sunlight?: string | null
+          temperature?: string | null
+          updated_at?: string
+          user_id?: string
+          water_frequency?: string | null
+          wind_sensitivity?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
