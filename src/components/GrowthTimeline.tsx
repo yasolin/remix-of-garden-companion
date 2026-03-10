@@ -1,5 +1,13 @@
 import { stages, stageLabels } from "@/data/mockData";
-import { Check } from "lucide-react";
+import { Check, Sprout, Leaf, Flower2, Apple, Scissors } from "lucide-react";
+
+const stageIcons: Record<string, React.ElementType> = {
+  planting: Sprout,
+  germination: Leaf,
+  flowering: Flower2,
+  fruiting: Apple,
+  harvest: Scissors,
+};
 
 interface GrowthTimelineProps {
   currentStage: string;
@@ -13,12 +21,13 @@ const GrowthTimeline = ({ currentStage }: GrowthTimelineProps) => {
       {stages.map((stage, idx) => {
         const isCompleted = idx < currentIdx;
         const isCurrent = idx === currentIdx;
+        const Icon = stageIcons[stage];
 
         return (
           <div key={stage} className="flex items-center flex-1">
             <div className="flex flex-col items-center flex-1">
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                   isCompleted
                     ? "bg-primary text-primary-foreground"
                     : isCurrent
@@ -26,7 +35,7 @@ const GrowthTimeline = ({ currentStage }: GrowthTimelineProps) => {
                     : "bg-muted text-muted-foreground"
                 }`}
               >
-                {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
               </div>
               <span
                 className={`text-[9px] mt-1 font-semibold text-center leading-tight ${

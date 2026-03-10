@@ -7,6 +7,8 @@ import BottomNav from "./components/BottomNav";
 import Index from "./pages/Index";
 import HarvestPage from "./pages/HarvestPage";
 import MyPlantsPage from "./pages/MyPlantsPage";
+import PlantDetailPage from "./pages/PlantDetailPage";
+import AddPlantPage from "./pages/AddPlantPage";
 import AIAssistantPage from "./pages/AIAssistantPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
@@ -24,6 +26,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/harvest" element={<HarvestPage />} />
             <Route path="/my-plants" element={<MyPlantsPage />} />
+            <Route path="/plant/:id" element={<PlantDetailPage />} />
+            <Route path="/add-plant" element={<AddPlantPage />} />
             <Route path="/ai-assistant" element={<AIAssistantPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFound />} />

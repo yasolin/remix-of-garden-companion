@@ -30,7 +30,11 @@ const HarvestPage = () => {
             className="bg-card rounded-2xl p-4 shadow-card border border-border"
           >
             <div className="flex items-center gap-3">
-              <span className="text-4xl">{plant.image}</span>
+              <img
+                src={plant.photo}
+                alt={plant.name}
+                className="w-14 h-14 rounded-xl object-cover"
+              />
               <div className="flex-1">
                 <h3 className="font-bold text-foreground">{plant.name}</h3>
                 <p className="text-xs text-muted-foreground">{plant.scientificName}</p>
