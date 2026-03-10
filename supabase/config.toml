@@ -1,1 +1,4 @@
 project_id = "innrcidcsslrmeogwoqv"
+
+[functions.plant-ai]
+verify_jwt = false
