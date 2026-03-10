@@ -18,7 +18,10 @@ const MyPlantsPage = () => {
             <p className="text-sm text-muted-foreground">{myPlants.length} bitki yetiştiriyorsunuz</p>
           </div>
         </div>
-        <button className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg">
+        <button
+          onClick={() => navigate("/add-plant")}
+          className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg"
+        >
           <Plus className="w-5 h-5 text-primary-foreground" />
         </button>
       </div>
@@ -47,11 +50,14 @@ const MyPlantsPage = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.08 }}
-            className="bg-card rounded-2xl overflow-hidden shadow-card border border-border"
+            onClick={() => navigate(`/plant/${plant.id}`)}
+            className="bg-card rounded-2xl overflow-hidden shadow-card border border-border cursor-pointer relative"
           >
-            <div className="h-28 bg-secondary flex items-center justify-center text-5xl">
-              {plant.image}
-            </div>
+            <img
+              src={plant.photo}
+              alt={plant.name}
+              className="w-full h-28 object-cover"
+            />
             <div className="p-3">
               <h3 className="font-bold text-sm text-foreground">{plant.name}</h3>
               <p className="text-[10px] text-muted-foreground">{plant.scientificName}</p>
