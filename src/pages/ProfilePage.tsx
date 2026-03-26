@@ -35,9 +35,10 @@ const ProfilePage = () => {
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
-      if (data) setDisplayName(data.display_name || "");
-      return data;
+      const { data } = await supabase.from("profiles" as any).select("*").eq("id", user!.id).maybeSingle();
+      const p = data as any;
+      if (p) setDisplayName(p.display_name || "");
+      return p;
     },
     enabled: !!user,
   });
