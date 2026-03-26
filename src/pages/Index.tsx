@@ -95,7 +95,7 @@ const Index = () => {
         </motion.div>
 
         <motion.div custom={1} initial="hidden" animate="visible" variants={cardVariants}
-          onClick={() => navigate("/my-plants")}
+          onClick={() => navigate("/watering")}
           className="gradient-market rounded-2xl p-4 cursor-pointer min-h-[140px] flex flex-col justify-between">
           <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
             <Droplets className="w-5 h-5 text-primary-foreground" />
@@ -128,14 +128,14 @@ const Index = () => {
         </motion.div>
 
         <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants}
-          onClick={() => navigate("/ai-assistant")}
+          onClick={() => navigate("/location-analysis")}
           className="gradient-help rounded-2xl p-4 cursor-pointer min-h-[130px] flex flex-col justify-between">
           <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
             <Camera className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h3 className="text-primary-foreground font-bold text-base">{t("home.needHelp")}</h3>
-            <p className="text-primary-foreground/80 text-xs mt-0.5">{t("home.helpDesc")}</p>
+            <h3 className="text-primary-foreground font-bold text-base">{t("home.locationAnalysis")}</h3>
+            <p className="text-primary-foreground/80 text-xs mt-0.5">{t("home.locationDesc")}</p>
           </div>
         </motion.div>
       </div>

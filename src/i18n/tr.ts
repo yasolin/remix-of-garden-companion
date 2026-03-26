@@ -40,6 +40,8 @@ export default {
       ideal: "İdeal",
       needHelp: "Yardıma mı ihtiyacın var?",
       helpDesc: "Hemen fotoğraf çek, AI asistanım yardım etsin",
+      locationAnalysis: "Konum Analizi",
+      locationDesc: "Bitkinin yönünü ve güneş/rüzgar bilgisini öğren",
       seasonTitle: "Bu Mevsim Ekilebilir",
       todaysTasks: "Bugünkü Görevler",
       noTasks: "Bugün yapılacak görev yok 🎉",
@@ -212,6 +214,35 @@ export default {
       harvest: "🌿 Hasat: {{name}} hasat zamanı",
       planting: "🌱 Ekim: {{name}} ekme zamanı",
       noNotifications: "Yeni bildirim yok",
+    },
+    // Watering
+    watering: {
+      title: "Sulama Zamanı",
+      subtitle: "{{count}} bitki sulanmalı",
+      allDone: "Tüm bitkiler sulandı! 🎉",
+      watered: "Bitki sulandı!",
+      alreadyWatered: "Sulananlar",
+    },
+    // Calendar
+    calendar: {
+      title: "Ekim Takvimi",
+      subtitle: "Mevsime göre ekilecek bitkiler",
+      currentMonth: "{{month}} ayında ekilecekler",
+      currentMonthDesc: "Bu ay ekmek için ideal bitkiler",
+      noPlants: "Bu ay için öneri bulunamadı",
+    },
+    // Location
+    location: {
+      title: "Konum Analizi",
+      subtitle: "Bitkinin yönünü belirleyin",
+      noCompass: "Pusula kullanılamıyor",
+      useCompass: "Pusulayı kullan",
+      useManual: "Manuel giriş yap",
+      sunExposure: "Güneş Maruziyeti",
+      windDirection: "Rüzgar Yönü",
+      sunTimes: "Güneş Saatleri",
+      sunrise: "Doğuş",
+      sunset: "Batış",
     },
   },
 };

@@ -13,6 +13,9 @@ import AddPlantPage from "./pages/AddPlantPage";
 import AIAssistantPage from "./pages/AIAssistantPage";
 import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
+import WateringPage from "./pages/WateringPage";
+import PlantingCalendarPage from "./pages/PlantingCalendarPage";
+import LocationAnalysisPage from "./pages/LocationAnalysisPage";
 import NotFound from "./pages/NotFound";
 import "./i18n";
 
@@ -36,6 +39,9 @@ const ProtectedRoutes = () => {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/harvest" element={<HarvestPage />} />
+        <Route path="/watering" element={<WateringPage />} />
+        <Route path="/planting-calendar" element={<PlantingCalendarPage />} />
+        <Route path="/location-analysis" element={<LocationAnalysisPage />} />
         <Route path="/my-plants" element={<MyPlantsPage />} />
         <Route path="/plant/:id" element={<PlantDetailPage />} />
         <Route path="/add-plant" element={<AddPlantPage />} />
