@@ -1,4 +1,4 @@
-import { ArrowLeft, Edit3, Sun, Droplets, Wind, Thermometer, CloudRain, MapPin, Sprout, Save, X, Camera, ImageIcon } from "lucide-react";
+import { ArrowLeft, Edit3, Sun, Droplets, Wind, Thermometer, CloudRain, MapPin, Sprout, Save, X, Camera, ImageIcon, Compass } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
@@ -100,6 +100,7 @@ const PlantDetailPage = () => {
     { icon: Thermometer, label: t("detail.temperature"), value: form.temperature, key: "temperature" },
     { icon: CloudRain, label: t("detail.humidity"), value: form.humidity, key: "humidity" },
     { icon: MapPin, label: t("detail.location"), value: form.placement, key: "placement" },
+    { icon: Compass, label: t("detail.direction"), value: form.direction || "-", key: "direction" },
   ];
 
   const photo = plant.photo_url || plant.photo;

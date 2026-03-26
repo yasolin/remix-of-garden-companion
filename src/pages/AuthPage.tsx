@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sprout, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import logo from "@/assets/logo.jpeg";
 
 type AuthMode = "login" | "signup";
 
@@ -20,16 +21,11 @@ const AuthPage = () => {
   const handleSubmit = async () => {
     if (!email || !password) return;
     setLoading(true);
-
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { display_name: displayName },
-            emailRedirectTo: window.location.origin,
-          },
+          email, password,
+          options: { data: { display_name: displayName }, emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
         setEmailSent(true);
@@ -56,9 +52,7 @@ const AuthPage = () => {
           <h2 className="text-xl font-bold text-foreground">{t("auth.checkEmail")}</h2>
           <p className="text-sm text-muted-foreground max-w-xs">{t("auth.checkEmailDesc")}</p>
           <button onClick={() => { setEmailSent(false); setMode("login"); }}
-            className="mt-4 text-sm font-semibold text-primary">
-            {t("auth.backToLogin")}
-          </button>
+            className="mt-4 text-sm font-semibold text-primary">{t("auth.backToLogin")}</button>
         </motion.div>
       </div>
     );
@@ -69,17 +63,13 @@ const AuthPage = () => {
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center gap-2 mb-8">
-          <div className="w-16 h-16 rounded-2xl gradient-harvest flex items-center justify-center">
-            <Sprout className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">Garden Pot</h1>
+          <img src={logo} alt="GardenPot" className="w-20 h-20 rounded-2xl object-cover shadow-card" />
+          <h1 className="text-2xl font-extrabold text-foreground mt-2">GardenPot</h1>
           <p className="text-sm text-muted-foreground">{t("auth.subtitle")}</p>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="w-full max-w-sm space-y-4">
-          
-          {/* Tab toggle */}
           <div className="flex bg-secondary rounded-xl p-1">
             <button onClick={() => setMode("login")}
               className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${
@@ -112,8 +102,7 @@ const AuthPage = () => {
             <input value={password} onChange={(e) => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"} placeholder={t("auth.passwordPlaceholder")}
               className="w-full bg-secondary rounded-xl pl-11 pr-11 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
-            <button onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2">
+            <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
               {showPassword ? <EyeOff className="w-5 h-5 text-muted-foreground" /> : <Eye className="w-5 h-5 text-muted-foreground" />}
             </button>
           </div>

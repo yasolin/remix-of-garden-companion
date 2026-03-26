@@ -21,7 +21,7 @@ export default {
       profile: "Profil",
     },
     home: {
-      greeting: "Merhaba",
+      greeting: "Merhaba {{name}}",
       search: "Bitki, görev ara...",
       harvestTime: "Hasat Zamanı",
       harvestReady: "{{count}} bitki hasata hazır",
@@ -77,6 +77,7 @@ export default {
       temperature: "Sıcaklık",
       humidity: "Nem",
       location: "Konum",
+      direction: "Yön",
       soilType: "🌱 Toprak Tipi",
       fertilizer: "🧪 Gübreleme",
       notes: "📝 Notlar",
