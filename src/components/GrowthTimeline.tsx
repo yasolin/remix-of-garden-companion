@@ -12,13 +12,19 @@ const stageIcons: Record<string, React.ElementType> = {
 
 interface GrowthTimelineProps {
   currentStage: number | string;
+  hasFruit?: boolean;
 }
 
-const GrowthTimeline = ({ currentStage }: GrowthTimelineProps) => {
+const GrowthTimeline = ({ currentStage, hasFruit = true }: GrowthTimelineProps) => {
   const { t } = useTranslation();
+
+  const filteredStages = hasFruit
+    ? stages
+    : stages.filter(s => s !== "fruiting");
+
   const currentIdx = typeof currentStage === "number"
     ? currentStage
-    : stages.indexOf(currentStage as any);
+    : filteredStages.indexOf(currentStage as any);
 
   const stageLabels: Record<string, string> = {
     planting: t("stages.planting"),
@@ -30,7 +36,7 @@ const GrowthTimeline = ({ currentStage }: GrowthTimelineProps) => {
 
   return (
     <div className="flex items-center gap-1 mt-3">
-      {stages.map((stage, idx) => {
+      {filteredStages.map((stage, idx) => {
         const isCompleted = idx < currentIdx;
         const isCurrent = idx === currentIdx;
         const Icon = stageIcons[stage];
@@ -49,7 +55,7 @@ const GrowthTimeline = ({ currentStage }: GrowthTimelineProps) => {
                 isCurrent ? "text-primary" : isCompleted ? "text-foreground" : "text-muted-foreground"
               }`}>{stageLabels[stage]}</span>
             </div>
-            {idx < stages.length - 1 && (
+            {idx < filteredStages.length - 1 && (
               <div className={`h-0.5 flex-1 min-w-2 -mt-4 ${idx < currentIdx ? "bg-primary" : "bg-muted"}`} />
             )}
           </div>
