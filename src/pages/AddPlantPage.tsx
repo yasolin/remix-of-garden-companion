@@ -30,6 +30,7 @@ const AddPlantPage = () => {
     name: "", scientificName: "", placement: "", waterFrequency: "",
     sunlight: "", windSensitivity: "", currentStage: "planting" as string,
     temperature: "", humidity: "", soilType: "", notes: "", fertilizer: "",
+    plantedDate: new Date().toISOString().split("T")[0],
   });
 
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
@@ -112,6 +113,7 @@ const AddPlantPage = () => {
         fertilizer: form.fertilizer,
         notes: form.notes,
         photo_url: photoUrl,
+        planted_date: form.plantedDate || new Date().toISOString(),
       });
       queryClient.invalidateQueries({ queryKey: ["plants"] });
       toast({ title: "✅", description: t("add.savePlant") });
@@ -225,6 +227,13 @@ const AddPlantPage = () => {
               className="w-full mt-1 bg-secondary rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
         ))}
+
+        {/* Planted date */}
+        <div>
+          <label className="text-sm font-semibold text-foreground">{t("add.plantedDate")}</label>
+          <input type="date" value={form.plantedDate} onChange={(e) => setForm({ ...form, plantedDate: e.target.value })}
+            className="w-full mt-1 bg-secondary rounded-xl px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30" />
+        </div>
 
         <div>
           <label className="text-sm font-semibold text-foreground">{t("add.growthStage")}</label>
