@@ -183,7 +183,7 @@ const Index = () => {
 
       {/* Today's Tasks */}
       <div className="px-4 mt-5">
-        <h3 className="font-extrabold text-foreground text-base mb-3">{t("home.todayTasks")}</h3>
+        <h3 className="font-extrabold text-foreground text-base mb-3">{t("home.todaysTasks")}</h3>
         {todayTasks.length === 0 ? (
           <div className="bg-card rounded-2xl p-4 border border-border text-center">
             <p className="text-sm text-muted-foreground">{t("home.noTasks")}</p>
@@ -198,7 +198,7 @@ const Index = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-foreground">{task.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{t("home.needsWateringTask")}</p>
+                  <p className="text-[11px] text-muted-foreground">{t("home.waterTask", { name: task.name })}</p>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); handleMarkWatered(task.id); }}
                   className="p-2 rounded-lg hover:bg-primary/10 transition-colors">
