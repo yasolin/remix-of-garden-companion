@@ -33,6 +33,10 @@ const AIAssistantPage = () => {
   ];
 
   const handleFeatureClick = (mode: string) => {
+    if (mode === "location") {
+      navigate("/location-analysis");
+      return;
+    }
     setPendingMode(mode);
     cameraRef.current?.click();
   };
