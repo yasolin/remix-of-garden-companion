@@ -77,6 +77,7 @@ export default {
       temperature: "Sıcaklık",
       humidity: "Nem",
       location: "Konum",
+      direction: "Yön",
       soilType: "🌱 Toprak Tipi",
       fertilizer: "🧪 Gübreleme",
       notes: "📝 Notlar",

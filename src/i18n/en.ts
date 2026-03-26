@@ -77,6 +77,7 @@ export default {
       temperature: "Temperature",
       humidity: "Humidity",
       location: "Location",
+      direction: "Direction",
       soilType: "🌱 Soil Type",
       fertilizer: "🧪 Fertilizer",
       notes: "📝 Notes",
