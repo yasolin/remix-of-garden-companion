@@ -55,7 +55,7 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("id", user.id);
+    const { error } = await supabase.from("profiles" as any).update({ display_name: displayName } as any).eq("id", user.id);
     if (error) toast({ title: "❌", description: error.message, variant: "destructive" });
     else { toast({ title: "✅", description: t("profile.saveProfile") }); setView("main"); }
   };
