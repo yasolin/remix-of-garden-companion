@@ -192,6 +192,7 @@ export default {
       displayName: "Görünen Ad",
       saveProfile: "Profili Kaydet",
       settingsMenu: "Ayarlar",
+      photoUpdated: "Profil fotoğrafı güncellendi!",
     },
     seasonal: {
       lettuce: "Marul",

@@ -192,6 +192,7 @@ export default {
       displayName: "Display Name",
       saveProfile: "Save Profile",
       settingsMenu: "Settings",
+      photoUpdated: "Profile photo updated!",
     },
     seasonal: {
       lettuce: "Lettuce",
