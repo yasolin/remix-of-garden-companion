@@ -4,7 +4,7 @@ import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo.png";
 
 type AuthMode = "login" | "signup";
 
@@ -62,9 +62,8 @@ const AuthPage = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center gap-2 mb-8">
-          <img src={logo} alt="GardenPot" className="w-20 h-20 rounded-2xl object-cover shadow-card" />
-          <h1 className="text-2xl font-extrabold text-foreground mt-2">GardenPot</h1>
+          className="flex flex-col items-center gap-1 mb-8">
+          <img src={logo} alt="Garden Pot" className="h-24 object-contain" />
           <p className="text-sm text-muted-foreground">{t("auth.subtitle")}</p>
         </motion.div>
 

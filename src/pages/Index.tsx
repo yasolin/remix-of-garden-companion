@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, Droplets, Sprout, Camera, Bell, User } from "lucide-react";
+import { Calendar, Droplets, Sprout, Camera, Bell, User, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { fetchUserPlants } from "@/lib/plantService";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchUserPlants, updatePlant } from "@/lib/plantService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo.png";
 import harvestImg from "@/assets/harvest-plants.png";
 import wateringImg from "@/assets/watering-plants.png";
 import plantingImg from "@/assets/planting-suggestion.png";
@@ -16,6 +16,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const { data: plants = [] } = useQuery({
@@ -28,6 +29,11 @@ const Index = () => {
   const needsWater = plants.filter(p => p.needs_watering).length;
   const waterNames = plants.filter(p => p.needs_watering).map(p => p.name).join(", ");
 
+  // Build today's tasks from plant data
+  const todayTasks = plants
+    .filter(p => p.needs_watering)
+    .map(p => ({ id: p.id, type: "water" as const, name: p.name }));
+
   const notifications: string[] = [];
   plants.forEach(p => {
     if (p.needs_watering) notifications.push(t("notifications.watering", { name: p.name }));
@@ -36,13 +42,17 @@ const Index = () => {
 
   const userName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "";
 
+  const handleMarkWatered = async (plantId: string) => {
+    await updatePlant(plantId, { needs_watering: false });
+    queryClient.invalidateQueries({ queryKey: ["plants"] });
+  };
+
   return (
     <div className="pb-24 max-w-lg mx-auto bg-background min-h-screen">
       {/* Header */}
       <div className="flex items-center px-4 pt-5 pb-1">
         <div className="flex items-center gap-2 flex-1">
-          <img src={logo} alt="GardenPot" className="h-9 w-9 rounded-lg object-cover" />
-          <span className="text-xl font-extrabold text-foreground tracking-tight">GardenPot</span>
+          <img src={logo} alt="Garden Pot" className="h-10 object-contain" />
         </div>
         <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-full hover:bg-secondary">
           <Bell className="w-5 h-5 text-foreground" />
@@ -169,6 +179,35 @@ const Index = () => {
           </div>
           <img src={analysisImg} alt="" className="w-20 h-20 object-contain shrink-0" loading="lazy" />
         </motion.div>
+      </div>
+
+      {/* Today's Tasks */}
+      <div className="px-4 mt-5">
+        <h3 className="font-extrabold text-foreground text-base mb-3">{t("home.todaysTasks")}</h3>
+        {todayTasks.length === 0 ? (
+          <div className="bg-card rounded-2xl p-4 border border-border text-center">
+            <p className="text-sm text-muted-foreground">{t("home.noTasks")}</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {todayTasks.map(task => (
+              <motion.div key={task.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <Droplets className="w-4 h-4 text-blue-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground">{task.name}</p>
+                  <p className="text-[11px] text-muted-foreground">{t("home.waterTask", { name: task.name })}</p>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); handleMarkWatered(task.id); }}
+                  className="p-2 rounded-lg hover:bg-primary/10 transition-colors">
+                  <CheckCircle2 className="w-5 h-5 text-primary" />
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

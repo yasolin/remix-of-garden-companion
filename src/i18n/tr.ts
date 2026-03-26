@@ -137,6 +137,8 @@ export default {
       placeholder: "Sorunuzu yazın...",
       analyzing: "Fotoğraf analiz ediliyor...",
       photoAnalysis: "Fotoğraf çekildi, AI analiz ediyor...",
+      camera: "Kamera",
+      cameraDesc: "Bitkinizin fotoğrafını çekin",
     },
     profile: {
       title: "Profil",
@@ -190,6 +192,7 @@ export default {
       displayName: "Görünen Ad",
       saveProfile: "Profili Kaydet",
       settingsMenu: "Ayarlar",
+      photoUpdated: "Profil fotoğrafı güncellendi!",
     },
     seasonal: {
       lettuce: "Marul",

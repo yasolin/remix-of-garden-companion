@@ -137,6 +137,8 @@ export default {
       placeholder: "Type your question...",
       analyzing: "Analyzing photo...",
       photoAnalysis: "Photo taken, AI is analyzing...",
+      camera: "Camera",
+      cameraDesc: "Take a photo of your plant",
     },
     profile: {
       title: "Profile",
@@ -190,6 +192,7 @@ export default {
       displayName: "Display Name",
       saveProfile: "Save Profile",
       settingsMenu: "Settings",
+      photoUpdated: "Profile photo updated!",
     },
     seasonal: {
       lettuce: "Lettuce",

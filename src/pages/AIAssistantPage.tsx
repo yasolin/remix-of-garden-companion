@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, Send, Mic, Scan, Leaf, MapPin } from "lucide-react";
+import { ArrowLeft, Camera, Send, Scan, Leaf, MapPin, Image } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef } from "react";
@@ -16,17 +16,11 @@ const AIAssistantPage = () => {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
   const [pendingMode, setPendingMode] = useState<string>("chat");
 
-  const features = [
-    { icon: Camera, title: t("ai.diseaseDetection").split(" ")[0], desc: t("ai.diseaseDesc"), color: "bg-destructive/10 text-destructive", mode: "disease" },
-    { icon: Scan, title: t("ai.diseaseDetection"), desc: t("ai.diseaseDesc"), color: "bg-destructive/10 text-destructive", mode: "disease" },
-    { icon: Leaf, title: t("ai.plantRecognition"), desc: t("ai.plantRecognitionDesc"), color: "bg-primary/10 text-primary", mode: "identify" },
-    { icon: MapPin, title: t("ai.locationAnalysis"), desc: t("ai.locationAnalysisDesc"), color: "bg-accent/10 text-accent", mode: "location" },
-  ];
-
-  // Remove duplicate - show Camera, Disease Detection, Plant Recognition, Location Analysis
   const displayFeatures = [
+    { icon: Camera, title: t("ai.camera"), desc: t("ai.cameraDesc"), color: "bg-primary/10 text-primary", mode: "camera" },
     { icon: Scan, title: t("ai.diseaseDetection"), desc: t("ai.diseaseDesc"), color: "bg-destructive/10 text-destructive", mode: "disease" },
     { icon: Leaf, title: t("ai.plantRecognition"), desc: t("ai.plantRecognitionDesc"), color: "bg-primary/10 text-primary", mode: "identify" },
     { icon: MapPin, title: t("ai.locationAnalysis"), desc: t("ai.locationAnalysisDesc"), color: "bg-accent/10 text-accent", mode: "location" },
@@ -37,6 +31,11 @@ const AIAssistantPage = () => {
       navigate("/location-analysis");
       return;
     }
+    if (mode === "camera") {
+      setPendingMode("chat");
+      cameraRef.current?.click();
+      return;
+    }
     setPendingMode(mode);
     cameraRef.current?.click();
   };
@@ -44,6 +43,11 @@ const AIAssistantPage = () => {
   const handleCameraClick = () => {
     setPendingMode("chat");
     cameraRef.current?.click();
+  };
+
+  const handleGalleryClick = () => {
+    setPendingMode("chat");
+    galleryRef.current?.click();
   };
 
   const handlePhotoTaken = async (file: File) => {
@@ -104,7 +108,7 @@ const AIAssistantPage = () => {
 
     try {
       await streamPlantAI({
-        messages: allMessages.filter(m => m.role !== "assistant" || allMessages.indexOf(m) !== 0), // skip initial greeting
+        messages: allMessages.filter(m => m.role !== "assistant" || allMessages.indexOf(m) !== 0),
         mode: "chat",
         onDelta: upsertAssistant,
         onDone: () => setIsLoading(false),
@@ -119,6 +123,8 @@ const AIAssistantPage = () => {
     <div className="pb-24 max-w-lg mx-auto flex flex-col h-[calc(100vh-80px)]">
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
         onChange={(e) => e.target.files?.[0] && handlePhotoTaken(e.target.files[0])} />
+      <input ref={galleryRef} type="file" accept="image/*" className="hidden"
+        onChange={(e) => e.target.files?.[0] && handlePhotoTaken(e.target.files[0])} />
 
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <button onClick={() => navigate("/")} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
@@ -129,9 +135,9 @@ const AIAssistantPage = () => {
 
       <div className="px-4 flex gap-3 overflow-x-auto pb-3 px-5">
         {displayFeatures.map((f, i) => (
-          <motion.button key={f.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          <motion.button key={f.mode} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }} onClick={() => handleFeatureClick(f.mode)}
-            className="min-w-[140px] bg-card rounded-xl p-3 shadow-card border border-border flex flex-col items-center gap-2 text-center">
+            className="min-w-[120px] bg-card rounded-xl p-3 shadow-card border border-border flex flex-col items-center gap-2 text-center">
             <div className={`w-10 h-10 rounded-lg ${f.color} flex items-center justify-center`}>
               <f.icon className="w-5 h-5" />
             </div>
@@ -170,6 +176,9 @@ const AIAssistantPage = () => {
       <div className="px-4 py-3 flex items-center gap-2">
         <button onClick={handleCameraClick} className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
           <Camera className="w-5 h-5 text-muted-foreground" />
+        </button>
+        <button onClick={handleGalleryClick} className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+          <Image className="w-5 h-5 text-muted-foreground" />
         </button>
         <div className="flex-1 flex items-center bg-secondary rounded-full px-4 py-2">
           <input value={message} onChange={(e) => setMessage(e.target.value)}
