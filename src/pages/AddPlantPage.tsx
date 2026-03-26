@@ -60,7 +60,8 @@ const AddPlantPage = () => {
         const base64 = reader.result as string;
         try {
           const result = await analyzePlantPhoto(base64);
-          setForm({
+          setForm(prev => ({
+            ...prev,
             name: result.name || "",
             scientificName: result.scientificName || "",
             placement: result.placement || "",
@@ -73,7 +74,7 @@ const AddPlantPage = () => {
             soilType: result.soilType || "",
             fertilizer: result.fertilizer || "",
             notes: result.notes || "",
-          });
+          }));
           setMode("manual");
         } catch (e: any) {
           toast({ title: "AI Error", description: e.message, variant: "destructive" });
