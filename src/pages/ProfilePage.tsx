@@ -1,10 +1,10 @@
-import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind } from "lucide-react";
+import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { fetchUserPlants } from "@/lib/plantService";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchUserPlants, uploadPlantPhoto } from "@/lib/plantService";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -20,9 +20,12 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { user, signOut } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedLang, setSelectedLang] = useState(i18n.language);
   const [view, setView] = useState<ProfileView>("main");
   const [displayName, setDisplayName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const avatarRef = useRef<HTMLInputElement>(null);
   const [notifSettings, setNotifSettings] = useState({ watering: true, harvest: true, planting: true });
   const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(() => {
     return (localStorage.getItem("gardenPotFontSize") as any) || "medium";
@@ -34,18 +37,20 @@ const ProfilePage = () => {
     enabled: !!user,
   });
 
-  const { data: profile } = useQuery({
+  const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data } = await supabase.from("profiles" as any).select("*").eq("id", user!.id).maybeSingle();
       const p = data as any;
-      if (p) setDisplayName(p.display_name || "");
+      if (p) {
+        setDisplayName(p.display_name || "");
+        setAvatarUrl(p.avatar_url || null);
+      }
       return p;
     },
     enabled: !!user,
   });
 
-  // Apply font size
   useEffect(() => {
     const sizes = { small: "14px", medium: "16px", large: "18px" };
     document.documentElement.style.fontSize = sizes[fontSize];
@@ -61,16 +66,31 @@ const ProfilePage = () => {
     localStorage.setItem("gardenPotLang", code);
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return;
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `avatars/${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("plant-photos").upload(path, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from("plant-photos").getPublicUrl(path);
+      const url = data.publicUrl;
+      await supabase.from("profiles" as any).update({ avatar_url: url } as any).eq("id", user.id);
+      setAvatarUrl(url);
+      toast({ title: "✅", description: t("profile.photoUpdated") });
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!user) return;
     const { error } = await supabase.from("profiles" as any).update({ display_name: displayName } as any).eq("id", user.id);
     if (error) toast({ title: "❌", description: error.message, variant: "destructive" });
-    else { toast({ title: "✅", description: t("profile.saveProfile") }); setView("main"); }
+    else { toast({ title: "✅", description: t("profile.saveProfile") }); refetchProfile(); setView("main"); }
   };
 
-  const handleLogout = async () => {
-    await signOut();
-  };
+  const handleLogout = async () => { await signOut(); };
 
   const achievements = [
     { emoji: "🌱", label: t("profile.firstPlanting") },
@@ -83,6 +103,8 @@ const ProfilePage = () => {
   if (view === "editProfile") {
     return (
       <div className="pb-24 max-w-lg mx-auto">
+        <input ref={avatarRef} type="file" accept="image/*" className="hidden"
+          onChange={(e) => e.target.files?.[0] && handleAvatarUpload(e.target.files[0])} />
         <div className="flex items-center gap-3 px-4 pt-4 pb-2">
           <button onClick={() => setView("main")} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
             <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -91,8 +113,18 @@ const ProfilePage = () => {
         </div>
         <div className="px-4 mt-4 space-y-4">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center">
-              <User className="w-10 h-10 text-muted-foreground" />
+            <div className="relative">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-primary/20" />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center border-2 border-primary/20">
+                  <User className="w-12 h-12 text-muted-foreground" />
+                </div>
+              )}
+              <button onClick={() => avatarRef.current?.click()}
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-md">
+                <Camera className="w-4 h-4 text-primary-foreground" />
+              </button>
             </div>
           </div>
           <div>
@@ -109,7 +141,7 @@ const ProfilePage = () => {
     );
   }
 
-  // Settings menu (notifications, font size, language, privacy, help combined)
+  // Settings menu
   if (view === "settingsMenu") {
     return (
       <div className="pb-24 max-w-lg mx-auto">
@@ -243,11 +275,15 @@ const ProfilePage = () => {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="mx-4 mt-3 bg-card rounded-2xl p-5 border border-border shadow-card">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center border-2 border-primary/20">
-            <User className="w-8 h-8 text-muted-foreground" />
+          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center border-2 border-primary/20 overflow-hidden">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-8 h-8 text-muted-foreground" />
+            )}
           </div>
           <div className="flex-1">
-            <h2 className="font-bold text-lg text-foreground">{profile?.display_name || t("profile.gardener")}</h2>
+            <h2 className="font-bold text-lg text-foreground">{profile?.display_name || displayName || t("profile.gardener")}</h2>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
           </div>
           <button onClick={() => setView("editProfile")} className="p-2 rounded-lg hover:bg-secondary">
@@ -284,7 +320,7 @@ const ProfilePage = () => {
         </div>
       </motion.div>
 
-      {/* My Plants - directly listed */}
+      {/* My Plants */}
       <div className="mx-4 mt-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-foreground">{t("profile.myPlants")}</h3>

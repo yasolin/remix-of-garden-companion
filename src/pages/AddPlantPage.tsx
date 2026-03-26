@@ -42,13 +42,10 @@ const AddPlantPage = () => {
 
   const handlePhotoSelected = (file: File) => {
     setPhotoFile(file);
-    const url = URL.createObjectURL(file);
-    setPhotoPreview(url);
+    setPhotoPreview(URL.createObjectURL(file));
   };
 
-  const handleAiAnalyze = () => {
-    cameraRef.current?.click();
-  };
+  const handleAiAnalyze = () => { cameraRef.current?.click(); };
 
   const handleAiPhotoSelected = async (file: File) => {
     handlePhotoSelected(file);
@@ -99,6 +96,8 @@ const AddPlantPage = () => {
       if (photoFile) {
         photoUrl = await uploadPlantPhoto(userId, photoFile);
       }
+
+      // Auto-set needs_watering to true when a plant is added
       await insertPlant({
         user_id: userId,
         name: form.name,
@@ -115,10 +114,11 @@ const AddPlantPage = () => {
         notes: form.notes,
         photo_url: photoUrl,
         planted_date: form.plantedDate || new Date().toISOString(),
+        needs_watering: true,
       });
       queryClient.invalidateQueries({ queryKey: ["plants"] });
       toast({ title: "✅", description: t("add.savePlant") });
-      navigate("/my-plants");
+      navigate("/profile");
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
@@ -229,7 +229,6 @@ const AddPlantPage = () => {
           </div>
         ))}
 
-        {/* Planted date */}
         <div>
           <label className="text-sm font-semibold text-foreground">{t("add.plantedDate")}</label>
           <input type="date" value={form.plantedDate} onChange={(e) => setForm({ ...form, plantedDate: e.target.value })}
