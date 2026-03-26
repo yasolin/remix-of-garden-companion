@@ -1,4 +1,4 @@
-import { Home, Leaf, Bot, User } from "lucide-react";
+import { Home, Bot, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,6 @@ const BottomNav = () => {
 
   const tabs = [
     { path: "/", label: t("nav.home"), icon: Home },
-    { path: "/my-plants", label: t("nav.myPlants"), icon: Leaf },
     { path: "/ai-assistant", label: t("nav.aiAssistant"), icon: Bot, isCenter: true },
     { path: "/profile", label: t("nav.profile"), icon: User },
   ];
