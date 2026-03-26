@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, Droplets, Sprout, Camera, Bell, CheckCircle2 } from "lucide-react";
+import { Calendar, Droplets, Sprout, Camera, Bell, CheckCircle2, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchUserPlants, type PlantRow } from "@/lib/plantService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import logo from "@/assets/logo.jpeg";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const Index = () => {
   const needsWater = plants.filter(p => p.needs_watering).length;
   const waterNames = plants.filter(p => p.needs_watering).map(p => p.name).join(", ");
 
-  // Today's tasks
+  // Today's tasks - include watering tasks too
   const tasks: { text: string; type: string }[] = [];
   plants.forEach(p => {
     if (p.needs_watering) tasks.push({ text: t("home.waterTask", { name: p.name }), type: "water" });
@@ -37,18 +38,11 @@ const Index = () => {
     if ((p.days_to_harvest ?? 30) <= 7) notifications.push(t("notifications.harvest", { name: p.name }));
   });
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.4 } }),
-  };
-
   return (
     <div className="pb-24 max-w-lg mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-          <Sprout className="w-5 h-5 text-primary-foreground" />
-        </div>
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+        <img src={logo} alt="Garden Pot" className="h-10 object-contain" />
         <div className="flex-1" />
         <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-lg hover:bg-secondary">
           <Bell className="w-5 h-5 text-foreground" />
@@ -58,6 +52,19 @@ const Index = () => {
             </span>
           )}
         </button>
+        <button onClick={() => navigate("/profile")} className="p-2 rounded-lg hover:bg-secondary">
+          <User className="w-5 h-5 text-foreground" />
+        </button>
+      </div>
+
+      {/* Greeting */}
+      <div className="px-4 mt-1 mb-4">
+        <h2 className="text-xl font-bold text-foreground">
+          {t("home.greeting")} 🌿
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {t("home.growing", { count: plants.length })}
+        </p>
       </div>
 
       {/* Notifications dropdown */}
@@ -77,65 +84,73 @@ const Index = () => {
         </motion.div>
       )}
 
-      {/* Main cards */}
-      <div className="px-4 grid grid-cols-2 gap-3 mt-2">
-        <motion.div custom={0} initial="hidden" animate="visible" variants={cardVariants}
+      {/* Main cards - vertical stack like reference */}
+      <div className="px-4 space-y-3">
+        {/* Harvest Time */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           onClick={() => navigate("/harvest")}
-          className="gradient-harvest rounded-2xl p-4 cursor-pointer min-h-[140px] flex flex-col justify-between">
-          <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-            <Calendar className="w-5 h-5 text-primary-foreground" />
+          className="rounded-2xl p-4 cursor-pointer flex items-center gap-4" style={{ background: "hsl(142 40% 94%)" }}>
+          <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center">
+            <Calendar className="w-5 h-5 text-primary" />
           </div>
-          <div>
-            <h3 className="text-primary-foreground font-bold text-base">{t("home.harvestTime")}</h3>
-            <p className="text-primary-foreground/80 text-xs mt-0.5">{t("home.harvestReady", { count: harvestSoon })}</p>
-            <span className="inline-flex items-center gap-1 mt-2 bg-primary-foreground/20 text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
+          <div className="flex-1">
+            <h3 className="font-bold text-foreground">{t("home.harvestTime")}</h3>
+            <p className="text-xs text-muted-foreground">{t("home.harvestReady", { count: harvestSoon })}</p>
+            <span className="inline-flex items-center gap-1 mt-1.5 bg-primary/10 text-primary text-[11px] font-bold px-2.5 py-0.5 rounded-full">
               📅 {t("home.harvestPlants", { count: harvestSoon })}
             </span>
           </div>
         </motion.div>
 
-        <motion.div custom={1} initial="hidden" animate="visible" variants={cardVariants}
+        {/* Watering Time */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           onClick={() => navigate("/watering")}
-          className="gradient-market rounded-2xl p-4 cursor-pointer min-h-[140px] flex flex-col justify-between">
-          <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-            <Droplets className="w-5 h-5 text-primary-foreground" />
+          className="rounded-2xl p-4 cursor-pointer flex items-center gap-4" style={{ background: "hsl(200 60% 94%)" }}>
+          <div className="w-11 h-11 rounded-xl bg-blue-500/15 flex items-center justify-center">
+            <Droplets className="w-5 h-5 text-blue-500" />
           </div>
-          <div>
-            <h3 className="text-primary-foreground font-bold text-base">{t("home.wateringTime")}</h3>
-            <p className="text-primary-foreground/80 text-xs mt-0.5">
+          <div className="flex-1">
+            <h3 className="font-bold text-foreground">{t("home.wateringTime")}</h3>
+            <p className="text-xs text-muted-foreground">
               {needsWater > 0 ? t("home.needsWater", { names: waterNames }) : t("home.allWatered")}
             </p>
-            <span className="inline-flex items-center gap-1 mt-2 bg-primary-foreground/20 text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1 mt-1.5 bg-blue-500/10 text-blue-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
               💧 {t("home.today")}
             </span>
           </div>
         </motion.div>
-      </div>
 
-      <div className="px-4 grid grid-cols-2 gap-3 mt-3">
-        <motion.div custom={2} initial="hidden" animate="visible" variants={cardVariants}
+        {/* Planting Suggestions */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
           onClick={() => navigate("/planting-calendar")}
-          className="gradient-planting rounded-2xl p-4 cursor-pointer min-h-[130px] flex flex-col justify-between">
-          <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
+          className="rounded-2xl p-4 cursor-pointer flex items-center gap-4" style={{ background: "hsl(35 70% 93%)" }}>
+          <div className="w-11 h-11 rounded-xl bg-accent/15 flex items-center justify-center">
             <Sprout className="w-5 h-5 text-accent" />
           </div>
-          <div>
-            <h3 className="text-foreground font-bold text-base">{t("home.plantingSuggestion")}</h3>
-            <span className="inline-flex items-center gap-1 mt-2 bg-accent text-accent-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
-              🌿 {t("home.ideal")}
-            </span>
+          <div className="flex-1">
+            <h3 className="font-bold text-foreground">{t("home.plantingSuggestion")}</h3>
+            <p className="text-xs text-muted-foreground">{t("home.plantingDesc")}</p>
+            <div className="flex gap-1.5 mt-1.5">
+              <span className="bg-accent/15 text-accent text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                {t("home.thisWeek")}
+              </span>
+            </div>
           </div>
         </motion.div>
 
-        <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants}
-          onClick={() => navigate("/location-analysis")}
-          className="gradient-help rounded-2xl p-4 cursor-pointer min-h-[130px] flex flex-col justify-between">
-          <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-            <Camera className="w-5 h-5 text-primary-foreground" />
+        {/* Plant Analysis & AI */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          onClick={() => navigate("/ai-assistant")}
+          className="rounded-2xl p-4 cursor-pointer flex items-center gap-4" style={{ background: "hsl(220 20% 94%)" }}>
+          <div className="w-11 h-11 rounded-xl bg-muted-foreground/10 flex items-center justify-center">
+            <Camera className="w-5 h-5 text-muted-foreground" />
           </div>
-          <div>
-            <h3 className="text-primary-foreground font-bold text-base">{t("home.locationAnalysis")}</h3>
-            <p className="text-primary-foreground/80 text-xs mt-0.5">{t("home.locationDesc")}</p>
+          <div className="flex-1">
+            <h3 className="font-bold text-foreground">{t("home.plantAnalysis")}</h3>
+            <p className="text-xs text-muted-foreground">{t("home.plantAnalysisDesc")}</p>
+            <span className="inline-flex items-center gap-1 mt-1.5 bg-muted text-muted-foreground text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+              {t("home.openAssistant")}
+            </span>
           </div>
         </motion.div>
       </div>

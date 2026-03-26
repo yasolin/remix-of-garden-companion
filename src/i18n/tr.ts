@@ -1,6 +1,5 @@
 export default {
   translation: {
-    // Auth
     auth: {
       subtitle: "Bitkilerinizi büyütün, takip edin 🌱",
       login: "Giriş Yap",
@@ -15,46 +14,48 @@ export default {
       checkEmailDesc: "Hesabınızı doğrulamak için e-postanıza gönderilen bağlantıya tıklayın.",
       backToLogin: "Giriş sayfasına dön",
     },
-    // Nav
     nav: {
       home: "Ana Sayfa",
       myPlants: "Bitkilerim",
       aiAssistant: "AI Asistan",
       profile: "Profil",
     },
-    // Home
     home: {
+      greeting: "Merhaba",
       search: "Bitki, görev ara...",
       harvestTime: "Hasat Zamanı",
-      harvestReady: "{{count}} bitki hazır",
+      harvestReady: "{{count}} bitki hasata hazır",
       harvestPlants: "{{count}} bitki",
       myPlants: "Bitkilerim",
-      growing: "{{count}} bitki yetiştiriyorsun",
+      growing: "Bahçende {{count}} bitki yetişiyor",
       discover: "Keşfet",
       wateringTime: "Sulama Zamanı",
       needsWater: "{{names}} sulanmalı",
       allWatered: "Tüm bitkiler sulandı!",
       today: "Bugün",
       plantingSuggestion: "Ekim Önerileri",
+      plantingDesc: "Mevsime uygun ekim zamanı",
       plantingTime: "{{name}} ekme zamanı",
       ideal: "İdeal",
+      thisWeek: "Bu Hafta",
       needHelp: "Yardıma mı ihtiyacın var?",
       helpDesc: "Hemen fotoğraf çek, AI asistanım yardım etsin",
       locationAnalysis: "Konum Analizi",
       locationDesc: "Bitkinin yönünü ve güneş/rüzgar bilgisini öğren",
+      plantAnalysis: "Bitki Analiz ve Teşhisi",
+      plantAnalysisDesc: "Hızlı analiz için AI asistanı dene",
+      openAssistant: "Asistanı Aç",
       seasonTitle: "Bu Mevsim Ekilebilir",
       todaysTasks: "Bugünkü Görevler",
       noTasks: "Bugün yapılacak görev yok 🎉",
       waterTask: "💧 {{name}} sulanmalı",
       harvestTask: "🌿 {{name}} hasat zamanı",
     },
-    // Harvest
     harvest: {
       title: "Hasat Zamanı",
       subtitle: "{{count}} bitki yetiştiriyorsunuz",
       days: "{{count}} gün",
     },
-    // My Plants
     plants: {
       title: "Bitkilerim",
       subtitle: "{{count}} bitki yetiştiriyorsunuz",
@@ -65,7 +66,6 @@ export default {
       noPlants: "Henüz bitki eklenmemiş",
       addFirst: "İlk bitkini ekle!",
     },
-    // Plant detail
     detail: {
       notFound: "Bitki bulunamadı",
       harvestIn: "Hasata {{count}} gün",
@@ -85,7 +85,6 @@ export default {
       takePhoto: "Fotoğraf Çek",
       chooseFromGallery: "Galeriden Seç",
     },
-    // Add plant
     add: {
       title: "Bitki Ekle",
       manualEntry: "Manuel Giriş",
@@ -118,7 +117,6 @@ export default {
       takePhotoFirst: "Önce fotoğraf çekin",
       plantedDate: "Ekim Tarihi",
     },
-    // Stages
     stages: {
       planting: "Ekim",
       germination: "Çimlenme",
@@ -126,7 +124,6 @@ export default {
       fruiting: "Meyve",
       harvest: "Hasat",
     },
-    // AI Assistant
     ai: {
       title: "AI Asistan",
       diseaseDetection: "Hastalık Tespiti",
@@ -140,7 +137,6 @@ export default {
       analyzing: "Fotoğraf analiz ediliyor...",
       photoAnalysis: "Fotoğraf çekildi, AI analiz ediyor...",
     },
-    // Profile
     profile: {
       title: "Profil",
       gardener: "Bahçıvan",
@@ -182,9 +178,9 @@ export default {
       medium: "Orta",
       large: "Büyük",
       privacyTitle: "Gizlilik Politikası",
-      privacyText: "Verileriniz güvenli bir şekilde saklanır. Kişisel bilgileriniz üçüncü taraflarla paylaşılmaz.",
+      privacyText: "Verileriniz güvenli bir şekilde saklanır. Kişisel bilgileriniz üçüncü taraflarla paylaşılmaz. Gizliliğinizi korumaya ve verilerinizin güvenliğini sağlamaya kararlıyız.",
       helpTitle: "Yardım & Destek",
-      helpText: "Sorularınız için destek ekibimize ulaşabilirsiniz.",
+      helpText: "Sorularınız veya sorunlarınız için destek ekibimize ulaşabilirsiniz. Garden Pot'u en iyi şekilde kullanmanız için buradayız.",
       premiumTitle: "Premium Planlar",
       premiumMonthly: "Aylık",
       premiumYearly: "Yıllık",
@@ -192,8 +188,8 @@ export default {
       subscribe: "Abone Ol",
       displayName: "Görünen Ad",
       saveProfile: "Profili Kaydet",
+      settingsMenu: "Ayarlar",
     },
-    // Seasonal suggestions
     seasonal: {
       lettuce: "Marul",
       lettuceTip: "Serin havada harika büyür",
@@ -207,7 +203,6 @@ export default {
       radishTip: "30 günde hasat",
       spring: "İlkbahar",
     },
-    // Notifications
     notifications: {
       title: "Bildirimler",
       watering: "💧 Sulama: {{name}} sulanmalı",
@@ -215,7 +210,6 @@ export default {
       planting: "🌱 Ekim: {{name}} ekme zamanı",
       noNotifications: "Yeni bildirim yok",
     },
-    // Watering
     watering: {
       title: "Sulama Zamanı",
       subtitle: "{{count}} bitki sulanmalı",
@@ -223,15 +217,16 @@ export default {
       watered: "Bitki sulandı!",
       alreadyWatered: "Sulananlar",
     },
-    // Calendar
     calendar: {
       title: "Ekim Takvimi",
       subtitle: "Mevsime göre ekilecek bitkiler",
       currentMonth: "{{month}} ayında ekilecekler",
       currentMonthDesc: "Bu ay ekmek için ideal bitkiler",
       noPlants: "Bu ay için öneri bulunamadı",
+      vegetables: "Sebzeler",
+      fruits: "Meyveler",
+      herbs: "Otlar & Diğer",
     },
-    // Location
     location: {
       title: "Konum Analizi",
       subtitle: "Bitkinin yönünü belirleyin",
@@ -243,6 +238,11 @@ export default {
       sunTimes: "Güneş Saatleri",
       sunrise: "Doğuş",
       sunset: "Batış",
+      country: "Ülke",
+      state: "Şehir / İl",
+      selectCountry: "Ülke seçin",
+      selectState: "Şehir seçin",
+      locationSaved: "Konum verisi kaydedildi",
     },
   },
 };
