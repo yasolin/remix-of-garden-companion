@@ -1,5 +1,20 @@
 export default {
   translation: {
+    // Auth
+    auth: {
+      subtitle: "Bitkilerinizi büyütün, takip edin 🌱",
+      login: "Giriş Yap",
+      signup: "Üye Ol",
+      loginBtn: "Giriş Yap",
+      signupBtn: "Üye Ol",
+      emailPlaceholder: "E-posta adresiniz",
+      passwordPlaceholder: "Şifreniz",
+      namePlaceholder: "Adınız",
+      verifyEmail: "Doğrulama e-postası gönderildi!",
+      checkEmail: "E-postanızı kontrol edin",
+      checkEmailDesc: "Hesabınızı doğrulamak için e-postanıza gönderilen bağlantıya tıklayın.",
+      backToLogin: "Giriş sayfasına dön",
+    },
     // Nav
     nav: {
       home: "Ana Sayfa",
@@ -9,7 +24,7 @@ export default {
     },
     // Home
     home: {
-      search: "Ürün, kategori ara...",
+      search: "Bitki, görev ara...",
       harvestTime: "Hasat Zamanı",
       harvestReady: "{{count}} bitki hazır",
       harvestPlants: "{{count}} bitki",
@@ -20,12 +35,16 @@ export default {
       needsWater: "{{names}} sulanmalı",
       allWatered: "Tüm bitkiler sulandı!",
       today: "Bugün",
-      plantingSuggestion: "Ekim Önerisi",
+      plantingSuggestion: "Ekim Önerileri",
       plantingTime: "{{name}} ekme zamanı",
       ideal: "İdeal",
       needHelp: "Yardıma mı ihtiyacın var?",
       helpDesc: "Hemen fotoğraf çek, AI asistanım yardım etsin",
       seasonTitle: "Bu Mevsim Ekilebilir",
+      todaysTasks: "Bugünkü Görevler",
+      noTasks: "Bugün yapılacak görev yok 🎉",
+      waterTask: "💧 {{name}} sulanmalı",
+      harvestTask: "🌿 {{name}} hasat zamanı",
     },
     // Harvest
     harvest: {
@@ -95,6 +114,7 @@ export default {
       notesPlaceholder: "Ek notlarınız...",
       savePlant: "Bitkiyi Kaydet",
       takePhotoFirst: "Önce fotoğraf çekin",
+      plantedDate: "Ekim Tarihi",
     },
     // Stages
     stages: {
@@ -147,6 +167,29 @@ export default {
       premiumDesc: "Gelişmiş özelliklere eriş",
       logout: "Çıkış Yap",
       logoutDesc: "Hesabından çıkış yap",
+      editProfile: "Profili Düzenle",
+      editProfileDesc: "İsim ve fotoğrafını değiştir",
+      myPlants: "Bitkilerim",
+      myPlantsDesc: "Bitkilerini görüntüle ve yönet",
+      wateringNotif: "Sulama Bildirimi",
+      harvestNotif: "Hasat Bildirimi",
+      plantingNotif: "Ekim Bildirimi",
+      fontSize: "Yazı Boyutu",
+      fontSizeDesc: "Uygulama yazı boyutunu ayarla",
+      small: "Küçük",
+      medium: "Orta",
+      large: "Büyük",
+      privacyTitle: "Gizlilik Politikası",
+      privacyText: "Verileriniz güvenli bir şekilde saklanır. Kişisel bilgileriniz üçüncü taraflarla paylaşılmaz.",
+      helpTitle: "Yardım & Destek",
+      helpText: "Sorularınız için destek ekibimize ulaşabilirsiniz.",
+      premiumTitle: "Premium Planlar",
+      premiumMonthly: "Aylık",
+      premiumYearly: "Yıllık",
+      premiumFeatures: "AI bitki tarama, gelişmiş analiz, reklamsız deneyim",
+      subscribe: "Abone Ol",
+      displayName: "Görünen Ad",
+      saveProfile: "Profili Kaydet",
     },
     // Seasonal suggestions
     seasonal: {
@@ -161,6 +204,14 @@ export default {
       radish: "Turp",
       radishTip: "30 günde hasat",
       spring: "İlkbahar",
+    },
+    // Notifications
+    notifications: {
+      title: "Bildirimler",
+      watering: "💧 Sulama: {{name}} sulanmalı",
+      harvest: "🌿 Hasat: {{name}} hasat zamanı",
+      planting: "🌱 Ekim: {{name}} ekme zamanı",
+      noNotifications: "Yeni bildirim yok",
     },
   },
 };
