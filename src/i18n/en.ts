@@ -21,7 +21,7 @@ export default {
       profile: "Profile",
     },
     home: {
-      greeting: "Hello",
+      greeting: "Hello {{name}}",
       search: "Search plants, tasks...",
       harvestTime: "Harvest Time",
       harvestReady: "{{count}} plants ready to harvest",
