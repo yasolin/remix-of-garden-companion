@@ -62,8 +62,9 @@ const AuthPage = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center gap-1 mb-8">
-          <img src={logo} alt="Garden Pot" className="h-24 object-contain" />
+          className="flex flex-col items-center gap-2 mb-10">
+          <img src={logo} alt="GardenPot" className="h-32 object-contain" />
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">GardenPot</h1>
           <p className="text-sm text-muted-foreground">{t("auth.subtitle")}</p>
         </motion.div>
 

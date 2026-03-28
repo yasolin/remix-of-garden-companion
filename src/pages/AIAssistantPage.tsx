@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, Send, Scan, Leaf, MapPin, Image } from "lucide-react";
+import { ArrowLeft, Send, Scan, Leaf, MapPin, Camera, Image } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef } from "react";
@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 
 const AIAssistantPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<AiMessage[]>([
     { role: "assistant", content: t("ai.welcome") },
@@ -20,9 +20,8 @@ const AIAssistantPage = () => {
   const [pendingMode, setPendingMode] = useState<string>("chat");
 
   const displayFeatures = [
-    { icon: Camera, title: t("ai.camera"), desc: t("ai.cameraDesc"), color: "bg-primary/10 text-primary", mode: "camera" },
-    { icon: Scan, title: t("ai.diseaseDetection"), desc: t("ai.diseaseDesc"), color: "bg-destructive/10 text-destructive", mode: "disease" },
     { icon: Leaf, title: t("ai.plantRecognition"), desc: t("ai.plantRecognitionDesc"), color: "bg-primary/10 text-primary", mode: "identify" },
+    { icon: Scan, title: t("ai.diseaseDetection"), desc: t("ai.diseaseDesc"), color: "bg-destructive/10 text-destructive", mode: "disease" },
     { icon: MapPin, title: t("ai.locationAnalysis"), desc: t("ai.locationAnalysisDesc"), color: "bg-accent/10 text-accent", mode: "location" },
   ];
 
@@ -31,17 +30,7 @@ const AIAssistantPage = () => {
       navigate("/location-analysis");
       return;
     }
-    if (mode === "camera") {
-      setPendingMode("chat");
-      cameraRef.current?.click();
-      return;
-    }
     setPendingMode(mode);
-    cameraRef.current?.click();
-  };
-
-  const handleCameraClick = () => {
-    setPendingMode("chat");
     cameraRef.current?.click();
   };
 
@@ -75,6 +64,7 @@ const AIAssistantPage = () => {
           messages: [{ role: "user", content: "Analyze this plant image." }],
           mode: pendingMode,
           imageBase64: base64,
+          lang: i18n.language,
           onDelta: upsertAssistant,
           onDone: () => setIsLoading(false),
         });
@@ -110,6 +100,7 @@ const AIAssistantPage = () => {
       await streamPlantAI({
         messages: allMessages.filter(m => m.role !== "assistant" || allMessages.indexOf(m) !== 0),
         mode: "chat",
+        lang: i18n.language,
         onDelta: upsertAssistant,
         onDone: () => setIsLoading(false),
       });
@@ -174,9 +165,6 @@ const AIAssistantPage = () => {
       </div>
 
       <div className="px-4 py-3 flex items-center gap-2">
-        <button onClick={handleCameraClick} className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-          <Camera className="w-5 h-5 text-muted-foreground" />
-        </button>
         <button onClick={handleGalleryClick} className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
           <Image className="w-5 h-5 text-muted-foreground" />
         </button>

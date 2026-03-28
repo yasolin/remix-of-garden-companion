@@ -1,8 +1,12 @@
-import { ArrowLeft, Compass, Sun, Wind, MapPin, Globe } from "lucide-react";
+import { ArrowLeft, Compass, Sun, Wind, MapPin, Globe, Check, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchUserPlants, updatePlant } from "@/lib/plantService";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
 const dirLabels: Record<string, Record<string, string>> = {
@@ -46,6 +50,7 @@ const countries: Record<string, { label: Record<string, string>; states: Record<
 const LocationAnalysisPage = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const lang = i18n.language === "en" ? "en" : "tr";
 
   const [heading, setHeading] = useState<number | null>(null);
@@ -56,6 +61,22 @@ const LocationAnalysisPage = () => {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [compassError, setCompassError] = useState(false);
+  const [compassActive, setCompassActive] = useState(false);
+  const [selectedPlantId, setSelectedPlantId] = useState<string>("");
+
+  const { data: plants = [] } = useQuery({
+    queryKey: ["plants", user?.id],
+    queryFn: () => fetchUserPlants(user!.id),
+    enabled: !!user,
+  });
+
+  const handleOrientation = useCallback((e: DeviceOrientationEvent) => {
+    if (e.alpha !== null) {
+      setHeading(Math.round(e.alpha));
+      setCompassError(false);
+      setCompassActive(true);
+    }
+  }, []);
 
   const requestCompass = useCallback(() => {
     if ("DeviceOrientationEvent" in window && typeof (DeviceOrientationEvent as any).requestPermission === "function") {
@@ -74,22 +95,16 @@ const LocationAnalysisPage = () => {
         });
     } else if ("DeviceOrientationEvent" in window) {
       window.addEventListener("deviceorientation", handleOrientation);
-      // Check after a short delay if we got any readings
       setTimeout(() => {
-        if (heading === null) setCompassError(true);
-      }, 2000);
+        if (!compassActive && heading === null) {
+          setCompassError(true);
+        }
+      }, 3000);
     } else {
       setCompassError(true);
       setUseManual(true);
     }
-  }, []);
-
-  const handleOrientation = (e: DeviceOrientationEvent) => {
-    if (e.alpha !== null) {
-      setHeading(Math.round(e.alpha));
-      setCompassError(false);
-    }
-  };
+  }, [handleOrientation, compassActive, heading]);
 
   useEffect(() => {
     requestCompass();
@@ -120,7 +135,21 @@ const LocationAnalysisPage = () => {
     return info[lang][dir] || "";
   };
 
+  const handleSaveLocation = async () => {
+    if (!selectedPlantId || !currentDir) return;
+    try {
+      const locationData = `${dirLabels[lang][currentDir]}${selectedCountry ? ` - ${countries[selectedCountry]?.label[lang]}` : ""}${selectedState ? `, ${selectedState}` : ""}`;
+      await updatePlant(selectedPlantId, { placement: locationData } as any);
+      toast({ title: "✅", description: t("location.locationSaved") });
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    }
+  };
+
   const statesForCountry = selectedCountry ? countries[selectedCountry]?.states || [] : [];
+
+  // Compass needle rotation
+  const needleRotation = heading !== null && !useManual ? 360 - heading : 0;
 
   return (
     <div className="pb-24 max-w-lg mx-auto">
@@ -134,33 +163,69 @@ const LocationAnalysisPage = () => {
         </div>
       </div>
 
+      {/* Plant selector */}
+      <div className="px-4 mt-4">
+        <div className="bg-card rounded-xl p-4 border border-border">
+          <label className="text-sm font-bold text-foreground mb-2 block">{t("location.selectPlant")}</label>
+          <div className="relative">
+            <select value={selectedPlantId} onChange={e => setSelectedPlantId(e.target.value)}
+              className="w-full bg-secondary rounded-lg px-3 py-2.5 text-sm text-foreground outline-none appearance-none pr-8">
+              <option value="">{t("location.choosePlant")}</option>
+              {plants.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
       {/* Compass */}
       <div className="px-4 mt-6 flex flex-col items-center">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          className="w-40 h-40 rounded-full border-4 border-primary/30 bg-card shadow-card flex items-center justify-center relative">
+          className="w-48 h-48 rounded-full border-4 border-primary/20 bg-card shadow-card flex items-center justify-center relative">
+          {/* Cardinal direction labels */}
+          <span className="absolute top-2 text-xs font-bold text-primary">N</span>
+          <span className="absolute bottom-2 text-xs font-bold text-muted-foreground">S</span>
+          <span className="absolute right-2 text-xs font-bold text-muted-foreground">E</span>
+          <span className="absolute left-2 text-xs font-bold text-muted-foreground">W</span>
+
           {heading !== null && !useManual ? (
             <div className="text-center">
-              <Compass className="w-12 h-12 text-primary mx-auto" style={{ transform: `rotate(${360 - heading}deg)` }} />
-              <p className="text-2xl font-bold text-foreground mt-2">{heading}°</p>
+              <motion.div animate={{ rotate: needleRotation }} transition={{ type: "spring", damping: 20 }}>
+                <Compass className="w-16 h-16 text-primary mx-auto" />
+              </motion.div>
+              <p className="text-2xl font-bold text-foreground mt-1">{heading}°</p>
               <p className="text-sm font-semibold text-primary">{dirLabel}</p>
             </div>
           ) : useManual ? (
             <div className="text-center">
-              <Compass className="w-12 h-12 text-primary mx-auto" />
-              <p className="text-sm font-semibold text-primary mt-2">{dirLabels[lang][manualDir]}</p>
+              <Compass className="w-16 h-16 text-primary mx-auto" />
+              <p className="text-lg font-bold text-foreground mt-1">{dirLabels[lang][manualDir]}</p>
+              <p className="text-xs text-muted-foreground">{t("location.manualMode")}</p>
             </div>
           ) : (
-            <div className="text-center">
-              <MapPin className="w-12 h-12 text-muted-foreground mx-auto" />
-              <p className="text-sm text-muted-foreground mt-2">{t("location.noCompass")}</p>
+            <div className="text-center px-4">
+              <Compass className="w-14 h-14 text-muted-foreground mx-auto animate-pulse" />
+              <p className="text-xs text-muted-foreground mt-2">
+                {compassError ? t("location.noCompass") : t("location.detecting")}
+              </p>
             </div>
           )}
         </motion.div>
 
-        <button onClick={() => { setUseManual(!useManual); if (!useManual) setCompassError(false); }}
-          className="mt-4 text-sm font-semibold text-primary underline">
-          {useManual ? t("location.useCompass") : t("location.useManual")}
-        </button>
+        <div className="flex gap-3 mt-4">
+          {!useManual && compassError && (
+            <button onClick={() => { requestCompass(); }}
+              className="text-sm font-semibold text-primary bg-primary/10 px-4 py-2 rounded-lg">
+              {t("location.retryCompass")}
+            </button>
+          )}
+          <button onClick={() => { setUseManual(!useManual); if (!useManual) setCompassError(false); }}
+            className="text-sm font-semibold text-primary bg-primary/10 px-4 py-2 rounded-lg">
+            {useManual ? t("location.useCompass") : t("location.useManual")}
+          </button>
+        </div>
       </div>
 
       {/* Manual direction picker + country/state */}
@@ -177,7 +242,6 @@ const LocationAnalysisPage = () => {
             ))}
           </div>
 
-          {/* Country selector */}
           <div className="bg-card rounded-xl p-4 border border-border space-y-3">
             <div className="flex items-center gap-2 mb-1">
               <Globe className="w-4 h-4 text-muted-foreground" />
@@ -249,6 +313,15 @@ const LocationAnalysisPage = () => {
               </div>
             </div>
           </motion.div>
+
+          {/* Save button */}
+          {selectedPlantId && (
+            <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              onClick={handleSaveLocation}
+              className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl flex items-center justify-center gap-2">
+              <Check className="w-5 h-5" /> {t("location.saveToPlant")}
+            </motion.button>
+          )}
         </div>
       )}
     </div>
