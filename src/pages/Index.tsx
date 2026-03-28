@@ -29,7 +29,6 @@ const Index = () => {
   const needsWater = plants.filter(p => p.needs_watering).length;
   const waterNames = plants.filter(p => p.needs_watering).map(p => p.name).join(", ");
 
-  // Build today's tasks from plant data
   const todayTasks = plants
     .filter(p => p.needs_watering)
     .map(p => ({ id: p.id, type: "water" as const, name: p.name }));
@@ -49,10 +48,11 @@ const Index = () => {
 
   return (
     <div className="pb-24 max-w-lg mx-auto bg-background min-h-screen">
-      {/* Header */}
+      {/* Header - matches reference image */}
       <div className="flex items-center px-4 pt-5 pb-1">
         <div className="flex items-center gap-2 flex-1">
-          <img src={logo} alt="Garden Pot" className="h-10 object-contain" />
+          <img src={logo} alt="GardenPot" className="h-9 object-contain" />
+          <span className="text-lg font-extrabold text-foreground tracking-tight">GardenPot</span>
         </div>
         <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-full hover:bg-secondary">
           <Bell className="w-5 h-5 text-foreground" />
@@ -96,7 +96,6 @@ const Index = () => {
 
       {/* Main cards */}
       <div className="px-4 space-y-3">
-        {/* Harvest Time */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           onClick={() => navigate("/harvest")}
           className="rounded-2xl p-4 cursor-pointer flex items-center gap-3 overflow-hidden"
@@ -116,7 +115,6 @@ const Index = () => {
           <img src={harvestImg} alt="" className="w-20 h-20 object-contain shrink-0" loading="lazy" />
         </motion.div>
 
-        {/* Watering Time */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           onClick={() => navigate("/watering")}
           className="rounded-2xl p-4 cursor-pointer flex items-center gap-3 overflow-hidden"
@@ -138,7 +136,6 @@ const Index = () => {
           <img src={wateringImg} alt="" className="w-20 h-20 object-contain shrink-0" loading="lazy" />
         </motion.div>
 
-        {/* Planting Suggestions */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
           onClick={() => navigate("/planting-calendar")}
           className="rounded-2xl p-4 cursor-pointer flex items-center gap-3 overflow-hidden"
@@ -160,7 +157,6 @@ const Index = () => {
           <img src={plantingImg} alt="" className="w-20 h-20 object-contain shrink-0" loading="lazy" />
         </motion.div>
 
-        {/* Plant Analysis & AI */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           onClick={() => navigate("/ai-assistant")}
           className="rounded-2xl p-4 cursor-pointer flex items-center gap-3 overflow-hidden"

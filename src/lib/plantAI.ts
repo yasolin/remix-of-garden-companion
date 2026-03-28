@@ -6,19 +6,20 @@ interface StreamChatOptions {
   messages: AiMessage[];
   mode?: string;
   imageBase64?: string;
+  lang?: string;
   onDelta: (text: string) => void;
   onDone: () => void;
   signal?: AbortSignal;
 }
 
-export async function streamPlantAI({ messages, mode = "chat", imageBase64, onDelta, onDone, signal }: StreamChatOptions) {
+export async function streamPlantAI({ messages, mode = "chat", imageBase64, lang, onDelta, onDone, signal }: StreamChatOptions) {
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages, mode, imageBase64 }),
+    body: JSON.stringify({ messages, mode, imageBase64, lang: lang || "en" }),
     signal,
   });
 
@@ -75,7 +76,7 @@ export async function streamPlantAI({ messages, mode = "chat", imageBase64, onDe
   onDone();
 }
 
-export async function analyzePlantPhoto(imageBase64: string): Promise<Record<string, string>> {
+export async function analyzePlantPhoto(imageBase64: string, lang?: string): Promise<Record<string, string>> {
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers: {
@@ -86,6 +87,7 @@ export async function analyzePlantPhoto(imageBase64: string): Promise<Record<str
       messages: [{ role: "user", content: "Analyze this plant and provide care information as JSON." }],
       mode: "analyze_plant",
       imageBase64,
+      lang: lang || "en",
     }),
   });
 
@@ -117,7 +119,6 @@ export async function analyzePlantPhoto(imageBase64: string): Promise<Record<str
     }
   }
 
-  // Extract JSON from result
   const jsonMatch = result.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     return JSON.parse(jsonMatch[0]);

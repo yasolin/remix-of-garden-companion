@@ -10,16 +10,20 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, mode, imageBase64 } = await req.json();
+    const { messages, mode, imageBase64, lang } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const langInstruction = lang === "tr"
+      ? "IMPORTANT: You MUST respond entirely in Turkish (Türkçe). Do not use English."
+      : "IMPORTANT: You MUST respond entirely in English. Do not use other languages.";
+
     const systemPrompts: Record<string, string> = {
-      chat: "You are a helpful plant care assistant called Garden Pot AI. You help users with plant care, disease detection, plant identification, and gardening advice. Keep answers clear, practical, and friendly. Use plant emojis. Respond in the same language the user writes in.",
-      disease: "You are a plant disease detection expert. Analyze the plant image and identify any diseases, pests, or health issues. Provide the disease name, symptoms, causes, and treatment recommendations. Be specific and practical. Respond in the same language as the user's message.",
-      identify: "You are a plant identification expert. Analyze the image and identify the plant species. Provide the common name, scientific name, care requirements (sunlight, watering, soil type, temperature), and interesting facts. Respond in the same language as the user's message.",
-      location: "You are a plant placement expert. Analyze the location/environment shown in the image and recommend which plants would thrive there. Consider light conditions, space, temperature, and humidity. Respond in the same language as the user's message.",
-      analyze_plant: "You are a plant care expert. Analyze the plant image and return a JSON object with these fields: name (common name), scientificName, placement (recommended), waterFrequency, sunlight, windSensitivity, temperature, humidity, soilType, fertilizer, notes. Respond ONLY with the JSON object, no other text.",
+      chat: `You are a helpful plant care assistant called Garden Pot AI. You help users with plant care, disease detection, plant identification, and gardening advice. Keep answers clear, practical, and friendly. Use plant emojis. ${langInstruction}`,
+      disease: `You are a plant disease detection expert. Analyze the plant image and identify any diseases, pests, or health issues. Provide the disease name, symptoms, causes, and treatment recommendations. Be specific and practical. ${langInstruction}`,
+      identify: `You are a plant identification expert. Analyze the image and identify the plant species. Provide the common name, scientific name, care requirements (sunlight, watering, soil type, temperature), and interesting facts. ${langInstruction}`,
+      location: `You are a plant placement expert. Analyze the location/environment shown in the image and recommend which plants would thrive there. Consider light conditions, space, temperature, and humidity. ${langInstruction}`,
+      analyze_plant: `You are a plant care expert. Analyze the plant image and return a JSON object with these fields: name (common name), scientificName, placement (recommended), waterFrequency, sunlight, windSensitivity, temperature, humidity, soilType, fertilizer, notes. Respond ONLY with the JSON object, no other text. ${langInstruction}`,
     };
 
     const systemPrompt = systemPrompts[mode] || systemPrompts.chat;
@@ -56,21 +60,18 @@ serve(async (req) => {
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "Payment required. Please add credits." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
       return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
