@@ -410,7 +410,6 @@ const ProfilePage = () => {
               className="p-1.5 rounded-lg bg-secondary hover:bg-muted transition-colors">
               {plantViewMode === "list" ? <LayoutGrid className="w-4 h-4 text-muted-foreground" /> : <LayoutList className="w-4 h-4 text-muted-foreground" />}
             </button>
-            </button>
             <button onClick={() => navigate("/add-plant")} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
               <Plus className="w-4 h-4 text-primary-foreground" />
             </button>
