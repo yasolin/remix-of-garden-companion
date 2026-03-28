@@ -30,8 +30,12 @@ const ProfilePage = () => {
   const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(() => {
     return (localStorage.getItem("gardenPotFontSize") as any) || "medium";
   });
-  const [plantViewMode, setPlantViewMode] = useState<"list" | "grid">("list");
-  const [plantSortBy, setSortBy] = useState<"name" | "date" | "harvest">("name");
+  const [plantViewMode, setPlantViewMode] = useState<"list" | "grid">(() => {
+    return (localStorage.getItem("gardenPotPlantView") as any) || "list";
+  });
+  const [plantSortBy, setSortBy] = useState<"name" | "date" | "harvest">(() => {
+    return (localStorage.getItem("gardenPotPlantSort") as any) || "name";
+  });
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
