@@ -1,13 +1,18 @@
 import { stages } from "@/lib/plantService";
-import { Check, Sprout, Leaf, Flower2, Apple, Scissors } from "lucide-react";
+import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import stagePlanting from "@/assets/stage-planting.png";
+import stageGermination from "@/assets/stage-germination.png";
+import stageFlowering from "@/assets/stage-flowering.png";
+import stageFruiting from "@/assets/stage-fruiting.png";
+import stageHarvest from "@/assets/stage-harvest.png";
 
-const stageIcons: Record<string, React.ElementType> = {
-  planting: Sprout,
-  germination: Leaf,
-  flowering: Flower2,
-  fruiting: Apple,
-  harvest: Scissors,
+const stageImages: Record<string, string> = {
+  planting: stagePlanting,
+  germination: stageGermination,
+  flowering: stageFlowering,
+  fruiting: stageFruiting,
+  harvest: stageHarvest,
 };
 
 interface GrowthTimelineProps {
@@ -39,17 +44,20 @@ const GrowthTimeline = ({ currentStage, hasFruit = true }: GrowthTimelineProps) 
       {filteredStages.map((stage, idx) => {
         const isCompleted = idx < currentIdx;
         const isCurrent = idx === currentIdx;
-        const Icon = stageIcons[stage];
 
         return (
           <div key={stage} className="flex items-center flex-1">
             <div className="flex flex-col items-center flex-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                isCompleted ? "bg-primary text-primary-foreground"
-                  : isCurrent ? "bg-primary text-primary-foreground animate-pulse-gentle ring-4 ring-primary/20"
-                  : "bg-muted text-muted-foreground"
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                isCompleted ? "bg-primary/10 ring-2 ring-primary"
+                  : isCurrent ? "bg-primary/10 ring-2 ring-primary animate-pulse-gentle"
+                  : "bg-muted"
               }`}>
-                {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                {isCompleted ? (
+                  <Check className="w-4 h-4 text-primary" />
+                ) : (
+                  <img src={stageImages[stage]} alt={stageLabels[stage]} className="w-7 h-7 object-contain" />
+                )}
               </div>
               <span className={`text-[9px] mt-1 font-semibold text-center leading-tight ${
                 isCurrent ? "text-primary" : isCompleted ? "text-foreground" : "text-muted-foreground"
