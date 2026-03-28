@@ -1,4 +1,4 @@
-import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera, Trash2, Award, Crown, Zap, Target } from "lucide-react";
+import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, ArrowUpDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
