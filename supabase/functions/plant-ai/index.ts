@@ -23,7 +23,7 @@ serve(async (req) => {
       disease: `You are a plant disease detection expert. Analyze the plant image and identify any diseases, pests, or health issues. Provide the disease name, symptoms, causes, and treatment recommendations. Be specific and practical. ${langInstruction}`,
       identify: `You are a plant identification expert. Analyze the image and identify the plant species. Provide the common name, scientific name, care requirements (sunlight, watering, soil type, temperature), and interesting facts. ${langInstruction}`,
       location: `You are a plant placement expert. Analyze the location/environment shown in the image and recommend which plants would thrive there. Consider light conditions, space, temperature, and humidity. ${langInstruction}`,
-      analyze_plant: `You are a plant care expert. Analyze the plant image and return a JSON object with these fields: name (common name), scientificName, placement (recommended), waterFrequency, sunlight, windSensitivity, temperature, humidity, soilType, fertilizer, notes. Respond ONLY with the JSON object, no other text. ${langInstruction}`,
+      analyze_plant: `You are a plant care expert. Analyze the plant image and return a JSON object with these fields: name (common name), scientificName, placement (recommended), waterFrequency, sunlight, windSensitivity, temperature, humidity, soilType, fertilizer, notes. Respond ONLY with the JSON object, no other text. IMPORTANT: ALL field values MUST be in the same language as the user. ${langInstruction}`,
     };
 
     const systemPrompt = systemPrompts[mode] || systemPrompts.chat;

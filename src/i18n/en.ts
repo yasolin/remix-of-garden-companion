@@ -50,11 +50,19 @@ export default {
       noTasks: "No tasks for today 🎉",
       waterTask: "💧 Water {{name}}",
       harvestTask: "🌿 Harvest {{name}}",
+      soilTask: "🪴 Refresh soil for {{name}}",
+      pruneTask: "✂️ Prune {{name}}",
+      taskHistory: "History",
+      completedTasks: "Completed Tasks",
     },
     harvest: {
       title: "Harvest Time",
       subtitle: "You're growing {{count}} plants",
       days: "{{count}} days",
+      aiScan: "AI Harvest Prediction",
+      aiScanDesc: "Scan your plant to estimate harvest time",
+      premiumRequired: "This feature is for Premium members only",
+      aiNoResult: "Could not estimate",
     },
     plants: {
       title: "My Plants",
@@ -234,6 +242,8 @@ export default {
       allDone: "All plants are watered! 🎉",
       watered: "Plant watered!",
       alreadyWatered: "Already Watered",
+      undone: "Watering undone",
+      needsWater: "Needs watering",
     },
     calendar: {
       title: "Planting Calendar",

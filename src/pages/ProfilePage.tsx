@@ -391,16 +391,25 @@ const ProfilePage = () => {
           <h3 className="font-semibold text-foreground">{t("profile.myPlants")}</h3>
           <div className="flex items-center gap-2">
             {/* Sort */}
-            <select value={plantSortBy} onChange={e => setSortBy(e.target.value as any)}
+            <select value={plantSortBy} onChange={e => {
+              const val = e.target.value as any;
+              setSortBy(val);
+              localStorage.setItem("gardenPotPlantSort", val);
+            }}
               className="text-[11px] bg-secondary text-foreground rounded-lg px-2 py-1.5 border-none outline-none">
               <option value="name">{t("profile.sortName")}</option>
               <option value="date">{t("profile.sortDate")}</option>
               <option value="harvest">{t("profile.sortHarvest")}</option>
             </select>
             {/* View toggle */}
-            <button onClick={() => setPlantViewMode(plantViewMode === "list" ? "grid" : "list")}
+            <button onClick={() => {
+              const newMode = plantViewMode === "list" ? "grid" : "list";
+              setPlantViewMode(newMode);
+              localStorage.setItem("gardenPotPlantView", newMode);
+            }}
               className="p-1.5 rounded-lg bg-secondary hover:bg-muted transition-colors">
               {plantViewMode === "list" ? <LayoutGrid className="w-4 h-4 text-muted-foreground" /> : <LayoutList className="w-4 h-4 text-muted-foreground" />}
+            </button>
             </button>
             <button onClick={() => navigate("/add-plant")} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
               <Plus className="w-4 h-4 text-primary-foreground" />

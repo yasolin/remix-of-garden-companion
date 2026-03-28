@@ -50,11 +50,19 @@ export default {
       noTasks: "Bugün yapılacak görev yok 🎉",
       waterTask: "💧 {{name}} sulanmalı",
       harvestTask: "🌿 {{name}} hasat zamanı",
+      soilTask: "🪴 {{name}} toprak tazeleme",
+      pruneTask: "✂️ {{name}} budama zamanı",
+      taskHistory: "Geçmiş",
+      completedTasks: "Tamamlanan Görevler",
     },
     harvest: {
       title: "Hasat Zamanı",
       subtitle: "{{count}} bitki yetiştiriyorsunuz",
       days: "{{count}} gün",
+      aiScan: "AI Hasat Tahmini",
+      aiScanDesc: "Bitkini tarat, hasat süresini öğren",
+      premiumRequired: "Bu özellik Premium üyelere özeldir",
+      aiNoResult: "Tahmin yapılamadı",
     },
     plants: {
       title: "Bitkilerim",
@@ -234,6 +242,8 @@ export default {
       allDone: "Tüm bitkiler sulandı! 🎉",
       watered: "Bitki sulandı!",
       alreadyWatered: "Sulananlar",
+      undone: "Sulama geri alındı",
+      needsWater: "Sulanmalı",
     },
     calendar: {
       title: "Ekim Takvimi",
