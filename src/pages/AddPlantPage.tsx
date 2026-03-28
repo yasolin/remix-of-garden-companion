@@ -13,7 +13,7 @@ type AddMode = "select" | "manual" | "ai";
 
 const AddPlantPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<AddMode>("select");
   const [userId, setUserId] = useState<string | null>(null);
@@ -56,7 +56,7 @@ const AddPlantPage = () => {
       reader.onloadend = async () => {
         const base64 = reader.result as string;
         try {
-          const result = await analyzePlantPhoto(base64);
+          const result = await analyzePlantPhoto(base64, i18n.language);
           setForm(prev => ({
             ...prev,
             name: result.name || "",
