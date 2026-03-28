@@ -48,16 +48,15 @@ const Index = () => {
 
   return (
     <div className="pb-24 max-w-lg mx-auto bg-background min-h-screen">
-      {/* Header - matches reference image */}
+      {/* Header */}
       <div className="flex items-center px-4 pt-5 pb-1">
-        <div className="flex items-center gap-2 flex-1">
-          <img src={logo} alt="GardenPot" className="h-9 object-contain" />
-          <span className="text-lg font-extrabold text-foreground tracking-tight">GardenPot</span>
+        <div className="flex items-center flex-1">
+          <img src={logo} alt="GardenPot" className="h-11 object-contain" />
         </div>
         <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-full hover:bg-secondary">
           <Bell className="w-5 h-5 text-foreground" />
           {notifications.length > 0 && (
-            <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-primary rounded-full text-[9px] text-primary-foreground font-bold flex items-center justify-center">
+            <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-primary rounded-full text-[9px] text-primary-foreground font-semibold flex items-center justify-center">
               {notifications.length}
             </span>
           )}
@@ -69,7 +68,7 @@ const Index = () => {
 
       {/* Greeting */}
       <div className="px-4 mt-3 mb-5">
-        <h2 className="text-2xl font-extrabold text-foreground">
+        <h2 className="text-xl font-semibold text-foreground">
           {t("home.greeting", { name: userName })} 🌱
         </h2>
         <p className="text-sm text-muted-foreground mt-0.5">
@@ -81,7 +80,7 @@ const Index = () => {
       {showNotifications && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           className="mx-4 mb-4 bg-card rounded-2xl border border-border shadow-card p-4">
-          <h3 className="font-bold text-sm text-foreground mb-2">{t("notifications.title")}</h3>
+          <h3 className="font-semibold text-sm text-foreground mb-2">{t("notifications.title")}</h3>
           {notifications.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("notifications.noNotifications")}</p>
           ) : (
@@ -102,13 +101,13 @@ const Index = () => {
           style={{ background: "hsl(142 40% 94%)" }}>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
                 <Calendar className="w-4 h-4 text-primary" />
               </div>
-              <h3 className="font-extrabold text-foreground text-base">{t("home.harvestTime")}</h3>
+              <h3 className="font-semibold text-foreground text-[15px]">{t("home.harvestTime")}</h3>
             </div>
-            <p className="text-xs text-muted-foreground ml-11">{t("home.harvestReady", { count: harvestSoon })}</p>
-            <span className="inline-flex items-center gap-1 mt-2 ml-11 bg-primary/10 text-primary text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+            <p className="text-xs text-muted-foreground ml-10">{t("home.harvestReady", { count: harvestSoon })}</p>
+            <span className="inline-flex items-center gap-1 mt-2 ml-10 bg-primary/10 text-primary text-[11px] font-medium px-2.5 py-0.5 rounded-full">
               📅 {t("home.harvestPlants", { count: harvestSoon })}
             </span>
           </div>
@@ -121,15 +120,15 @@ const Index = () => {
           style={{ background: "hsl(200 60% 94%)" }}>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-9 h-9 rounded-xl bg-blue-500/15 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/15 flex items-center justify-center shrink-0">
                 <Droplets className="w-4 h-4 text-blue-500" />
               </div>
-              <h3 className="font-extrabold text-foreground text-base">{t("home.wateringTime")}</h3>
+              <h3 className="font-semibold text-foreground text-[15px]">{t("home.wateringTime")}</h3>
             </div>
-            <p className="text-xs text-muted-foreground ml-11">
+            <p className="text-xs text-muted-foreground ml-10">
               {needsWater > 0 ? t("home.needsWater", { names: waterNames }) : t("home.allWatered")}
             </p>
-            <span className="inline-flex items-center gap-1 mt-2 ml-11 bg-blue-500/10 text-blue-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 mt-2 ml-10 bg-blue-500/10 text-blue-600 text-[11px] font-medium px-2.5 py-0.5 rounded-full">
               💧 {t("home.today")}
             </span>
           </div>
@@ -142,14 +141,14 @@ const Index = () => {
           style={{ background: "hsl(35 70% 93%)" }}>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-accent/15 flex items-center justify-center shrink-0">
                 <Sprout className="w-4 h-4 text-accent" />
               </div>
-              <h3 className="font-extrabold text-foreground text-base">{t("home.plantingSuggestion")}</h3>
+              <h3 className="font-semibold text-foreground text-[15px]">{t("home.plantingSuggestion")}</h3>
             </div>
-            <p className="text-xs text-muted-foreground ml-11">{t("home.plantingDesc")}</p>
-            <div className="flex gap-1.5 mt-2 ml-11">
-              <span className="bg-accent/15 text-accent text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+            <p className="text-xs text-muted-foreground ml-10">{t("home.plantingDesc")}</p>
+            <div className="flex gap-1.5 mt-2 ml-10">
+              <span className="bg-accent/15 text-accent text-[11px] font-medium px-2.5 py-0.5 rounded-full">
                 {t("home.thisWeek")}
               </span>
             </div>
@@ -163,13 +162,13 @@ const Index = () => {
           style={{ background: "hsl(220 20% 94%)" }}>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-9 h-9 rounded-xl bg-muted-foreground/10 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-muted-foreground/10 flex items-center justify-center shrink-0">
                 <Camera className="w-4 h-4 text-muted-foreground" />
               </div>
-              <h3 className="font-extrabold text-foreground text-base">{t("home.plantAnalysis")}</h3>
+              <h3 className="font-semibold text-foreground text-[15px]">{t("home.plantAnalysis")}</h3>
             </div>
-            <p className="text-xs text-muted-foreground ml-11">{t("home.plantAnalysisDesc")}</p>
-            <span className="inline-flex items-center gap-1 mt-2 ml-11 bg-muted text-muted-foreground text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+            <p className="text-xs text-muted-foreground ml-10">{t("home.plantAnalysisDesc")}</p>
+            <span className="inline-flex items-center gap-1 mt-2 ml-10 bg-muted text-muted-foreground text-[11px] font-medium px-2.5 py-0.5 rounded-full">
               {t("home.openAssistant")}
             </span>
           </div>
@@ -179,7 +178,7 @@ const Index = () => {
 
       {/* Today's Tasks */}
       <div className="px-4 mt-5">
-        <h3 className="font-extrabold text-foreground text-base mb-3">{t("home.todaysTasks")}</h3>
+        <h3 className="font-semibold text-foreground text-base mb-3">{t("home.todaysTasks")}</h3>
         {todayTasks.length === 0 ? (
           <div className="bg-card rounded-2xl p-4 border border-border text-center">
             <p className="text-sm text-muted-foreground">{t("home.noTasks")}</p>
@@ -193,7 +192,7 @@ const Index = () => {
                   <Droplets className="w-4 h-4 text-blue-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground">{task.name}</p>
+                  <p className="text-sm font-medium text-foreground">{task.name}</p>
                   <p className="text-[11px] text-muted-foreground">{t("home.waterTask", { name: task.name })}</p>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); handleMarkWatered(task.id); }}

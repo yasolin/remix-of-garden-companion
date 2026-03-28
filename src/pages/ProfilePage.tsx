@@ -1,4 +1,4 @@
-import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera, Trash2, Award, Crown, Zap, Target } from "lucide-react";
+import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, ArrowUpDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
@@ -30,6 +30,8 @@ const ProfilePage = () => {
   const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(() => {
     return (localStorage.getItem("gardenPotFontSize") as any) || "medium";
   });
+  const [plantViewMode, setPlantViewMode] = useState<"list" | "grid">("list");
+  const [plantSortBy, setSortBy] = useState<"name" | "date" | "harvest">("name");
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
@@ -382,50 +384,113 @@ const ProfilePage = () => {
       {/* My Plants */}
       <div className="mx-4 mt-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-foreground">{t("profile.myPlants")}</h3>
-          <button onClick={() => navigate("/add-plant")} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <Plus className="w-4 h-4 text-primary-foreground" />
-          </button>
-        </div>
-        {plants.length === 0 ? (
-          <div className="bg-card rounded-2xl p-6 border border-border text-center">
-            <Leaf className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">{t("plants.noPlants")}</p>
-            <button onClick={() => navigate("/add-plant")} className="mt-3 bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-bold">
-              {t("plants.addFirst")}
+          <h3 className="font-semibold text-foreground">{t("profile.myPlants")}</h3>
+          <div className="flex items-center gap-2">
+            {/* Sort */}
+            <select value={plantSortBy} onChange={e => setSortBy(e.target.value as any)}
+              className="text-[11px] bg-secondary text-foreground rounded-lg px-2 py-1.5 border-none outline-none">
+              <option value="name">{t("profile.sortName")}</option>
+              <option value="date">{t("profile.sortDate")}</option>
+              <option value="harvest">{t("profile.sortHarvest")}</option>
+            </select>
+            {/* View toggle */}
+            <button onClick={() => setPlantViewMode(plantViewMode === "list" ? "grid" : "list")}
+              className="p-1.5 rounded-lg bg-secondary hover:bg-muted transition-colors">
+              {plantViewMode === "list" ? <LayoutGrid className="w-4 h-4 text-muted-foreground" /> : <LayoutList className="w-4 h-4 text-muted-foreground" />}
+            </button>
+            <button onClick={() => navigate("/add-plant")} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+              <Plus className="w-4 h-4 text-primary-foreground" />
             </button>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {plants.map((plant, i) => (
-              <motion.div key={plant.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
-                <div onClick={() => navigate(`/plant/${plant.id}`)} className="flex items-center gap-3 flex-1 cursor-pointer">
-                  {plant.photo_url ? (
-                    <img src={plant.photo_url} alt={plant.name} className="w-12 h-12 rounded-lg object-cover" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
-                      <Leaf className="w-6 h-6 text-muted-foreground/30" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-sm text-foreground">{plant.name}</h4>
-                    <p className="text-[10px] text-muted-foreground truncate">{plant.scientific_name || plant.placement}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Sun className="w-3.5 h-3.5 text-accent" />
-                  <Droplets className="w-3.5 h-3.5 text-primary" />
-                </div>
-                <button onClick={(e) => { e.stopPropagation(); handleDeletePlant(plant.id, plant.name); }}
-                  className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">
-                  <Trash2 className="w-4 h-4 text-destructive/60 hover:text-destructive" />
+        </div>
+
+        {(() => {
+          const sorted = [...plants].sort((a, b) => {
+            if (plantSortBy === "name") return a.name.localeCompare(b.name);
+            if (plantSortBy === "date") return (a.planted_date || "").localeCompare(b.planted_date || "");
+            return (a.days_to_harvest ?? 999) - (b.days_to_harvest ?? 999);
+          });
+
+          if (sorted.length === 0) {
+            return (
+              <div className="bg-card rounded-2xl p-6 border border-border text-center">
+                <Leaf className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">{t("plants.noPlants")}</p>
+                <button onClick={() => navigate("/add-plant")} className="mt-3 bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-medium">
+                  {t("plants.addFirst")}
                 </button>
-              </motion.div>
-            ))}
-          </div>
-        )}
+              </div>
+            );
+          }
+
+          if (plantViewMode === "grid") {
+            return (
+              <div className="grid grid-cols-2 gap-2">
+                {sorted.map((plant, i) => (
+                  <motion.div key={plant.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="bg-card rounded-xl border border-border overflow-hidden">
+                    <div onClick={() => navigate(`/plant/${plant.id}`)} className="cursor-pointer">
+                      {plant.photo_url ? (
+                        <img src={plant.photo_url} alt={plant.name} className="w-full h-28 object-cover" />
+                      ) : (
+                        <div className="w-full h-28 bg-secondary flex items-center justify-center">
+                          <Leaf className="w-8 h-8 text-muted-foreground/20" />
+                        </div>
+                      )}
+                      <div className="p-2.5">
+                        <h4 className="font-medium text-sm text-foreground truncate">{plant.name}</h4>
+                        <p className="text-[10px] text-muted-foreground truncate">{plant.scientific_name || plant.placement}</p>
+                      </div>
+                    </div>
+                    <div className="px-2.5 pb-2 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Sun className="w-3 h-3 text-accent" />
+                        <Droplets className="w-3 h-3 text-primary" />
+                      </div>
+                      <button onClick={() => handleDeletePlant(plant.id, plant.name)}
+                        className="p-1 rounded hover:bg-destructive/10">
+                        <Trash2 className="w-3.5 h-3.5 text-destructive/50" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-2">
+              {sorted.map((plant, i) => (
+                <motion.div key={plant.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
+                  <div onClick={() => navigate(`/plant/${plant.id}`)} className="flex items-center gap-3 flex-1 cursor-pointer">
+                    {plant.photo_url ? (
+                      <img src={plant.photo_url} alt={plant.name} className="w-12 h-12 rounded-lg object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+                        <Leaf className="w-6 h-6 text-muted-foreground/30" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm text-foreground">{plant.name}</h4>
+                      <p className="text-[10px] text-muted-foreground truncate">{plant.scientific_name || plant.placement}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Sun className="w-3.5 h-3.5 text-accent" />
+                    <Droplets className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); handleDeletePlant(plant.id, plant.name); }}
+                    className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">
+                    <Trash2 className="w-4 h-4 text-destructive/60 hover:text-destructive" />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Bottom actions */}
