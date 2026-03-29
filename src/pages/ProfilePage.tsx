@@ -365,9 +365,14 @@ const ProfilePage = () => {
           </button>
           <h1 className="text-xl font-bold text-foreground">{t("profile.title")}</h1>
         </div>
-        <button onClick={() => setView("settingsMenu")} className="p-2 rounded-lg hover:bg-secondary">
-          <Settings className="w-5 h-5 text-muted-foreground" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setView("premium")} className="p-2 rounded-lg hover:bg-secondary">
+            <Crown className="w-5 h-5 text-accent" />
+          </button>
+          <button onClick={() => setView("settingsMenu")} className="p-2 rounded-lg hover:bg-secondary">
+            <Settings className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
       </div>
 
       {/* Profile card - social style */}
