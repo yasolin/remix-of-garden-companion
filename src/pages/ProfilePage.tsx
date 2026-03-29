@@ -265,6 +265,21 @@ const ProfilePage = () => {
           </div>
 
           <div className="bg-card rounded-xl p-4 border border-border">
+            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+              <Palette className="w-4 h-4" /> {t("profile.appTheme") || "Tema"}
+            </h3>
+            <div className="flex gap-2">
+              {(["green", "light", "dark"] as const).map(theme => (
+                <button key={theme} onClick={() => setAppTheme(theme)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    appTheme === theme ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+                  }`}>
+                  {t(`theme.${theme === "green" ? "current" : theme}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bg-card rounded-xl p-4 border border-border">
             <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
               <Shield className="w-4 h-4" /> {t("profile.privacy")}
             </h3>
