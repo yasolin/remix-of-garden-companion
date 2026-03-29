@@ -1,4 +1,4 @@
-import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, ArrowUpDown, Palette } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
@@ -15,6 +15,7 @@ const languages = [
 ];
 
 type ProfileView = "main" | "editProfile" | "settingsMenu" | "premium";
+type AppTheme = "green" | "light" | "dark";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -29,6 +30,9 @@ const ProfilePage = () => {
   const [notifSettings, setNotifSettings] = useState({ watering: true, harvest: true, planting: true });
   const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(() => {
     return (localStorage.getItem("gardenPotFontSize") as any) || "medium";
+  });
+  const [appTheme, setAppTheme] = useState<AppTheme>(() => {
+    return (localStorage.getItem("gardenPotTheme") as any) || "green";
   });
   const [plantViewMode, setPlantViewMode] = useState<"list" | "grid">(() => {
     return (localStorage.getItem("gardenPotPlantView") as any) || "list";
