@@ -1,7 +1,7 @@
-import { ArrowLeft, Send, Scan, Leaf, MapPin, Camera, Image } from "lucide-react";
+import { ArrowLeft, Send, Scan, Leaf, MapPin, Image } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { streamPlantAI, type AiMessage } from "@/lib/plantAI";
@@ -17,6 +17,7 @@ const AIAssistantPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [pendingMode, setPendingMode] = useState<string>("chat");
 
   const displayFeatures = [
@@ -24,6 +25,10 @@ const AIAssistantPage = () => {
     { icon: Scan, title: t("ai.diseaseDetection"), desc: t("ai.diseaseDesc"), color: "bg-destructive/10 text-destructive", mode: "disease" },
     { icon: MapPin, title: t("ai.locationAnalysis"), desc: t("ai.locationAnalysisDesc"), color: "bg-accent/10 text-accent", mode: "location" },
   ];
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleFeatureClick = (mode: string) => {
     if (mode === "location") {
@@ -111,7 +116,7 @@ const AIAssistantPage = () => {
   };
 
   return (
-    <div className="pb-24 max-w-lg mx-auto flex flex-col h-[calc(100vh-80px)]">
+    <div className="max-w-lg mx-auto flex flex-col" style={{ height: "calc(100vh - 70px)" }}>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
         onChange={(e) => e.target.files?.[0] && handlePhotoTaken(e.target.files[0])} />
       <input ref={galleryRef} type="file" accept="image/*" className="hidden"
@@ -124,21 +129,21 @@ const AIAssistantPage = () => {
         <h1 className="text-xl font-bold text-foreground">{t("ai.title")}</h1>
       </div>
 
-      <div className="px-4 flex gap-3 overflow-x-auto pb-3 px-5">
+      <div className="px-4 flex gap-3 overflow-x-auto pb-3 shrink-0">
         {displayFeatures.map((f, i) => (
           <motion.button key={f.mode} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }} onClick={() => handleFeatureClick(f.mode)}
-            className="min-w-[120px] bg-card rounded-xl p-3 shadow-card border border-border flex flex-col items-center gap-2 text-center">
-            <div className={`w-10 h-10 rounded-lg ${f.color} flex items-center justify-center`}>
-              <f.icon className="w-5 h-5" />
+            className="min-w-[110px] bg-card rounded-xl p-3 shadow-card border border-border flex flex-col items-center gap-2 text-center">
+            <div className={`w-9 h-9 rounded-lg ${f.color} flex items-center justify-center`}>
+              <f.icon className="w-4 h-4" />
             </div>
-            <span className="text-xs font-bold text-foreground">{f.title}</span>
-            <span className="text-[10px] text-muted-foreground">{f.desc}</span>
+            <span className="text-[11px] font-semibold text-foreground">{f.title}</span>
           </motion.button>
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 space-y-3 mt-2">
+      {/* Messages - flex-1 to fill available space */}
+      <div className="flex-1 overflow-y-auto px-4 space-y-3">
         {messages.map((msg, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
             className={`max-w-[85%] p-3 rounded-2xl text-sm ${
@@ -162,20 +167,22 @@ const AIAssistantPage = () => {
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
-      <div className="px-4 py-3 flex items-center gap-2">
-        <button onClick={handleGalleryClick} className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-          <Image className="w-5 h-5 text-muted-foreground" />
+      {/* Input - fixed at bottom, just above nav */}
+      <div className="px-4 py-2 flex items-center gap-2 shrink-0 bg-background border-t border-border">
+        <button onClick={handleGalleryClick} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+          <Image className="w-4 h-4 text-muted-foreground" />
         </button>
-        <div className="flex-1 flex items-center bg-secondary rounded-full px-4 py-2">
+        <div className="flex-1 flex items-center bg-secondary rounded-full px-3 py-2">
           <input value={message} onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder={t("ai.placeholder")}
             className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground" />
         </div>
         <button onClick={sendMessage} disabled={isLoading}
-          className="w-10 h-10 rounded-full bg-primary flex items-center justify-center disabled:opacity-50">
+          className="w-9 h-9 rounded-full bg-primary flex items-center justify-center disabled:opacity-50 shrink-0">
           <Send className="w-4 h-4 text-primary-foreground" />
         </button>
       </div>

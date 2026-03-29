@@ -1,4 +1,4 @@
-import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, ArrowUpDown, Palette } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
@@ -15,6 +15,7 @@ const languages = [
 ];
 
 type ProfileView = "main" | "editProfile" | "settingsMenu" | "premium";
+type AppTheme = "green" | "light" | "dark";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -29,6 +30,9 @@ const ProfilePage = () => {
   const [notifSettings, setNotifSettings] = useState({ watering: true, harvest: true, planting: true });
   const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(() => {
     return (localStorage.getItem("gardenPotFontSize") as any) || "medium";
+  });
+  const [appTheme, setAppTheme] = useState<AppTheme>(() => {
+    return (localStorage.getItem("gardenPotTheme") as any) || "green";
   });
   const [plantViewMode, setPlantViewMode] = useState<"list" | "grid">(() => {
     return (localStorage.getItem("gardenPotPlantView") as any) || "list";
@@ -62,6 +66,45 @@ const ProfilePage = () => {
     document.documentElement.style.fontSize = sizes[fontSize];
     localStorage.setItem("gardenPotFontSize", fontSize);
   }, [fontSize]);
+
+  useEffect(() => {
+    localStorage.setItem("gardenPotTheme", appTheme);
+    const root = document.documentElement;
+    if (appTheme === "dark") {
+      root.style.setProperty("--background", "220 15% 10%");
+      root.style.setProperty("--foreground", "0 0% 95%");
+      root.style.setProperty("--card", "220 15% 13%");
+      root.style.setProperty("--card-foreground", "0 0% 95%");
+      root.style.setProperty("--secondary", "220 10% 18%");
+      root.style.setProperty("--secondary-foreground", "0 0% 90%");
+      root.style.setProperty("--muted", "220 10% 20%");
+      root.style.setProperty("--muted-foreground", "220 10% 60%");
+      root.style.setProperty("--border", "220 10% 20%");
+      root.style.setProperty("--input", "220 10% 20%");
+    } else if (appTheme === "light") {
+      root.style.setProperty("--background", "0 0% 100%");
+      root.style.setProperty("--foreground", "220 15% 15%");
+      root.style.setProperty("--card", "0 0% 100%");
+      root.style.setProperty("--card-foreground", "220 15% 15%");
+      root.style.setProperty("--secondary", "220 10% 96%");
+      root.style.setProperty("--secondary-foreground", "220 15% 20%");
+      root.style.setProperty("--muted", "220 10% 95%");
+      root.style.setProperty("--muted-foreground", "220 10% 45%");
+      root.style.setProperty("--border", "220 10% 92%");
+      root.style.setProperty("--input", "220 10% 92%");
+    } else {
+      root.style.setProperty("--background", "120 20% 98%");
+      root.style.setProperty("--foreground", "150 30% 12%");
+      root.style.setProperty("--card", "0 0% 100%");
+      root.style.setProperty("--card-foreground", "150 30% 12%");
+      root.style.setProperty("--secondary", "120 20% 95%");
+      root.style.setProperty("--secondary-foreground", "150 30% 20%");
+      root.style.setProperty("--muted", "120 15% 94%");
+      root.style.setProperty("--muted-foreground", "150 10% 45%");
+      root.style.setProperty("--border", "120 15% 90%");
+      root.style.setProperty("--input", "120 15% 90%");
+    }
+  }, [appTheme]);
 
   const harvestReady = plants.filter(p => (p.days_to_harvest ?? 30) <= 7).length;
   const waterNeeded = plants.filter(p => p.needs_watering).length;
@@ -222,6 +265,21 @@ const ProfilePage = () => {
           </div>
 
           <div className="bg-card rounded-xl p-4 border border-border">
+            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+              <Palette className="w-4 h-4" /> {t("profile.appTheme") || "Tema"}
+            </h3>
+            <div className="flex gap-2">
+              {(["green", "light", "dark"] as const).map(theme => (
+                <button key={theme} onClick={() => setAppTheme(theme)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    appTheme === theme ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+                  }`}>
+                  {t(`theme.${theme === "green" ? "current" : theme}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bg-card rounded-xl p-4 border border-border">
             <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
               <Shield className="w-4 h-4" /> {t("profile.privacy")}
             </h3>
@@ -322,9 +380,14 @@ const ProfilePage = () => {
           </button>
           <h1 className="text-xl font-bold text-foreground">{t("profile.title")}</h1>
         </div>
-        <button onClick={() => setView("settingsMenu")} className="p-2 rounded-lg hover:bg-secondary">
-          <Settings className="w-5 h-5 text-muted-foreground" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setView("premium")} className="p-2 rounded-lg hover:bg-secondary">
+            <Crown className="w-5 h-5 text-accent" />
+          </button>
+          <button onClick={() => setView("settingsMenu")} className="p-2 rounded-lg hover:bg-secondary">
+            <Settings className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
       </div>
 
       {/* Profile card - social style */}
