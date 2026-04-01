@@ -14,6 +14,103 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          comments_count: number
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          likes_count: number
+          plant_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_count?: number
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          plant_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_count?: number
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          plant_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plants: {
         Row: {
           created_at: string
@@ -80,6 +177,33 @@ export type Database = {
           user_id?: string
           water_frequency?: string | null
           wind_sensitivity?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
