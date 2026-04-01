@@ -56,13 +56,14 @@ const LocationAnalysisPage = () => {
   const [heading, setHeading] = useState<number | null>(null);
   const [manualDir, setManualDir] = useState<string>("N");
   const [useManual, setUseManual] = useState(false);
-  const [sunrise, setSunrise] = useState("06:30");
-  const [sunset, setSunset] = useState("19:45");
+  const [sunrise, setSunrise] = useState("--:--");
+  const [sunset, setSunset] = useState("--:--");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [compassError, setCompassError] = useState(false);
   const [compassActive, setCompassActive] = useState(false);
   const [selectedPlantId, setSelectedPlantId] = useState<string>("");
+  const [detectedCity, setDetectedCity] = useState("");
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
