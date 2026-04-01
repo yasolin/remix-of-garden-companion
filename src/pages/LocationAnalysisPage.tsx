@@ -109,6 +109,23 @@ const LocationAnalysisPage = () => {
 
   useEffect(() => {
     requestCompass();
+    // Auto-fetch sun times and city from geolocation
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      try {
+        const [weatherResp, geoResp] = await Promise.all([
+          fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=sunrise,sunset&timezone=auto`),
+          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=${lang}`).catch(() => null),
+        ]);
+        const weatherData = await weatherResp.json();
+        if (weatherData.daily?.sunrise?.[0]) setSunrise(weatherData.daily.sunrise[0].slice(11, 16));
+        if (weatherData.daily?.sunset?.[0]) setSunset(weatherData.daily.sunset[0].slice(11, 16));
+        if (geoResp?.ok) {
+          const geo = await geoResp.json();
+          setDetectedCity(geo.address?.city || geo.address?.town || geo.address?.province || "");
+        }
+      } catch {}
+    }, () => {}, { timeout: 8000 });
     return () => window.removeEventListener("deviceorientation", handleOrientation);
   }, []);
 
