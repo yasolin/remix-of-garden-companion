@@ -1,4 +1,4 @@
-import { ArrowLeft, Crown, Camera, Sparkles, Timer } from "lucide-react";
+import { ArrowLeft, Sparkles, Timer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -6,9 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchUserPlants } from "@/lib/plantService";
 import GrowthTimeline from "@/components/GrowthTimeline";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 // Plant types that produce fruit/vegetable
 const fruitingPlants = new Set([

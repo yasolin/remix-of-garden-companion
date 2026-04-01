@@ -1,4 +1,4 @@
-import { ArrowLeft, Droplets, Check, Undo2, Beaker, CloudRain, Sparkles, Crown } from "lucide-react";
+import { ArrowLeft, Droplets, Check, Undo2, Beaker, CloudRain, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
