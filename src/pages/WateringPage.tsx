@@ -1,4 +1,4 @@
-import { ArrowLeft, Droplets, Check, Undo2, Beaker, CloudRain } from "lucide-react";
+import { ArrowLeft, Droplets, Check, Undo2, Beaker, CloudRain, Sparkles, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -6,9 +6,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-// Estimated water amount by common plant types
 const waterAmounts: Record<string, string> = {
   domates: "250 ml", tomato: "250 ml", biber: "200 ml", pepper: "200 ml",
   patlıcan: "300 ml", eggplant: "300 ml", salatalık: "200 ml", cucumber: "200 ml",
@@ -29,13 +28,39 @@ interface WeatherTip {
   message: string;
 }
 
+const AI_WATER_SCAN_KEY = "gardenPotWaterScanDate";
+const AI_WATER_SCAN_COUNT = "gardenPotWaterScanCount";
+
+function canFreeWaterScan(): boolean {
+  const lastDate = localStorage.getItem(AI_WATER_SCAN_KEY);
+  const today = new Date().toDateString();
+  if (lastDate !== today) return true;
+  return parseInt(localStorage.getItem(AI_WATER_SCAN_COUNT) || "0") < 1;
+}
+
+function recordWaterScan() {
+  const today = new Date().toDateString();
+  const lastDate = localStorage.getItem(AI_WATER_SCAN_KEY);
+  if (lastDate !== today) {
+    localStorage.setItem(AI_WATER_SCAN_KEY, today);
+    localStorage.setItem(AI_WATER_SCAN_COUNT, "1");
+  } else {
+    const count = parseInt(localStorage.getItem(AI_WATER_SCAN_COUNT) || "0");
+    localStorage.setItem(AI_WATER_SCAN_COUNT, String(count + 1));
+  }
+}
+
 const WateringPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [recentlyWatered, setRecentlyWatered] = useState<string[]>([]);
   const [weatherTip, setWeatherTip] = useState<WeatherTip | null>(null);
+  const [aiScanning, setAiScanning] = useState(false);
+  const [aiResult, setAiResult] = useState<string | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const isPremium = false;
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
@@ -43,7 +68,6 @@ const WateringPage = () => {
     enabled: !!user,
   });
 
-  // Fetch weather for smart tips
   useEffect(() => {
     const fetchWeather = async () => {
       try {
@@ -56,15 +80,9 @@ const WateringPage = () => {
         const data = await resp.json();
         const temp = data.current?.temperature_2m ?? 22;
         const code = data.current?.weather_code ?? 0;
-
-        if (temp > 32) {
-          setWeatherTip({ icon: CloudRain, message: t("watering.hotTip") });
-        } else if ([61, 63, 65, 80, 81, 82].includes(code)) {
-          setWeatherTip({ icon: CloudRain, message: t("watering.rainTip") });
-        }
-      } catch {
-        // No weather tip if unavailable
-      }
+        if (temp > 32) setWeatherTip({ icon: CloudRain, message: t("watering.hotTip") });
+        else if ([61, 63, 65, 80, 81, 82].includes(code)) setWeatherTip({ icon: CloudRain, message: t("watering.rainTip") });
+      } catch {}
     };
     fetchWeather();
   }, [t]);
@@ -97,8 +115,75 @@ const WateringPage = () => {
     }
   };
 
+  const handleAiWaterScan = async (file: File) => {
+    if (!isPremium && !canFreeWaterScan()) {
+      toast({ title: "👑", description: t("watering.dailyLimitReached") });
+      return;
+    }
+    setAiScanning(true);
+    setAiResult(null);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const base64 = reader.result as string;
+        const langInstr = i18n.language === "tr"
+          ? "Yanıtını TAMAMEN Türkçe ver."
+          : "Respond entirely in English.";
+
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/plant-ai`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: `Analyze this plant image for watering needs. Based on the plant type, pot size, soil condition, and current state, recommend: how much water (in ml), how often to water, and any specific watering schedule. Be concise and practical. ${langInstr}` }],
+            mode: "disease",
+            imageBase64: base64,
+            lang: i18n.language,
+          }),
+        });
+
+        if (!resp.ok || !resp.body) throw new Error("AI error");
+
+        const rdr = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let result = "";
+        let buf = "";
+        while (true) {
+          const { done, value } = await rdr.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          let nl: number;
+          while ((nl = buf.indexOf("\n")) !== -1) {
+            let line = buf.slice(0, nl);
+            buf = buf.slice(nl + 1);
+            if (line.endsWith("\r")) line = line.slice(0, -1);
+            if (!line.startsWith("data: ")) continue;
+            const js = line.slice(6).trim();
+            if (js === "[DONE]") continue;
+            try {
+              const p = JSON.parse(js);
+              const c = p.choices?.[0]?.delta?.content;
+              if (c) result += c;
+            } catch {}
+          }
+        }
+        setAiResult(result || t("watering.aiNoResult"));
+        recordWaterScan();
+      } catch (e: any) {
+        toast({ title: "❌", description: e.message, variant: "destructive" });
+      }
+      setAiScanning(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="pb-24 max-w-lg mx-auto">
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
+        onChange={e => e.target.files?.[0] && handleAiWaterScan(e.target.files[0])} />
+
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
           <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -112,10 +197,42 @@ const WateringPage = () => {
         </div>
       </div>
 
-      {/* Weather-based smart tip */}
+      {/* AI Water Analysis */}
+      <div className="px-4 mt-3">
+        <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          onClick={() => cameraRef.current?.click()}
+          className="w-full bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-blue-500/15 flex items-center justify-center">
+            {aiScanning ? (
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Sparkles className="w-5 h-5 text-blue-500" />
+            )}
+          </div>
+          <div className="flex-1 text-left">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-foreground">{t("watering.aiAnalysis")}</span>
+              {!isPremium && (
+                <span className="text-[10px] font-medium bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">
+                  {canFreeWaterScan() ? t("watering.freeScanAvailable") : t("watering.dailyLimitReached")}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">{t("watering.aiAnalysisDesc")}</p>
+          </div>
+        </motion.button>
+
+        {aiResult && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="mt-3 bg-card rounded-2xl p-4 border border-blue-500/20">
+            <p className="text-sm text-foreground whitespace-pre-wrap">{aiResult}</p>
+          </motion.div>
+        )}
+      </div>
+
       {weatherTip && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mt-2 mb-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl p-3 border border-blue-200/50 flex items-center gap-3">
+          className="mx-4 mt-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl p-3 border border-blue-200/50 flex items-center gap-3">
           <weatherTip.icon className="w-5 h-5 text-blue-500 shrink-0" />
           <p className="text-xs text-foreground">{weatherTip.message}</p>
         </motion.div>
@@ -137,10 +254,8 @@ const WateringPage = () => {
                   const waterAmount = getWaterAmount(plant.name);
                   return (
                     <motion.div key={plant.id}
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: 100 }}
-                      transition={{ delay: i * 0.05 }}
+                      initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: 100 }} transition={{ delay: i * 0.05 }}
                       className="bg-card rounded-2xl p-4 border border-border flex items-center gap-3">
                       {plant.photo_url ? (
                         <img src={plant.photo_url} alt={plant.name} className="w-12 h-12 rounded-xl object-cover" />
@@ -185,8 +300,7 @@ const WateringPage = () => {
                     <Check className="w-4 h-4 text-primary" />
                     {recentlyWatered.includes(plant.id) && (
                       <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleUndo(plant.id)}
+                        whileTap={{ scale: 0.9 }} onClick={() => handleUndo(plant.id)}
                         className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
                         <Undo2 className="w-4 h-4 text-muted-foreground" />
                       </motion.button>
