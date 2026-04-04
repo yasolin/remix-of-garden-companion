@@ -46,6 +46,8 @@ const ProtectedRoutes = () => {
         <Route path="/planting-calendar" element={<PlantingCalendarPage />} />
         <Route path="/location-analysis" element={<LocationAnalysisPage />} />
         <Route path="/community" element={<CommunityPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
         <Route path="/my-plants" element={<MyPlantsPage />} />
         <Route path="/plant/:id" element={<PlantDetailPage />} />
         <Route path="/add-plant" element={<AddPlantPage />} />
