@@ -276,6 +276,8 @@ export default {
       vegetables: "Vegetables",
       fruits: "Fruits",
       herbs: "Herbs & Others",
+      calendarTitle: "Planting Calendar",
+      idealDays: "Ideal planting days",
     },
     location: {
       title: "Location Analysis",
