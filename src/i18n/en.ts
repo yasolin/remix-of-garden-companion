@@ -321,6 +321,13 @@ export default {
       writeComment: "Write a comment...",
       anonymous: "Anonymous",
       confirmDelete: "Are you sure you want to delete this post?",
+      likedYourPost: "liked your post",
+      cat_all: "All",
+      cat_vegetables: "Vegetables",
+      cat_fruits: "Fruits",
+      cat_herbs: "Herbs",
+      cat_flowers: "Flowers",
+      cat_tips: "Tips",
     },
     theme: {
       current: "Green",
