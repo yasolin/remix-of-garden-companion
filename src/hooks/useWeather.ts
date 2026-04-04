@@ -8,6 +8,7 @@ export interface WeatherData {
   sunset: string;
   humidity: number;
   city?: string;
+  weatherCode?: number;
 }
 
 export function useWeather() {
@@ -47,6 +48,7 @@ export function useWeather() {
           sunset: data.daily?.sunset?.[0]?.slice(11, 16) || "19:00",
           humidity: data.current?.relative_humidity_2m ?? 50,
           city,
+          weatherCode: code,
         });
       } catch {
         setWeather({ temp: 22, condition: "🌤️", wind: 8, sunrise: "06:15", sunset: "19:30", humidity: 55 });

@@ -17,6 +17,8 @@ import WateringPage from "./pages/WateringPage";
 import PlantingCalendarPage from "./pages/PlantingCalendarPage";
 import LocationAnalysisPage from "./pages/LocationAnalysisPage";
 import CommunityPage from "./pages/CommunityPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import TasksPage from "./pages/TasksPage";
 import NotFound from "./pages/NotFound";
 import "./i18n";
 
@@ -44,6 +46,8 @@ const ProtectedRoutes = () => {
         <Route path="/planting-calendar" element={<PlantingCalendarPage />} />
         <Route path="/location-analysis" element={<LocationAnalysisPage />} />
         <Route path="/community" element={<CommunityPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
         <Route path="/my-plants" element={<MyPlantsPage />} />
         <Route path="/plant/:id" element={<PlantDetailPage />} />
         <Route path="/add-plant" element={<AddPlantPage />} />

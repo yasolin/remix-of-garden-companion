@@ -77,6 +77,7 @@ export type Database = {
       }
       community_posts: {
         Row: {
+          category: string | null
           comments_count: number
           content: string
           created_at: string
@@ -88,6 +89,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           comments_count?: number
           content: string
           created_at?: string
@@ -99,6 +101,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           comments_count?: number
           content?: string
           created_at?: string
@@ -107,6 +110,39 @@ export type Database = {
           likes_count?: number
           plant_name?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          related_id?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          related_id?: string | null
+          title?: string
+          type?: string
           user_id?: string
         }
         Relationships: []
@@ -186,6 +222,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          kvkk_accepted: boolean | null
           updated_at: string
           user_id: string
         }
@@ -194,6 +231,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          kvkk_accepted?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -202,6 +240,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          kvkk_accepted?: boolean | null
           updated_at?: string
           user_id?: string
         }

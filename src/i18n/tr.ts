@@ -156,6 +156,10 @@ export default {
       photoAnalysis: "Fotoğraf çekildi, AI analiz ediyor...",
       camera: "Kamera",
       cameraDesc: "Bitkinizin fotoğrafını çekin",
+      speechNotSupported: "Sesle yazma bu cihazda desteklenmiyor",
+      listening: "Dinleniyor...",
+      listenResponse: "Sesli dinle",
+      stopSpeaking: "Durdur",
     },
     profile: {
       title: "Profil",
@@ -244,6 +248,8 @@ export default {
       harvest: "🌿 Hasat: {{name}} hasat zamanı",
       planting: "🌱 Ekim: {{name}} ekme zamanı",
       noNotifications: "Yeni bildirim yok",
+      unreadCount: "{{count}} okunmamış bildirim",
+      markAllRead: "Tümünü Oku",
     },
     watering: {
       title: "Sulama Zamanı",
@@ -270,6 +276,8 @@ export default {
       vegetables: "Sebzeler",
       fruits: "Meyveler",
       herbs: "Otlar & Diğer",
+      calendarTitle: "Ekim Takvimi",
+      idealDays: "İdeal ekim günleri",
     },
     location: {
       title: "Konum Analizi",
@@ -313,11 +321,29 @@ export default {
       writeComment: "Yorum yaz...",
       anonymous: "Anonim",
       confirmDelete: "Bu gönderiyi silmek istediğinize emin misiniz?",
+      likedYourPost: "gönderinizi beğendi",
+      cat_all: "Tümü",
+      cat_vegetables: "Sebzeler",
+      cat_fruits: "Meyveler",
+      cat_herbs: "Otlar",
+      cat_flowers: "Çiçekler",
+      cat_tips: "İpuçları",
     },
     theme: {
       current: "Yeşil",
       light: "Beyaz",
       dark: "Koyu",
+    },
+    weatherTips: {
+      rainyBalcony: "🌧️ Hava yağmurlu! Balkondaki bitkilerini sulama, yağmurdan faydalansınlar.",
+      hotSun: "☀️ Güneş ışınları bitkinin yapraklarını yakabilir, öğle saatlerinde gölgelendirin.",
+      coldProtect: "❄️ Sıcaklık düşük! Hassas bitkilerinizi iç mekana alın.",
+      goodDay: "🌤️ Bugün bitkileriniz için güzel bir gün!",
+    },
+    tasks: {
+      completed: "Görev tamamlandı!",
+      undone: "Görev geri alındı",
+      viewAll: "Tüm görevleri gör ({{count}})",
     },
   },
 };

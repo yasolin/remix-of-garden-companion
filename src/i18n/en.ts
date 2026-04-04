@@ -156,6 +156,10 @@ export default {
       photoAnalysis: "Photo taken, AI is analyzing...",
       camera: "Camera",
       cameraDesc: "Take a photo of your plant",
+      speechNotSupported: "Speech recognition is not supported on this device",
+      listening: "Listening...",
+      listenResponse: "Listen",
+      stopSpeaking: "Stop",
     },
     profile: {
       title: "Profile",
@@ -244,6 +248,8 @@ export default {
       harvest: "🌿 Harvest: {{name}} is ready",
       planting: "🌱 Planting: Time to plant {{name}}",
       noNotifications: "No new notifications",
+      unreadCount: "{{count}} unread notifications",
+      markAllRead: "Mark All Read",
     },
     watering: {
       title: "Watering Time",
@@ -270,6 +276,8 @@ export default {
       vegetables: "Vegetables",
       fruits: "Fruits",
       herbs: "Herbs & Others",
+      calendarTitle: "Planting Calendar",
+      idealDays: "Ideal planting days",
     },
     location: {
       title: "Location Analysis",
@@ -313,11 +321,29 @@ export default {
       writeComment: "Write a comment...",
       anonymous: "Anonymous",
       confirmDelete: "Are you sure you want to delete this post?",
+      likedYourPost: "liked your post",
+      cat_all: "All",
+      cat_vegetables: "Vegetables",
+      cat_fruits: "Fruits",
+      cat_herbs: "Herbs",
+      cat_flowers: "Flowers",
+      cat_tips: "Tips",
     },
     theme: {
       current: "Green",
       light: "White",
       dark: "Dark",
+    },
+    weatherTips: {
+      rainyBalcony: "🌧️ It's rainy! Don't water your balcony plants, let them enjoy the rain.",
+      hotSun: "☀️ Sun rays can burn plant leaves, shade them during noon hours.",
+      coldProtect: "❄️ Temperature is low! Move sensitive plants indoors.",
+      goodDay: "🌤️ Great day for your plants!",
+    },
+    tasks: {
+      completed: "Task completed!",
+      undone: "Task undone",
+      viewAll: "View all tasks ({{count}})",
     },
   },
 };

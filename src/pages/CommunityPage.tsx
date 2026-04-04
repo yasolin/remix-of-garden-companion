@@ -12,6 +12,16 @@ import {
   getUserLikes, uploadPostImage, deletePost,
   type CommunityPost, type CommunityComment,
 } from "@/lib/communityService";
+import { createNotification } from "@/lib/notificationService";
+
+const categories = [
+  { key: "all", emoji: "🌍" },
+  { key: "vegetables", emoji: "🥬" },
+  { key: "fruits", emoji: "🍎" },
+  { key: "herbs", emoji: "🌿" },
+  { key: "flowers", emoji: "🌸" },
+  { key: "tips", emoji: "💡" },
+];
 
 const CommunityPage = () => {
   const navigate = useNavigate();
@@ -22,10 +32,12 @@ const CommunityPage = () => {
   const [newContent, setNewContent] = useState("");
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [_newCategory] = useState("general");
   const [posting, setPosting] = useState(false);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [expandedComments, setExpandedComments] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
   const imageRef = useRef<HTMLInputElement>(null);
 
   const { data: posts = [], isLoading } = useQuery({
@@ -40,14 +52,10 @@ const CommunityPage = () => {
     enabled: !!expandedComments,
   });
 
-  // Load user's likes
   useEffect(() => {
-    if (user) {
-      getUserLikes(user.id).then(setLikedPosts);
-    }
+    if (user) getUserLikes(user.id).then(setLikedPosts);
   }, [user]);
 
-  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel("community-realtime")
@@ -73,14 +81,9 @@ const CommunityPage = () => {
     setPosting(true);
     try {
       let imageUrl: string | undefined;
-      if (newImage) {
-        imageUrl = await uploadPostImage(user.id, newImage);
-      }
+      if (newImage) imageUrl = await uploadPostImage(user.id, newImage);
       await createPost(user.id, newContent.trim(), imageUrl);
-      setNewContent("");
-      setNewImage(null);
-      setNewImagePreview(null);
-      setShowNewPost(false);
+      setNewContent(""); setNewImage(null); setNewImagePreview(null); setShowNewPost(false);
       queryClient.invalidateQueries({ queryKey: ["community-posts"] });
       toast({ title: "✅", description: t("community.posted") });
     } catch (e: any) {
@@ -89,22 +92,32 @@ const CommunityPage = () => {
     setPosting(false);
   };
 
-  const handleLike = async (postId: string) => {
+  const handleLike = async (post: CommunityPost) => {
     if (!user) return;
-    const liked = await toggleLike(postId, user.id);
+    const liked = await toggleLike(post.id, user.id);
     setLikedPosts(prev => {
       const next = new Set(prev);
-      if (liked) next.add(postId); else next.delete(postId);
+      if (liked) next.add(post.id); else next.delete(post.id);
       return next;
     });
     queryClient.invalidateQueries({ queryKey: ["community-posts"] });
+    // Send notification to post owner
+    if (liked && post.user_id !== user.id) {
+      const displayName = user.user_metadata?.display_name || user.email?.split("@")[0] || "";
+      createNotification(post.user_id, "community_like", `❤️ ${displayName}`, t("community.likedYourPost"), post.id);
+    }
   };
 
-  const handleComment = async (postId: string) => {
+  const handleComment = async (post: CommunityPost) => {
     if (!user || !commentText.trim()) return;
-    await addComment(postId, user.id, commentText.trim());
+    await addComment(post.id, user.id, commentText.trim());
+    // Send notification
+    if (post.user_id !== user.id) {
+      const displayName = user.user_metadata?.display_name || user.email?.split("@")[0] || "";
+      createNotification(post.user_id, "community_comment", `💬 ${displayName}`, commentText.trim().slice(0, 100), post.id);
+    }
     setCommentText("");
-    queryClient.invalidateQueries({ queryKey: ["community-comments", postId] });
+    queryClient.invalidateQueries({ queryKey: ["community-comments", post.id] });
     queryClient.invalidateQueries({ queryKey: ["community-posts"] });
   };
 
@@ -123,6 +136,8 @@ const CommunityPage = () => {
     return t("community.daysAgo", { count: Math.floor(hours / 24) });
   };
 
+  const filteredPosts = filterCategory === "all" ? posts : posts.filter((p: any) => p.category === filterCategory);
+
   return (
     <div className="pb-24 max-w-lg mx-auto">
       <input ref={imageRef} type="file" accept="image/*" className="hidden"
@@ -140,6 +155,19 @@ const CommunityPage = () => {
           className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
           <Plus className="w-5 h-5 text-primary-foreground" />
         </button>
+      </div>
+
+      {/* Category filters */}
+      <div className="px-4 flex gap-2 overflow-x-auto pb-2">
+        {categories.map(cat => (
+          <button key={cat.key} onClick={() => setFilterCategory(cat.key)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              filterCategory === cat.key ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+            }`}>
+            <span>{cat.emoji}</span>
+            {t(`community.cat_${cat.key}`)}
+          </button>
+        ))}
       </div>
 
       {/* New post form */}
@@ -182,12 +210,12 @@ const CommunityPage = () => {
           <div className="text-center py-10">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
-        ) : posts.length === 0 ? (
+        ) : filteredPosts.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-muted-foreground">{t("community.noPosts")}</p>
           </div>
         ) : (
-          posts.map((post: CommunityPost, i: number) => (
+          filteredPosts.map((post: CommunityPost, i: number) => (
             <motion.div key={post.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
               className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -223,7 +251,7 @@ const CommunityPage = () => {
                 )}
 
                 <div className="flex items-center gap-4">
-                  <button onClick={() => handleLike(post.id)}
+                  <button onClick={() => handleLike(post)}
                     className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors">
                     <Heart className={`w-4 h-4 ${likedPosts.has(post.id) ? "fill-destructive text-destructive" : ""}`} />
                     <span className="text-xs">{post.likes_count}</span>
@@ -238,7 +266,6 @@ const CommunityPage = () => {
                   </button>
                 </div>
 
-                {/* Comments section */}
                 <AnimatePresence>
                   {expandedComments === post.id && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
@@ -258,10 +285,10 @@ const CommunityPage = () => {
                       ))}
                       <div className="flex gap-2 mt-2">
                         <input value={commentText} onChange={e => setCommentText(e.target.value)}
-                          onKeyDown={e => e.key === "Enter" && handleComment(post.id)}
+                          onKeyDown={e => e.key === "Enter" && handleComment(post)}
                           placeholder={t("community.writeComment")}
                           className="flex-1 bg-secondary rounded-full px-3 py-2 text-xs text-foreground outline-none placeholder:text-muted-foreground" />
-                        <button onClick={() => handleComment(post.id)}
+                        <button onClick={() => handleComment(post)}
                           className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
                           <Send className="w-3.5 h-3.5 text-primary-foreground" />
                         </button>

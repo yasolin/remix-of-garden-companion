@@ -1,7 +1,7 @@
-import { ArrowLeft, Send, Scan, Leaf, MapPin, Image } from "lucide-react";
+import { ArrowLeft, Send, Scan, Leaf, MapPin, Image, Mic, MicOff, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { streamPlantAI, type AiMessage } from "@/lib/plantAI";
@@ -15,10 +15,13 @@ const AIAssistantPage = () => {
     { role: "assistant", content: t("ai.welcome") },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [pendingMode, setPendingMode] = useState<string>("chat");
+  const recognitionRef = useRef<any>(null);
 
   const displayFeatures = [
     { icon: Leaf, title: t("ai.plantRecognition"), desc: t("ai.plantRecognitionDesc"), color: "bg-primary/10 text-primary", mode: "identify" },
@@ -29,6 +32,58 @@ const AIAssistantPage = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Speech-to-text
+  const toggleListening = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: "❌", description: t("ai.speechNotSupported"), variant: "destructive" });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = i18n.language === "tr" ? "tr-TR" : "en-US";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((r: any) => r[0].transcript)
+        .join("");
+      setMessage(transcript);
+    };
+
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognition.start();
+    setIsListening(true);
+  }, [isListening, i18n.language, t]);
+
+  // Text-to-speech
+  const speakText = useCallback((text: string) => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    // Strip markdown
+    const plainText = text.replace(/[#*_`~\[\]()>]/g, "").replace(/\n+/g, ". ");
+    const utterance = new SpeechSynthesisUtterance(plainText);
+    utterance.lang = i18n.language === "tr" ? "tr-TR" : "en-US";
+    utterance.rate = 0.9;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  }, [isSpeaking, i18n.language]);
 
   const handleFeatureClick = (mode: string) => {
     if (mode === "location") {
@@ -142,7 +197,7 @@ const AIAssistantPage = () => {
         ))}
       </div>
 
-      {/* Messages - flex-1 to fill available space */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 space-y-3">
         {messages.map((msg, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
@@ -152,8 +207,17 @@ const AIAssistantPage = () => {
                 : "bg-secondary text-secondary-foreground rounded-bl-md"
             }`}>
             {msg.role === "assistant" ? (
-              <div className="prose prose-sm max-w-none dark:prose-invert">
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <div>
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+                {msg.content.length > 10 && (
+                  <button onClick={() => speakText(msg.content)}
+                    className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors">
+                    <Volume2 className={`w-3 h-3 ${isSpeaking ? "text-primary animate-pulse" : ""}`} />
+                    {isSpeaking ? t("ai.stopSpeaking") : t("ai.listenResponse")}
+                  </button>
+                )}
               </div>
             ) : msg.content}
           </motion.div>
@@ -170,15 +234,21 @@ const AIAssistantPage = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input - fixed at bottom, just above nav */}
+      {/* Input */}
       <div className="px-4 py-2 flex items-center gap-2 shrink-0 bg-background border-t border-border">
         <button onClick={handleGalleryClick} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
           <Image className="w-4 h-4 text-muted-foreground" />
         </button>
+        <button onClick={toggleListening}
+          className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+            isListening ? "bg-destructive/10" : "bg-secondary"
+          }`}>
+          {isListening ? <MicOff className="w-4 h-4 text-destructive animate-pulse" /> : <Mic className="w-4 h-4 text-muted-foreground" />}
+        </button>
         <div className="flex-1 flex items-center bg-secondary rounded-full px-3 py-2">
           <input value={message} onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder={t("ai.placeholder")}
+            placeholder={isListening ? t("ai.listening") : t("ai.placeholder")}
             className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground" />
         </div>
         <button onClick={sendMessage} disabled={isLoading}
