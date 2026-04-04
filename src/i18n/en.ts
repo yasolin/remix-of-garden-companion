@@ -156,6 +156,10 @@ export default {
       photoAnalysis: "Photo taken, AI is analyzing...",
       camera: "Camera",
       cameraDesc: "Take a photo of your plant",
+      speechNotSupported: "Speech recognition is not supported on this device",
+      listening: "Listening...",
+      listenResponse: "Listen",
+      stopSpeaking: "Stop",
     },
     profile: {
       title: "Profile",
