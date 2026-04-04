@@ -248,6 +248,8 @@ export default {
       harvest: "🌿 Harvest: {{name}} is ready",
       planting: "🌱 Planting: Time to plant {{name}}",
       noNotifications: "No new notifications",
+      unreadCount: "{{count}} unread notifications",
+      markAllRead: "Mark All Read",
     },
     watering: {
       title: "Watering Time",
