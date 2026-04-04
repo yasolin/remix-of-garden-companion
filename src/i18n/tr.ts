@@ -334,5 +334,19 @@ export default {
       light: "Beyaz",
       dark: "Koyu",
     },
+    weatherTips: {
+      rainyBalcony: "🌧️ Hava yağmurlu! Balkondaki bitkilerini sulama, yağmurdan faydalansınlar.",
+      hotSun: "☀️ Güneş ışınları bitkinin yapraklarını yakabilir, öğle saatlerinde gölgelendirin.",
+      coldProtect: "❄️ Sıcaklık düşük! Hassas bitkilerinizi iç mekana alın.",
+      goodDay: "🌤️ Bugün bitkileriniz için güzel bir gün!",
+    },
+    tasks: {
+      completed: "Görev tamamlandı!",
+      undone: "Görev geri alındı",
+      viewAll: "Tüm görevleri gör ({{count}})",
+    },
+    auth: {
+      ...undefined,
+    },
   },
 };

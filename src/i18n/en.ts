@@ -334,5 +334,16 @@ export default {
       light: "White",
       dark: "Dark",
     },
+    weatherTips: {
+      rainyBalcony: "🌧️ It's rainy! Don't water your balcony plants, let them enjoy the rain.",
+      hotSun: "☀️ Sun rays can burn plant leaves, shade them during noon hours.",
+      coldProtect: "❄️ Temperature is low! Move sensitive plants indoors.",
+      goodDay: "🌤️ Great day for your plants!",
+    },
+    tasks: {
+      completed: "Task completed!",
+      undone: "Task undone",
+      viewAll: "View all tasks ({{count}})",
+    },
   },
 };
