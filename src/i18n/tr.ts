@@ -313,6 +313,13 @@ export default {
       writeComment: "Yorum yaz...",
       anonymous: "Anonim",
       confirmDelete: "Bu gönderiyi silmek istediğinize emin misiniz?",
+      likedYourPost: "gönderinizi beğendi",
+      cat_all: "Tümü",
+      cat_vegetables: "Sebzeler",
+      cat_fruits: "Meyveler",
+      cat_herbs: "Otlar",
+      cat_flowers: "Çiçekler",
+      cat_tips: "İpuçları",
     },
     theme: {
       current: "Yeşil",
