@@ -156,6 +156,10 @@ export default {
       photoAnalysis: "Fotoğraf çekildi, AI analiz ediyor...",
       camera: "Kamera",
       cameraDesc: "Bitkinizin fotoğrafını çekin",
+      speechNotSupported: "Sesle yazma bu cihazda desteklenmiyor",
+      listening: "Dinleniyor...",
+      listenResponse: "Sesli dinle",
+      stopSpeaking: "Durdur",
     },
     profile: {
       title: "Profil",
