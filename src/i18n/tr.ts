@@ -345,8 +345,5 @@ export default {
       undone: "Görev geri alındı",
       viewAll: "Tüm görevleri gör ({{count}})",
     },
-    auth: {
-      ...undefined,
-    },
   },
 };
