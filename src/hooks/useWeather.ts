@@ -8,6 +8,7 @@ export interface WeatherData {
   sunset: string;
   humidity: number;
   city?: string;
+  weatherCode?: number;
 }
 
 export function useWeather() {
