@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, Droplets, Sprout, Camera, Bell, CheckCircle2, Scissors, Leaf, Clock, Sun, Wind, Users, Thermometer, CloudRain, Umbrella } from "lucide-react";
+import { Calendar, Droplets, Sprout, Camera, Bell, CheckCircle2, Scissors, Leaf, Clock, Sun, Wind, Users, Thermometer, Umbrella } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
