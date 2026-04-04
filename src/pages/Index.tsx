@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, Droplets, Sprout, Camera, Bell, User, CheckCircle2, Scissors, Leaf, Clock, Sun, Wind, Users, Thermometer } from "lucide-react";
+import { Calendar, Droplets, Sprout, Camera, Bell, CheckCircle2, Scissors, Leaf, Clock, Sun, Wind, Users, Thermometer, CloudRain, Umbrella } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { useWeather } from "@/hooks/useWeather";
+import { getUnreadCount } from "@/lib/notificationService";
 import logo from "@/assets/logo.png";
 
 interface TaskItem {
@@ -22,7 +23,6 @@ const Index = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<TaskItem[]>([]);
   const { weather } = useWeather();
@@ -31,6 +31,13 @@ const Index = () => {
     queryKey: ["plants", user?.id],
     queryFn: () => fetchUserPlants(user!.id),
     enabled: !!user,
+  });
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["unread-count", user?.id],
+    queryFn: () => getUnreadCount(user!.id),
+    enabled: !!user,
+    refetchInterval: 15000,
   });
 
   const harvestSoon = plants.filter(p => (p.days_to_harvest ?? 30) <= 7).length;
@@ -56,23 +63,6 @@ const Index = () => {
     })),
   ];
 
-  const currentMonth = new Date().getMonth();
-  const monthPlants: Record<number, string[]> = {
-    0: ["Sarımsak", "Ispanak"], 1: ["Bezelye", "Marul"], 2: ["Havuç", "Turp", "Maydanoz"],
-    3: ["Domates", "Biber", "Patlıcan"], 4: ["Kabak", "Salatalık", "Fasulye"],
-    5: ["Karpuz", "Kavun", "Fesleğen"], 6: ["Tere", "Roka"], 7: ["Brokoli", "Karnabahar"],
-    8: ["Lahana", "Ispanak"], 9: ["Sarımsak", "Soğan"], 10: ["Bezelye", "Bakla"], 11: ["Sarımsak", "Ispanak"],
-  };
-
-  const notifications: string[] = [];
-  (monthPlants[currentMonth] || []).forEach(name => {
-    notifications.push(t("notifications.planting", { name }));
-  });
-  plants.forEach(p => {
-    if (p.needs_watering) notifications.push(t("notifications.watering", { name: p.name }));
-    if ((p.days_to_harvest ?? 30) <= 7) notifications.push(t("notifications.harvest", { name: p.name }));
-  });
-
   const userName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "";
 
   const handleCompleteTask = async (task: TaskItem) => {
@@ -86,12 +76,35 @@ const Index = () => {
 
   const activeTasks = todayTasks.filter(t => !completedTasks.some(c => c.id === t.id));
 
+  // Weather-based plant tips
+  const weatherTips: string[] = [];
+  if (weather) {
+    const temp = weather.temp;
+    const code = weather.weatherCode ?? 0;
+    const isRainy = [51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code);
+    const isHot = temp > 30;
+    const isCold = temp < 5;
+
+    if (isRainy && plants.some(p => p.placement?.includes("Balkon") || p.placement?.includes("balcony"))) {
+      weatherTips.push(t("weatherTips.rainyBalcony"));
+    }
+    if (isHot) {
+      weatherTips.push(t("weatherTips.hotSun"));
+    }
+    if (isCold) {
+      weatherTips.push(t("weatherTips.coldProtect"));
+    }
+    if (!isRainy && !isHot && !isCold && plants.length > 0) {
+      weatherTips.push(t("weatherTips.goodDay"));
+    }
+  }
+
   const mainCards = [
     {
       key: "harvest", route: "/harvest",
-      gradient: "from-emerald-500/10 via-green-400/5 to-teal-500/10",
-      border: "border-emerald-500/15",
-      icon: Calendar, iconBg: "bg-emerald-500/15", iconColor: "text-emerald-600",
+      gradient: "from-emerald-500/15 via-green-400/10 to-teal-500/15",
+      border: "border-emerald-500/20",
+      icon: Calendar, iconBg: "bg-gradient-to-br from-emerald-500/20 to-teal-500/20", iconColor: "text-emerald-600",
       title: t("home.harvestTime"),
       desc: t("home.harvestReady", { count: harvestSoon }),
       badge: `📅 ${t("home.harvestPlants", { count: harvestSoon })}`,
@@ -99,9 +112,9 @@ const Index = () => {
     },
     {
       key: "water", route: "/watering",
-      gradient: "from-blue-500/10 via-cyan-400/5 to-sky-500/10",
-      border: "border-blue-500/15",
-      icon: Droplets, iconBg: "bg-blue-500/15", iconColor: "text-blue-500",
+      gradient: "from-blue-500/15 via-cyan-400/10 to-sky-500/15",
+      border: "border-blue-500/20",
+      icon: Droplets, iconBg: "bg-gradient-to-br from-blue-500/20 to-cyan-500/20", iconColor: "text-blue-500",
       title: t("home.wateringTime"),
       desc: needsWater > 0 ? t("home.needsWater", { names: waterNames }) : t("home.allWatered"),
       badge: `💧 ${t("home.today")}`,
@@ -109,9 +122,9 @@ const Index = () => {
     },
     {
       key: "calendar", route: "/planting-calendar",
-      gradient: "from-amber-500/10 via-orange-400/5 to-yellow-500/10",
-      border: "border-amber-500/15",
-      icon: Sprout, iconBg: "bg-amber-500/15", iconColor: "text-amber-600",
+      gradient: "from-amber-500/15 via-orange-400/10 to-yellow-500/15",
+      border: "border-amber-500/20",
+      icon: Sprout, iconBg: "bg-gradient-to-br from-amber-500/20 to-orange-500/20", iconColor: "text-amber-600",
       title: t("home.plantingSuggestion"),
       desc: t("home.plantingDesc"),
       badge: `🌱 ${t("home.thisWeek")}`,
@@ -119,9 +132,9 @@ const Index = () => {
     },
     {
       key: "ai", route: "/ai-assistant",
-      gradient: "from-violet-500/10 via-purple-400/5 to-indigo-500/10",
-      border: "border-violet-500/15",
-      icon: Camera, iconBg: "bg-violet-500/15", iconColor: "text-violet-500",
+      gradient: "from-violet-500/15 via-purple-400/10 to-indigo-500/15",
+      border: "border-violet-500/20",
+      icon: Camera, iconBg: "bg-gradient-to-br from-violet-500/20 to-indigo-500/20", iconColor: "text-violet-500",
       title: t("home.plantAnalysis"),
       desc: t("home.plantAnalysisDesc"),
       badge: t("home.openAssistant"),
@@ -129,9 +142,9 @@ const Index = () => {
     },
     {
       key: "community", route: "/community",
-      gradient: "from-pink-500/10 via-rose-400/5 to-fuchsia-500/10",
-      border: "border-pink-500/15",
-      icon: Users, iconBg: "bg-pink-500/15", iconColor: "text-pink-500",
+      gradient: "from-pink-500/15 via-rose-400/10 to-fuchsia-500/15",
+      border: "border-pink-500/20",
+      icon: Users, iconBg: "bg-gradient-to-br from-pink-500/20 to-rose-500/20", iconColor: "text-pink-500",
       title: t("home.community"),
       desc: t("home.communityDesc"),
       badge: `🌍 ${t("home.communityJoin")}`,
@@ -142,25 +155,22 @@ const Index = () => {
   return (
     <div className="pb-24 max-w-lg mx-auto bg-background min-h-screen">
       {/* Header */}
-      <div className="flex items-center px-4 pt-5 pb-1">
-        <div className="flex items-center flex-1">
-          <img src={logo} alt="GardenPot" className="h-40 object-contain" />
+      <div className="flex items-center px-4 pt-3 pb-0">
+        <div className="flex-1">
+          <img src={logo} alt="GardenPot" className="h-16 object-contain -ml-1" />
         </div>
-        <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-full hover:bg-secondary">
+        <button onClick={() => navigate("/notifications")} className="relative p-2 rounded-full hover:bg-secondary">
           <Bell className="w-5 h-5 text-foreground" />
-          {notifications.length > 0 && (
+          {unreadCount > 0 && (
             <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-primary rounded-full text-[9px] text-primary-foreground font-semibold flex items-center justify-center">
-              {notifications.length}
+              {unreadCount}
             </span>
           )}
-        </button>
-        <button onClick={() => navigate("/profile")} className="p-2 rounded-full hover:bg-secondary">
-          <User className="w-5 h-5 text-foreground" />
         </button>
       </div>
 
       {/* Greeting */}
-      <div className="px-4 mt-1 mb-4">
+      <div className="px-4 mt-1 mb-3">
         <h2 className="text-lg font-medium text-foreground">
           {t("home.greeting", { name: userName })} 🌱
         </h2>
@@ -169,26 +179,9 @@ const Index = () => {
         </p>
       </div>
 
-      {/* Notifications dropdown */}
-      {showNotifications && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mb-4 bg-card rounded-2xl border border-border shadow-card p-4">
-          <h3 className="font-medium text-sm text-foreground mb-2">{t("notifications.title")}</h3>
-          {notifications.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("notifications.noNotifications")}</p>
-          ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {notifications.map((n, i) => (
-                <p key={i} className="text-sm text-foreground">{n}</p>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      )}
-
       {/* Weather Widgets */}
       {weather && (
-        <div className="px-4 mb-4">
+        <div className="px-4 mb-3">
           <div className="grid grid-cols-4 gap-2">
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-xl p-2.5 border border-amber-500/10 text-center">
@@ -206,7 +199,7 @@ const Index = () => {
               className="bg-gradient-to-br from-teal-500/10 to-emerald-500/5 rounded-xl p-2.5 border border-teal-500/10 text-center">
               <Thermometer className="w-4 h-4 text-teal-500 mx-auto mb-0.5" />
               <p className="text-base font-bold text-foreground">{weather.humidity}%</p>
-              <p className="text-[9px] text-muted-foreground">{t("home.weatherHumidity") || "Nem"}</p>
+              <p className="text-[9px] text-muted-foreground">{t("home.weatherHumidity")}</p>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
               className="bg-gradient-to-br from-orange-500/10 to-amber-500/5 rounded-xl p-2.5 border border-orange-500/10 text-center">
@@ -218,21 +211,38 @@ const Index = () => {
         </div>
       )}
 
+      {/* Weather Tips */}
+      {weatherTips.length > 0 && (
+        <div className="px-4 mb-3">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-amber-500/10 to-orange-500/5 rounded-xl p-3 border border-amber-500/15">
+            <div className="flex items-start gap-2">
+              <Umbrella className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+              <div className="space-y-1">
+                {weatherTips.map((tip, i) => (
+                  <p key={i} className="text-xs text-foreground">{tip}</p>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Main cards */}
       <div className="px-4 space-y-3">
         {mainCards.map((card, i) => (
           <motion.div key={card.key} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 + i * 0.05 }}
             onClick={() => navigate(card.route)}
-            className={`bg-gradient-to-r ${card.gradient} rounded-2xl p-4 cursor-pointer border ${card.border} hover:shadow-md transition-shadow`}>
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className={`w-8 h-8 rounded-xl ${card.iconBg} flex items-center justify-center shrink-0`}>
-                <card.icon className={`w-4 h-4 ${card.iconColor}`} />
+            className={`bg-gradient-to-r ${card.gradient} rounded-2xl p-4 cursor-pointer border ${card.border} hover:shadow-md transition-all hover:scale-[1.01]`}>
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <div className={`w-9 h-9 rounded-xl ${card.iconBg} flex items-center justify-center shrink-0`}>
+                <card.icon className={`w-4.5 h-4.5 ${card.iconColor}`} />
               </div>
               <h3 className="font-medium text-foreground text-sm">{card.title}</h3>
             </div>
-            <p className="text-xs text-muted-foreground ml-10">{card.desc}</p>
-            <span className={`inline-flex items-center gap-1 mt-2 ml-10 ${card.badgeColor} text-[11px] font-medium px-2.5 py-0.5 rounded-full`}>
+            <p className="text-xs text-muted-foreground ml-[46px]">{card.desc}</p>
+            <span className={`inline-flex items-center gap-1 mt-2 ml-[46px] ${card.badgeColor} text-[11px] font-medium px-2.5 py-0.5 rounded-full`}>
               {card.badge}
             </span>
           </motion.div>
@@ -242,7 +252,9 @@ const Index = () => {
       {/* Today's Tasks */}
       <div className="px-4 mt-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-medium text-foreground text-base">{t("home.todaysTasks")}</h3>
+          <button onClick={() => navigate("/tasks")} className="font-medium text-foreground text-base hover:text-primary transition-colors">
+            {t("home.todaysTasks")} →
+          </button>
           {completedTasks.length > 0 && (
             <button onClick={() => setShowHistory(!showHistory)}
               className="flex items-center gap-1 text-xs text-primary font-medium">
@@ -257,7 +269,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {activeTasks.map(task => (
+            {activeTasks.slice(0, 3).map(task => (
               <motion.div key={task.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                 className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${task.color}`}>
@@ -269,7 +281,6 @@ const Index = () => {
                     {task.type === "water" && t("home.waterTask", { name: task.name })}
                     {task.type === "harvest" && t("home.harvestTask", { name: task.name })}
                     {task.type === "soil" && t("home.soilTask", { name: task.name })}
-                    {task.type === "prune" && t("home.pruneTask", { name: task.name })}
                   </p>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); handleCompleteTask(task); }}
@@ -278,6 +289,12 @@ const Index = () => {
                 </button>
               </motion.div>
             ))}
+            {activeTasks.length > 3 && (
+              <button onClick={() => navigate("/tasks")}
+                className="w-full text-center text-xs text-primary font-medium py-2">
+                {t("tasks.viewAll", { count: activeTasks.length })}
+              </button>
+            )}
           </div>
         )}
 

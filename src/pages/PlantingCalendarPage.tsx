@@ -1,93 +1,118 @@
-import { ArrowLeft, Sprout } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 type PlantCategory = "vegetable" | "fruit" | "herb";
 
 interface CalendarPlant {
   name: Record<string, string>;
   emoji: string;
-  tip: Record<string, string>;
   category: PlantCategory;
+  plantDays: number[]; // days of month ideal for planting (1-indexed)
+  note?: Record<string, string>;
 }
 
 const monthlyPlants: Record<number, CalendarPlant[]> = {
   0: [
-    { name: { tr: "Sarımsak", en: "Garlic" }, emoji: "🧄", tip: { tr: "Soğuk aylarda ekilir", en: "Plant in cold months" }, category: "vegetable" },
-    { name: { tr: "Ispanak", en: "Spinach" }, emoji: "🥬", tip: { tr: "Serin havayı sever", en: "Loves cool weather" }, category: "vegetable" },
+    { name: { tr: "Sarımsak", en: "Garlic" }, emoji: "🧄", category: "vegetable", plantDays: [1,2,3,5,8,10,15,20,25] },
+    { name: { tr: "Ispanak", en: "Spinach" }, emoji: "🥬", category: "vegetable", plantDays: [3,5,7,10,12,18,22] },
   ],
   1: [
-    { name: { tr: "Bezelye", en: "Pea" }, emoji: "🫛", tip: { tr: "Şubat sonu ekilebilir", en: "Can be sown late February" }, category: "vegetable" },
-    { name: { tr: "Marul", en: "Lettuce" }, emoji: "🥬", tip: { tr: "Erken ekim", en: "Early sowing" }, category: "vegetable" },
+    { name: { tr: "Bezelye", en: "Pea" }, emoji: "🫛", category: "vegetable", plantDays: [5,8,12,15,20,25] },
+    { name: { tr: "Marul", en: "Lettuce" }, emoji: "🥬", category: "vegetable", plantDays: [1,3,7,10,14,18,22,26] },
   ],
   2: [
-    { name: { tr: "Havuç", en: "Carrot" }, emoji: "🥕", tip: { tr: "Mart başı ideal", en: "Early March is ideal" }, category: "vegetable" },
-    { name: { tr: "Turp", en: "Radish" }, emoji: "🔴", tip: { tr: "30 günde hasat", en: "Harvest in 30 days" }, category: "vegetable" },
-    { name: { tr: "Maydanoz", en: "Parsley" }, emoji: "🌿", tip: { tr: "Her mevsim ekilebilir", en: "Can be planted any season" }, category: "herb" },
+    { name: { tr: "Havuç", en: "Carrot" }, emoji: "🥕", category: "vegetable", plantDays: [1,5,8,12,15,20,25] },
+    { name: { tr: "Turp", en: "Radish" }, emoji: "🔴", category: "vegetable", plantDays: [2,6,10,14,18,22,26] },
+    { name: { tr: "Maydanoz", en: "Parsley" }, emoji: "🌿", category: "herb", plantDays: [3,7,11,15,19,23,27] },
   ],
   3: [
-    { name: { tr: "Domates", en: "Tomato" }, emoji: "🍅", tip: { tr: "Fide olarak dikin", en: "Plant as seedlings" }, category: "vegetable" },
-    { name: { tr: "Biber", en: "Pepper" }, emoji: "🌶️", tip: { tr: "Sıcak ortam ister", en: "Needs warm environment" }, category: "vegetable" },
-    { name: { tr: "Patlıcan", en: "Eggplant" }, emoji: "🍆", tip: { tr: "Nisan ortası ideal", en: "Mid-April is ideal" }, category: "vegetable" },
+    { name: { tr: "Domates", en: "Tomato" }, emoji: "🍅", category: "vegetable", plantDays: [1,2,3,6,10,15], note: { tr: "Fide dikimi başlar", en: "Seedling planting starts" } },
+    { name: { tr: "Biber", en: "Pepper" }, emoji: "🌶️", category: "vegetable", plantDays: [5,10,13,15,18,22], note: { tr: "İdeal sıcaklık gerekli", en: "Ideal temperature needed" } },
+    { name: { tr: "Patlıcan", en: "Eggplant" }, emoji: "🍆", category: "vegetable", plantDays: [15,18,20,22,23,25,29], note: { tr: "Nisan ortası ideal", en: "Mid-April ideal" } },
   ],
   4: [
-    { name: { tr: "Kabak", en: "Squash" }, emoji: "🎃", tip: { tr: "Geniş alana ihtiyaç duyar", en: "Needs wide space" }, category: "vegetable" },
-    { name: { tr: "Salatalık", en: "Cucumber" }, emoji: "🥒", tip: { tr: "Hızlı büyür", en: "Grows fast" }, category: "vegetable" },
-    { name: { tr: "Fasulye", en: "Bean" }, emoji: "🫘", tip: { tr: "Destek ile büyütün", en: "Grow with support" }, category: "vegetable" },
+    { name: { tr: "Kabak", en: "Squash" }, emoji: "🎃", category: "vegetable", plantDays: [1,5,8,12,15,20,25] },
+    { name: { tr: "Salatalık", en: "Cucumber" }, emoji: "🥒", category: "vegetable", plantDays: [3,7,10,14,18,22,26] },
+    { name: { tr: "Fasulye", en: "Bean" }, emoji: "🫘", category: "vegetable", plantDays: [2,6,10,14,18,22,26] },
   ],
   5: [
-    { name: { tr: "Karpuz", en: "Watermelon" }, emoji: "🍉", tip: { tr: "Sıcak ve güneşli", en: "Hot and sunny" }, category: "fruit" },
-    { name: { tr: "Kavun", en: "Melon" }, emoji: "🍈", tip: { tr: "Haziran başı", en: "Early June" }, category: "fruit" },
-    { name: { tr: "Fesleğen", en: "Basil" }, emoji: "🌿", tip: { tr: "Sıcak havayı sever", en: "Loves warm weather" }, category: "herb" },
+    { name: { tr: "Karpuz", en: "Watermelon" }, emoji: "🍉", category: "fruit", plantDays: [1,5,10,15] },
+    { name: { tr: "Kavun", en: "Melon" }, emoji: "🍈", category: "fruit", plantDays: [1,5,10,15] },
+    { name: { tr: "Fesleğen", en: "Basil" }, emoji: "🌿", category: "herb", plantDays: [1,5,8,12,15,20,25] },
   ],
   6: [
-    { name: { tr: "Tere", en: "Cress" }, emoji: "🌱", tip: { tr: "Hızlı hasat", en: "Quick harvest" }, category: "herb" },
-    { name: { tr: "Roka", en: "Arugula" }, emoji: "🥗", tip: { tr: "Yazın ekilebilir", en: "Can be sown in summer" }, category: "herb" },
+    { name: { tr: "Tere", en: "Cress" }, emoji: "🌱", category: "herb", plantDays: [1,5,10,15,20,25] },
+    { name: { tr: "Roka", en: "Arugula" }, emoji: "🥗", category: "herb", plantDays: [3,8,13,18,23,28] },
   ],
   7: [
-    { name: { tr: "Brokoli", en: "Broccoli" }, emoji: "🥦", tip: { tr: "Ağustos sonu fide", en: "Late August seedlings" }, category: "vegetable" },
-    { name: { tr: "Karnabahar", en: "Cauliflower" }, emoji: "🥬", tip: { tr: "Sonbahar hasadı için", en: "For autumn harvest" }, category: "vegetable" },
+    { name: { tr: "Brokoli", en: "Broccoli" }, emoji: "🥦", category: "vegetable", plantDays: [15,18,20,22,25,28] },
+    { name: { tr: "Karnabahar", en: "Cauliflower" }, emoji: "🥬", category: "vegetable", plantDays: [15,18,20,22,25,28] },
   ],
   8: [
-    { name: { tr: "Lahana", en: "Cabbage" }, emoji: "🥬", tip: { tr: "Eylül ekim ayı", en: "September planting month" }, category: "vegetable" },
-    { name: { tr: "Ispanak", en: "Spinach" }, emoji: "🥬", tip: { tr: "Serin havada harika", en: "Great in cool weather" }, category: "vegetable" },
+    { name: { tr: "Lahana", en: "Cabbage" }, emoji: "🥬", category: "vegetable", plantDays: [1,5,8,12,15,20] },
+    { name: { tr: "Ispanak", en: "Spinach" }, emoji: "🥬", category: "vegetable", plantDays: [5,10,15,20,25] },
   ],
   9: [
-    { name: { tr: "Sarımsak", en: "Garlic" }, emoji: "🧄", tip: { tr: "Ekim-Kasım arası ideal", en: "October-November is ideal" }, category: "vegetable" },
-    { name: { tr: "Soğan", en: "Onion" }, emoji: "🧅", tip: { tr: "Sonbahar ekimi", en: "Autumn planting" }, category: "vegetable" },
+    { name: { tr: "Sarımsak", en: "Garlic" }, emoji: "🧄", category: "vegetable", plantDays: [1,5,10,15,20,25] },
+    { name: { tr: "Soğan", en: "Onion" }, emoji: "🧅", category: "vegetable", plantDays: [5,10,15,20,25] },
   ],
   10: [
-    { name: { tr: "Bezelye", en: "Pea" }, emoji: "🫛", tip: { tr: "Kasım sonuna kadar", en: "Until end of November" }, category: "vegetable" },
-    { name: { tr: "Bakla", en: "Fava Bean" }, emoji: "🫘", tip: { tr: "Kışlık ekim", en: "Winter planting" }, category: "vegetable" },
+    { name: { tr: "Bezelye", en: "Pea" }, emoji: "🫛", category: "vegetable", plantDays: [1,5,10,15,20] },
+    { name: { tr: "Bakla", en: "Fava Bean" }, emoji: "🫘", category: "vegetable", plantDays: [5,10,15,20,25] },
   ],
   11: [
-    { name: { tr: "Sarımsak", en: "Garlic" }, emoji: "🧄", tip: { tr: "Aralık ekimi mümkün", en: "December planting possible" }, category: "vegetable" },
-    { name: { tr: "Ispanak", en: "Spinach" }, emoji: "🥬", tip: { tr: "Soğuğa dayanıklı", en: "Cold resistant" }, category: "vegetable" },
+    { name: { tr: "Sarımsak", en: "Garlic" }, emoji: "🧄", category: "vegetable", plantDays: [1,5,10,15] },
+    { name: { tr: "Ispanak", en: "Spinach" }, emoji: "🥬", category: "vegetable", plantDays: [5,10,15,20] },
   ],
 };
 
 const monthNames = {
+  tr: ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+};
+
+const fullMonthNames = {
   tr: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"],
   en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
 };
 
-const categoryColors: Record<PlantCategory, string> = {
-  vegetable: "bg-primary/10 text-primary",
-  fruit: "bg-accent/10 text-accent",
-  herb: "bg-emerald-100 text-emerald-700",
+const dayNames = {
+  tr: ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"],
+  en: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
 };
 
 const PlantingCalendarPage = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const lang = (i18n.language === "en" ? "en" : "tr") as "tr" | "en";
-  const months = monthNames[lang];
 
   const plants = monthlyPlants[selectedMonth] || [];
+
+  // Build calendar grid
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(currentYear, selectedMonth, 1);
+    let startDow = firstDay.getDay() - 1; // Monday=0
+    if (startDow < 0) startDow = 6;
+    const daysInMonth = new Date(currentYear, selectedMonth + 1, 0).getDate();
+
+    const cells: { day: number | null; plants: CalendarPlant[] }[] = [];
+    // Empty cells before first day
+    for (let i = 0; i < startDow; i++) cells.push({ day: null, plants: [] });
+    // Days
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayPlants = plants.filter(p => p.plantDays.includes(d));
+      cells.push({ day: d, plants: dayPlants });
+    }
+    return cells;
+  }, [selectedMonth, currentYear, plants]);
+
+  const today = new Date().getDate();
 
   return (
     <div className="pb-24 max-w-lg mx-auto">
@@ -101,57 +126,106 @@ const PlantingCalendarPage = () => {
         </div>
       </div>
 
-      {/* Calendar grid */}
-      <div className="px-4 mt-4">
-        <div className="grid grid-cols-4 gap-2">
-          {months.map((month, idx) => (
+      {/* Month selector */}
+      <div className="px-4 mt-3">
+        <div className="grid grid-cols-4 gap-1.5">
+          {monthNames[lang].map((month, idx) => (
             <button key={idx} onClick={() => setSelectedMonth(idx)}
-              className={`py-2.5 rounded-xl text-xs font-bold transition-colors ${
+              className={`py-2 rounded-xl text-xs font-bold transition-colors ${
                 idx === selectedMonth
                   ? "bg-primary text-primary-foreground"
                   : idx === currentMonth
                     ? "bg-accent/15 text-accent border border-accent/30"
                     : "bg-secondary text-secondary-foreground"
               }`}>
-              {month.slice(0, 3)}
+              {month}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Current month highlight */}
-      {selectedMonth === currentMonth && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mt-4 bg-primary/5 border border-primary/15 rounded-2xl p-4">
-          <p className="text-sm font-bold text-foreground">🌱 {t("calendar.currentMonth", { month: months[currentMonth] })}</p>
-          <p className="text-xs text-muted-foreground mt-1">{t("calendar.currentMonthDesc")}</p>
-        </motion.div>
-      )}
+      {/* Legend */}
+      <div className="px-4 mt-4 flex flex-wrap gap-3">
+        {plants.map(p => (
+          <div key={p.name[lang]} className="flex items-center gap-1.5">
+            <span className="text-sm">{p.emoji}</span>
+            <span className="text-xs font-medium text-foreground">{p.name[lang]}</span>
+          </div>
+        ))}
+      </div>
 
-      {/* Plants for selected month */}
-      <div className="px-4 mt-4 space-y-3">
+      {/* Calendar Grid */}
+      <div className="px-4 mt-3">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-2xl border border-border p-3 shadow-card">
+          <h3 className="text-center font-bold text-foreground mb-3 text-sm">
+            {fullMonthNames[lang][selectedMonth]} {t("calendar.calendarTitle")}
+          </h3>
+
+          {/* Day headers */}
+          <div className="grid grid-cols-7 gap-0.5 mb-1">
+            {dayNames[lang].map(d => (
+              <div key={d} className="text-center text-[9px] font-bold text-muted-foreground py-1">{d}</div>
+            ))}
+          </div>
+
+          {/* Day cells */}
+          <div className="grid grid-cols-7 gap-0.5">
+            {calendarDays.map((cell, i) => (
+              <div key={i}
+                className={`min-h-[52px] rounded-lg p-0.5 text-center border transition-colors ${
+                  cell.day === null ? "border-transparent"
+                    : cell.day === today && selectedMonth === currentMonth
+                      ? "border-primary bg-primary/5"
+                      : cell.plants.length > 0
+                        ? "border-primary/20 bg-primary/5"
+                        : "border-border/50"
+                }`}>
+                {cell.day !== null && (
+                  <>
+                    <span className={`text-[10px] font-semibold ${
+                      cell.day === today && selectedMonth === currentMonth ? "text-primary" : "text-foreground"
+                    }`}>{cell.day}</span>
+                    <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
+                      {cell.plants.slice(0, 2).map((p, pi) => (
+                        <span key={pi} className="text-[10px] leading-none">{p.emoji}</span>
+                      ))}
+                    </div>
+                    {cell.plants.length > 0 && cell.plants[0].note && (
+                      <p className="text-[6px] text-muted-foreground leading-tight mt-0.5 line-clamp-2">
+                        {cell.plants[0].note[lang]}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Plant info cards */}
+      <div className="px-4 mt-4 space-y-2">
         {plants.map((plant, i) => (
-          <motion.div key={plant.name[lang]} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08 }}
-            className="bg-card rounded-2xl p-4 shadow-card border border-border flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl">
-              {plant.emoji}
-            </div>
+          <motion.div key={plant.name[lang]} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
+            <span className="text-2xl">{plant.emoji}</span>
             <div className="flex-1">
-              <h3 className="font-bold text-foreground">{plant.name[lang]}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{plant.tip[lang]}</p>
-              <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${categoryColors[plant.category]}`}>
-                {t(`calendar.${plant.category === "vegetable" ? "vegetables" : plant.category === "fruit" ? "fruits" : "herbs"}`)}
-              </span>
+              <h4 className="font-semibold text-sm text-foreground">{plant.name[lang]}</h4>
+              <p className="text-[10px] text-muted-foreground">
+                {t("calendar.idealDays")}: {plant.plantDays.slice(0, 5).join(", ")}{plant.plantDays.length > 5 ? "..." : ""}
+              </p>
             </div>
-            <Sprout className="w-5 h-5 text-primary" />
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              plant.category === "vegetable" ? "bg-primary/10 text-primary"
+                : plant.category === "fruit" ? "bg-accent/10 text-accent"
+                : "bg-emerald-100 text-emerald-700"
+            }`}>
+              {t(`calendar.${plant.category === "vegetable" ? "vegetables" : plant.category === "fruit" ? "fruits" : "herbs"}`)}
+            </span>
           </motion.div>
         ))}
-        {plants.length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-muted-foreground">{t("calendar.noPlants")}</p>
-          </div>
-        )}
       </div>
     </div>
   );
