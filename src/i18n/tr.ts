@@ -244,6 +244,8 @@ export default {
       harvest: "🌿 Hasat: {{name}} hasat zamanı",
       planting: "🌱 Ekim: {{name}} ekme zamanı",
       noNotifications: "Yeni bildirim yok",
+      unreadCount: "{{count}} okunmamış bildirim",
+      markAllRead: "Tümünü Oku",
     },
     watering: {
       title: "Sulama Zamanı",
