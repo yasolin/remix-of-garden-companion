@@ -276,6 +276,8 @@ export default {
       vegetables: "Sebzeler",
       fruits: "Meyveler",
       herbs: "Otlar & Diğer",
+      calendarTitle: "Ekim Takvimi",
+      idealDays: "İdeal ekim günleri",
     },
     location: {
       title: "Konum Analizi",
