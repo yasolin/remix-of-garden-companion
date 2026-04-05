@@ -102,6 +102,7 @@ export default {
       changePhoto: "Fotoğrafı Değiştir",
       takePhoto: "Fotoğraf Çek",
       chooseFromGallery: "Galeriden Seç",
+      toxicToPets: "Evcil hayvanlar için toksik",
     },
     add: {
       title: "Bitki Ekle",
