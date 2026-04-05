@@ -165,6 +165,7 @@ export type Database = {
           soil_type: string | null
           sunlight: string | null
           temperature: string | null
+          toxic_to_pets: boolean | null
           updated_at: string
           user_id: string
           water_frequency: string | null
@@ -187,6 +188,7 @@ export type Database = {
           soil_type?: string | null
           sunlight?: string | null
           temperature?: string | null
+          toxic_to_pets?: boolean | null
           updated_at?: string
           user_id: string
           water_frequency?: string | null
@@ -209,6 +211,7 @@ export type Database = {
           soil_type?: string | null
           sunlight?: string | null
           temperature?: string | null
+          toxic_to_pets?: boolean | null
           updated_at?: string
           user_id?: string
           water_frequency?: string | null
@@ -218,29 +221,44 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          gender: string | null
           id: string
           kvkk_accepted: boolean | null
+          occupation: string | null
+          phone: string | null
+          surname: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          age?: number | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
           id?: string
           kvkk_accepted?: boolean | null
+          occupation?: string | null
+          phone?: string | null
+          surname?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          age?: number | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
           id?: string
           kvkk_accepted?: boolean | null
+          occupation?: string | null
+          phone?: string | null
+          surname?: string | null
           updated_at?: string
           user_id?: string
         }
