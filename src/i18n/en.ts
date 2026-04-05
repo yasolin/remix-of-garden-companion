@@ -114,6 +114,7 @@ export default {
       changePhoto: "Change Photo",
       takePhoto: "Take Photo",
       chooseFromGallery: "Choose from Gallery",
+      toxicToPets: "Toxic to pets",
     },
     add: {
       title: "Add Plant",
