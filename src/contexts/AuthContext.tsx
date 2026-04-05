@@ -24,10 +24,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Update profile with extra signup data after first login
+      if (_event === "SIGNED_IN" && session?.user) {
+        const meta = session.user.user_metadata;
+        if (meta?.surname || meta?.age || meta?.gender || meta?.occupation || meta?.phone) {
+          try {
+            await supabase.from("profiles").update({
+              surname: meta.surname || null,
+              age: meta.age || null,
+              gender: meta.gender || null,
+              occupation: meta.occupation || null,
+              phone: meta.phone || null,
+              kvkk_accepted: true,
+            }).eq("user_id", session.user.id);
+          } catch {}
+        }
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
