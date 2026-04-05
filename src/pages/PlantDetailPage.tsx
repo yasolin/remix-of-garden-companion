@@ -155,9 +155,17 @@ const PlantDetailPage = () => {
               )}
               <p className="text-sm text-muted-foreground italic">{scientificName}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Sprout className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">{t(`stages.${stageFromIndex(currentStage)}`)}</span>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-2">
+                <Sprout className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-primary">{t(`stages.${stageFromIndex(currentStage)}`)}</span>
+              </div>
+              {plant.toxic_to_pets && (
+                <div className="flex items-center gap-1 bg-destructive/10 px-2 py-0.5 rounded-full">
+                  <AlertTriangle className="w-3 h-3 text-destructive" />
+                  <span className="text-[10px] font-semibold text-destructive">{t("detail.toxicToPets")}</span>
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-2 flex items-center gap-2">
