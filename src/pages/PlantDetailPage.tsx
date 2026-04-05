@@ -1,4 +1,4 @@
-import { ArrowLeft, Edit3, Sun, Droplets, Wind, Thermometer, CloudRain, MapPin, Sprout, Save, X, Camera, ImageIcon, Compass } from "lucide-react";
+import { ArrowLeft, Edit3, Sun, Droplets, Wind, Thermometer, CloudRain, MapPin, Sprout, Save, X, Camera, ImageIcon, Compass, AlertTriangle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
