@@ -1,41 +1,26 @@
-## Plan: Garden Pot Kapsamlı Güncelleme
 
-### Aşama 1 - UI/Layout Düzeltmeleri
-- Logo sola dayalı, boşluk azaltılmış, profil ikonu kaldırılmış
-- Ana sayfa kartları profesyonel gradyanlı tasarım
-- Hava durumuna göre akıllı bitki uyarıları
+## Aşama 1 - Kayıt Formu & KVKK
+- Üye ol formuna **ad, soyad, yaş, cinsiyet, meslek, telefon** alanları eklenmesi
+- KVKK onay ekranı (checkbox ile) kayıt sırasında gösterilmesi
+- Profil tablosuna yeni alanlar eklenmesi (surname, age, gender, occupation, phone)
 
-### Aşama 2 - AI Asistan Geliştirmeleri
-- Sesle yazma (speech-to-text) ve yanıtları sesle okuma (text-to-speech)
-- AI Hasat analizi: sadece büyüme/çiçeklenme/hasat zamanı odaklı
-- AI Sulama analizi: bitki türü → saksı boyutu → sulama sıklığı → fotoğraf akışı
+## Aşama 2 - Yeni Kullanıcı Bildirim E-postası
+- Yeni kayıt olan kullanıcıların bilgilerini gardenpot2024@gmail.com adresine otomatik gönderen edge function
 
-### Aşama 3 - Ekim Takvimi
-- Görselddeki gibi aylık grid takvim görünümü
-- Hangi bitkinin hangi günlerde ekilebileceği gösterilecek
+## Aşama 3 - Ana Sayfa Logo Büyütme
+- Garden Pot logosu 1.5x büyütülmesi
 
-### Aşama 4 - Bildirim Sistemi
-- Ayrı bildirim sayfası (okunmuş/okunmamış renk ayrımı)
-- Topluluk beğeni/yorum bildirimleri
-- Bildirim sayacı otomatik güncelleme
+## Aşama 4 - Bitki Bilgileri Dil Düzeltmesi
+- Türkçe dil seçiliyken bitki bilgilerinin Türkçe gösterilmesi
 
-### Aşama 5 - Sulama Zamanı
-- Takvim veya liste görünümü seçeneği
-- Geçmiş ve gelecek sulama verileri
-- Tamamlandı işaretleme ve geri alma
+## Aşama 5 - Hayvan Toksik Uyarı Rozeti
+- Hayvanlara toksik bitkilerde uyarı rozeti eklenmesi
+- Plants tablosuna `toxic_to_pets` alanı eklenmesi
 
-### Aşama 6 - Topluluk Geliştirmeleri
-- Kullanıcı adlarıyla paylaşım (anonim yerine)
-- Kategoriler (üstte filtre)
-- Beğeni/yorum bildirimleri
+## Aşama 6 - AI Sulama Analizi Geliştirmesi
+- Kayıtlı bitkilerden seçerek veya yeni bitki için analiz
+- Yeni bitki: fotoğraf çekme veya manuel giriş akışı (bitki türü → saksı boyutu → sulama sıklığı → sulama miktarı)
+- Mevcut sulama döngüsü sisteme eklenebilir olması
 
-### Aşama 7 - Görevler Sayfası
-- Güncel görevler + geçmiş tamamlanan görevler
-- Geri al seçeneği
-
-### Aşama 8 - KVKK & Güvenlik
-- Kayıt sırasında KVKK onayı
-- Onay sonrası fotoğraf yükleme aktif
-
-### Aşama 9 - Dil Düzeltmeleri
-- Bitki bilgileri Türkçe seçiliyken Türkçe gösterilecek
+## Aşama 7 - Sulama Takvim Görünümü
+- Takvim veya liste görünümünde sulama geçmişi ve gelecek sulama zamanları
