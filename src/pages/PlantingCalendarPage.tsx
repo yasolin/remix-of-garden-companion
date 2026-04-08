@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useState, useMemo } from "react";
+import { AnimatePresence } from "framer-motion";
 
 type PlantCategory = "vegetable" | "fruit" | "herb";
 
