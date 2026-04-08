@@ -550,16 +550,27 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
                 const isToday = day === today.getDate();
+                const isPast = day < today.getDate();
                 const hasWatering = wateringPlants.length > 0 && isToday;
+                const wasWatered = isPast && wateredPlants.length > 0;
                 return (
                   <div key={day} className={`relative w-full aspect-square flex items-center justify-center rounded-lg text-xs ${
                     isToday ? "bg-primary text-primary-foreground font-bold" : "text-foreground"
                   }`}>
                     {day}
-                    {hasWatering && <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-blue-500" />}
+                    {hasWatering && <div className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                    {wasWatered && !isToday && <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-primary/40" />}
+                    {!isPast && !isToday && wateringPlants.length > 0 && day % 3 === 0 && (
+                      <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-blue-300/50" />
+                    )}
                   </div>
                 );
               })}
+            </div>
+            <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün sulama" : "Water today"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/40" /> {isTr ? "Geçmiş" : "Past"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300/50" /> {isTr ? "Planlanan" : "Planned"}</div>
             </div>
           </div>
         </div>

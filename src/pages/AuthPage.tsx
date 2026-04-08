@@ -12,6 +12,7 @@ const KVKK_TEXT_TR = `Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında, G
 
 • Kişisel verileriniz (ad, soyad, e-posta, telefon, yaş, cinsiyet, meslek) uygulama hizmetlerinin sunulması amacıyla işlenecektir.
 • Bitki fotoğrafları ve konum verileri, kişiselleştirilmiş bahçecilik önerileri sunmak amacıyla kullanılacaktır.
+• Fotoğraf çekme ve galeri erişimi, profil fotoğrafı ekleme, toplulukta bitki paylaşımı ve yapay zeka ile bitki analizi için kullanılacaktır.
 • Verileriniz üçüncü taraflarla paylaşılmayacak ve yalnızca uygulama hizmetleri kapsamında saklanacaktır.
 • Dilediğiniz zaman verilerinizin silinmesini talep edebilirsiniz.
 • Detaylı bilgi için gizlilik politikamızı inceleyebilirsiniz.`;
@@ -20,6 +21,7 @@ const KVKK_TEXT_EN = `By registering to Garden Pot, you agree to the following t
 
 • Your personal data (name, surname, email, phone, age, gender, occupation) will be processed for providing app services.
 • Plant photos and location data will be used to provide personalized gardening recommendations.
+• Camera and gallery access will be used for profile photos, community plant sharing, and AI-powered plant analysis.
 • Your data will not be shared with third parties and will only be stored within the scope of app services.
 • You can request the deletion of your data at any time.
 • Please review our privacy policy for detailed information.`;
