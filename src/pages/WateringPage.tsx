@@ -375,10 +375,6 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                   className="bg-primary text-primary-foreground px-6 py-2 rounded-xl text-sm font-semibold">
                   {isTr ? "Fotoğraf Çek" : "Take Photo"}
                 </button>
-                <p className="text-[10px] text-muted-foreground">
-                  {isTr ? "Bitki türünü bilmiyorsanız AI Asistan'da 'Bitki Tanıma' özelliğini kullanabilirsiniz." :
-                    "If you don't know the plant type, use 'Plant Recognition' in AI Assistant."}
-                </p>
               </div>
               <button onClick={() => setAnalysisMode("choose")} className="text-xs text-primary font-medium mt-2">
                 ← {isTr ? "Geri" : "Back"}
