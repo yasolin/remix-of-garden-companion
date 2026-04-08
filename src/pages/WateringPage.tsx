@@ -396,9 +396,9 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
                 {/* Step indicator */}
                 <div className="flex items-center gap-1 mb-2">
-                  {["type", "pot", "frequency", "amount"].map((s, i) => (
+                  {["type", "pot", "potType", "frequency", "amount"].map((s, i) => (
                     <div key={s} className={`flex-1 h-1 rounded-full ${
-                      ["type", "pot", "frequency", "amount"].indexOf(manualStep) >= i ? "bg-primary" : "bg-secondary"
+                      ["type", "pot", "potType", "frequency", "amount"].indexOf(manualStep) >= i ? "bg-primary" : "bg-secondary"
                     }`} />
                   ))}
                 </div>
