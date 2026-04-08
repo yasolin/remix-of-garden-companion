@@ -99,7 +99,7 @@ const WateringPage = () => {
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("none");
   const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
   const [manualStep, setManualStep] = useState<ManualStep>("type");
-  const [manualData, setManualData] = useState({ plantType: "", potSize: "", frequency: "", amount: "" });
+  const [manualData, setManualData] = useState({ plantType: "", potSize: "", potType: "", frequency: "", amount: "" });
 
   // View mode: list or calendar
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
