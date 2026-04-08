@@ -592,15 +592,6 @@ const ProfilePage = () => {
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </motion.button>
 
-        <button onClick={handleLogout}
-          className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-destructive/5 transition-colors">
-          <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-            <LogOut className="w-5 h-5 text-destructive" />
-          </div>
-          <div className="flex-1 text-left">
-            <span className="text-sm font-semibold text-destructive">{t("profile.logout")}</span>
-          </div>
-        </button>
       </div>
 
       <p className="text-center text-[10px] text-muted-foreground mt-6 mb-4">Garden Pot v1.0.0 🌿</p>

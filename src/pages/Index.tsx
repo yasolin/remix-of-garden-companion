@@ -157,7 +157,7 @@ const Index = () => {
       {/* Header */}
       <div className="flex items-center px-4 pt-3 pb-0">
         <div className="flex-1">
-          <img src={logo} alt="GardenPot" className="h-24 object-contain -ml-1" />
+          <img src={logo} alt="GardenPot" className="h-32 object-contain -ml-1" />
         </div>
         <button onClick={() => navigate("/notifications")} className="relative p-2 rounded-full hover:bg-secondary">
           <Bell className="w-5 h-5 text-foreground" />

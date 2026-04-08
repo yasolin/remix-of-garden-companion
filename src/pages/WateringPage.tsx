@@ -76,11 +76,11 @@ const frequencyOptions = [
 ];
 
 const amountOptions = [
-  { key: "50ml", tr: "50 ml", en: "50 ml" },
-  { key: "100ml", tr: "100 ml", en: "100 ml" },
-  { key: "200ml", tr: "200 ml", en: "200 ml" },
-  { key: "300ml", tr: "300 ml", en: "300 ml" },
-  { key: "500ml", tr: "500 ml", en: "500 ml" },
+  { key: "50ml", tr: "50 ml", en: "50 ml", emoji: "🥄", hint: { tr: "~3 yemek kaşığı", en: "~3 tablespoons" } },
+  { key: "100ml", tr: "100 ml", en: "100 ml", emoji: "🥃", hint: { tr: "Yarım çay bardağı", en: "Half a tea glass" } },
+  { key: "200ml", tr: "200 ml", en: "200 ml", emoji: "☕", hint: { tr: "Bir çay bardağı", en: "One tea glass" } },
+  { key: "300ml", tr: "300 ml", en: "300 ml", emoji: "🥛", hint: { tr: "Bir su bardağı", en: "One water glass" } },
+  { key: "500ml", tr: "500 ml", en: "500 ml", emoji: "🫗", hint: { tr: "Küçük şişe suyu", en: "Small water bottle" } },
 ];
 
 const WateringPage = () => {
