@@ -91,6 +91,7 @@ const PlantingCalendarPage = () => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedPlant, setSelectedPlant] = useState<CalendarPlant | null>(null);
   const lang = (i18n.language === "en" ? "en" : "tr") as "tr" | "en";
 
   const plants = monthlyPlants[selectedMonth] || [];
