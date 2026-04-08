@@ -250,9 +250,10 @@ Provide: ideal watering amount (ml), optimal schedule, tips for current season. 
     const prompt = `Create a detailed watering analysis and schedule for:
 - Plant type: ${manualData.plantType}
 - Pot size: ${manualData.potSize}
+- Pot type: ${manualData.potType}
 - Current watering frequency: ${manualData.frequency}
 - Current watering amount: ${manualData.amount}
-Provide: recommended watering amount (ml), optimal schedule, seasonal adjustments, and practical tips. Be concise.`;
+Provide: recommended watering amount (ml), optimal schedule, seasonal adjustments, and practical tips based on pot type (drainage affects watering). Be concise.`;
     runAiAnalysis(prompt);
   };
 
