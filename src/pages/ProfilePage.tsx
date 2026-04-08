@@ -286,12 +286,22 @@ const ProfilePage = () => {
             <p className="text-xs text-muted-foreground">{t("profile.privacyText")}</p>
           </div>
 
-          <div className="bg-card rounded-xl p-4 border border-border">
+        <div className="bg-card rounded-xl p-4 border border-border">
             <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
               <HelpCircle className="w-4 h-4" /> {t("profile.help")}
             </h3>
             <p className="text-xs text-muted-foreground">{t("profile.helpText")}</p>
           </div>
+
+          <button onClick={handleLogout}
+            className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-destructive/5 transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <LogOut className="w-5 h-5 text-destructive" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="text-sm font-semibold text-destructive">{t("profile.logout")}</span>
+            </div>
+          </button>
         </div>
       </div>
     );
