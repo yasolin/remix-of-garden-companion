@@ -1,10 +1,10 @@
-import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Wind, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, ArrowUpDown, Palette } from "lucide-react";
+import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, Palette } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchUserPlants, uploadPlantPhoto, deletePlant } from "@/lib/plantService";
+import { fetchUserPlants, deletePlant } from "@/lib/plantService";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -286,12 +286,22 @@ const ProfilePage = () => {
             <p className="text-xs text-muted-foreground">{t("profile.privacyText")}</p>
           </div>
 
-          <div className="bg-card rounded-xl p-4 border border-border">
+        <div className="bg-card rounded-xl p-4 border border-border">
             <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
               <HelpCircle className="w-4 h-4" /> {t("profile.help")}
             </h3>
             <p className="text-xs text-muted-foreground">{t("profile.helpText")}</p>
           </div>
+
+          <button onClick={handleLogout}
+            className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-destructive/5 transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <LogOut className="w-5 h-5 text-destructive" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="text-sm font-semibold text-destructive">{t("profile.logout")}</span>
+            </div>
+          </button>
         </div>
       </div>
     );
@@ -582,15 +592,6 @@ const ProfilePage = () => {
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </motion.button>
 
-        <button onClick={handleLogout}
-          className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-destructive/5 transition-colors">
-          <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-            <LogOut className="w-5 h-5 text-destructive" />
-          </div>
-          <div className="flex-1 text-left">
-            <span className="text-sm font-semibold text-destructive">{t("profile.logout")}</span>
-          </div>
-        </button>
       </div>
 
       <p className="text-center text-[10px] text-muted-foreground mt-6 mb-4">Garden Pot v1.0.0 🌿</p>

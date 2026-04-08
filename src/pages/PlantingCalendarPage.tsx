@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useState, useMemo } from "react";
+import { AnimatePresence } from "framer-motion";
 
 type PlantCategory = "vegetable" | "fruit" | "herb";
 
@@ -90,6 +91,7 @@ const PlantingCalendarPage = () => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedPlant, setSelectedPlant] = useState<CalendarPlant | null>(null);
   const lang = (i18n.language === "en" ? "en" : "tr") as "tr" | "en";
 
   const plants = monthlyPlants[selectedMonth] || [];
@@ -173,12 +175,13 @@ const PlantingCalendarPage = () => {
           <div className="grid grid-cols-7 gap-0.5">
             {calendarDays.map((cell, i) => (
               <div key={i}
+                onClick={() => { if (cell.plants.length > 0) setSelectedPlant(cell.plants[0]); }}
                 className={`min-h-[52px] rounded-lg p-0.5 text-center border transition-colors ${
                   cell.day === null ? "border-transparent"
                     : cell.day === today && selectedMonth === currentMonth
                       ? "border-primary bg-primary/5"
                       : cell.plants.length > 0
-                        ? "border-primary/20 bg-primary/5"
+                        ? "border-primary/20 bg-primary/5 cursor-pointer hover:bg-primary/10"
                         : "border-border/50"
                 }`}>
                 {cell.day !== null && (
@@ -191,17 +194,43 @@ const PlantingCalendarPage = () => {
                         <span key={pi} className="text-[10px] leading-none">{p.emoji}</span>
                       ))}
                     </div>
-                    {cell.plants.length > 0 && cell.plants[0].note && (
-                      <p className="text-[6px] text-muted-foreground leading-tight mt-0.5 line-clamp-2">
-                        {cell.plants[0].note[lang]}
-                      </p>
-                    )}
                   </>
                 )}
               </div>
             ))}
           </div>
         </motion.div>
+
+        {/* Selected plant detail */}
+        <AnimatePresence>
+          {selectedPlant && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="mt-3 bg-card rounded-2xl border border-primary/20 p-4 shadow-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{selectedPlant.emoji}</span>
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">{selectedPlant.name[lang]}</h4>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      selectedPlant.category === "vegetable" ? "bg-primary/10 text-primary"
+                        : selectedPlant.category === "fruit" ? "bg-accent/10 text-accent"
+                        : "bg-emerald-100 text-emerald-700"
+                    }`}>
+                      {t(`calendar.${selectedPlant.category === "vegetable" ? "vegetables" : selectedPlant.category === "fruit" ? "fruits" : "herbs"}`)}
+                    </span>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedPlant(null)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+              </div>
+              {selectedPlant.note && (
+                <p className="text-xs text-muted-foreground mb-2">💡 {selectedPlant.note[lang]}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {t("calendar.idealDays")}: {selectedPlant.plantDays.join(", ")}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Plant info cards */}

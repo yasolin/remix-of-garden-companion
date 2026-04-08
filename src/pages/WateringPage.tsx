@@ -51,13 +51,20 @@ function recordWaterScan() {
 }
 
 type AnalysisMode = "none" | "choose" | "registered" | "new_photo" | "new_manual";
-type ManualStep = "type" | "pot" | "frequency" | "amount" | "analyzing";
+type ManualStep = "type" | "pot" | "potType" | "frequency" | "amount" | "analyzing";
 
 const potSizes = [
-  { key: "small", tr: "Küçük (10-15 cm)", en: "Small (10-15 cm)" },
-  { key: "medium", tr: "Orta (15-25 cm)", en: "Medium (15-25 cm)" },
-  { key: "large", tr: "Büyük (25-40 cm)", en: "Large (25-40 cm)" },
-  { key: "xlarge", tr: "Çok Büyük (40+ cm)", en: "Extra Large (40+ cm)" },
+  { key: "small", tr: "Küçük (10-15 cm)", en: "Small (10-15 cm)", emoji: "🪴", hint: { tr: "Kahve fincanı boyutu", en: "Coffee cup size" } },
+  { key: "medium", tr: "Orta (15-25 cm)", en: "Medium (15-25 cm)", emoji: "🌱", hint: { tr: "Tabak boyutu", en: "Plate size" } },
+  { key: "large", tr: "Büyük (25-40 cm)", en: "Large (25-40 cm)", emoji: "🌿", hint: { tr: "Kova boyutu", en: "Bucket size" } },
+  { key: "xlarge", tr: "Çok Büyük (40+ cm)", en: "Extra Large (40+ cm)", emoji: "🌳", hint: { tr: "Çamaşır sepeti boyutu", en: "Laundry basket size" } },
+];
+
+const potTypes = [
+  { key: "holed", emoji: "🕳️", tr: "Delikli Saksı", en: "Drainage Pot", desc: { tr: "Alt kısımda delikler var", en: "Has holes at the bottom" } },
+  { key: "solid", emoji: "🏺", tr: "Deliksiz Saksı", en: "Solid Pot", desc: { tr: "Delik yok, dikkatli sulama", en: "No holes, careful watering" } },
+  { key: "transparent", emoji: "🫙", tr: "Şeffaf Saksı", en: "Transparent Pot", desc: { tr: "Kök gelişimini izleyin", en: "Monitor root growth" } },
+  { key: "selfwater", emoji: "💧", tr: "Kendinden Sulu", en: "Self-Watering", desc: { tr: "Hazne ile otomatik sulama", en: "Auto-watering reservoir" } },
 ];
 
 const frequencyOptions = [
@@ -69,11 +76,11 @@ const frequencyOptions = [
 ];
 
 const amountOptions = [
-  { key: "50ml", tr: "50 ml", en: "50 ml" },
-  { key: "100ml", tr: "100 ml", en: "100 ml" },
-  { key: "200ml", tr: "200 ml", en: "200 ml" },
-  { key: "300ml", tr: "300 ml", en: "300 ml" },
-  { key: "500ml", tr: "500 ml", en: "500 ml" },
+  { key: "50ml", tr: "50 ml", en: "50 ml", emoji: "🥄", hint: { tr: "~3 yemek kaşığı", en: "~3 tablespoons" } },
+  { key: "100ml", tr: "100 ml", en: "100 ml", emoji: "🥃", hint: { tr: "Yarım çay bardağı", en: "Half a tea glass" } },
+  { key: "200ml", tr: "200 ml", en: "200 ml", emoji: "☕", hint: { tr: "Bir çay bardağı", en: "One tea glass" } },
+  { key: "300ml", tr: "300 ml", en: "300 ml", emoji: "🥛", hint: { tr: "Bir su bardağı", en: "One water glass" } },
+  { key: "500ml", tr: "500 ml", en: "500 ml", emoji: "🫗", hint: { tr: "Küçük şişe suyu", en: "Small water bottle" } },
 ];
 
 const WateringPage = () => {
@@ -90,9 +97,9 @@ const WateringPage = () => {
 
   // AI analysis flow
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("none");
-  const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
+  
   const [manualStep, setManualStep] = useState<ManualStep>("type");
-  const [manualData, setManualData] = useState({ plantType: "", potSize: "", frequency: "", amount: "" });
+  const [manualData, setManualData] = useState({ plantType: "", potSize: "", potType: "", frequency: "", amount: "" });
 
   // View mode: list or calendar
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
@@ -243,9 +250,10 @@ Provide: ideal watering amount (ml), optimal schedule, tips for current season. 
     const prompt = `Create a detailed watering analysis and schedule for:
 - Plant type: ${manualData.plantType}
 - Pot size: ${manualData.potSize}
+- Pot type: ${manualData.potType}
 - Current watering frequency: ${manualData.frequency}
 - Current watering amount: ${manualData.amount}
-Provide: recommended watering amount (ml), optimal schedule, seasonal adjustments, and practical tips. Be concise.`;
+Provide: recommended watering amount (ml), optimal schedule, seasonal adjustments, and practical tips based on pot type (drainage affects watering). Be concise.`;
     runAiAnalysis(prompt);
   };
 
@@ -327,7 +335,7 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                   <p className="text-[11px] text-muted-foreground">{isTr ? "Fotoğraf çekerek otomatik analiz" : "Auto-analyze from photo"}</p>
                 </div>
               </button>
-              <button onClick={() => { setAnalysisMode("new_manual"); setManualStep("type"); setManualData({ plantType: "", potSize: "", frequency: "", amount: "" }); }}
+              <button onClick={() => { setAnalysisMode("new_manual"); setManualStep("type"); setManualData({ plantType: "", potSize: "", potType: "", frequency: "", amount: "" }); }}
                 className="w-full bg-card border border-border rounded-xl p-3 flex items-center gap-3 text-left">
                 <Beaker className="w-5 h-5 text-amber-500" />
                 <div className="flex-1">
@@ -375,10 +383,6 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                   className="bg-primary text-primary-foreground px-6 py-2 rounded-xl text-sm font-semibold">
                   {isTr ? "Fotoğraf Çek" : "Take Photo"}
                 </button>
-                <p className="text-[10px] text-muted-foreground">
-                  {isTr ? "Bitki türünü bilmiyorsanız AI Asistan'da 'Bitki Tanıma' özelliğini kullanabilirsiniz." :
-                    "If you don't know the plant type, use 'Plant Recognition' in AI Assistant."}
-                </p>
               </div>
               <button onClick={() => setAnalysisMode("choose")} className="text-xs text-primary font-medium mt-2">
                 ← {isTr ? "Geri" : "Back"}
@@ -392,9 +396,9 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
                 {/* Step indicator */}
                 <div className="flex items-center gap-1 mb-2">
-                  {["type", "pot", "frequency", "amount"].map((s, i) => (
+                  {["type", "pot", "potType", "frequency", "amount"].map((s, i) => (
                     <div key={s} className={`flex-1 h-1 rounded-full ${
-                      ["type", "pot", "frequency", "amount"].indexOf(manualStep) >= i ? "bg-primary" : "bg-secondary"
+                      ["type", "pot", "potType", "frequency", "amount"].indexOf(manualStep) >= i ? "bg-primary" : "bg-secondary"
                     }`} />
                   ))}
                 </div>
@@ -420,13 +424,34 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                     <p className="text-sm font-semibold text-foreground">{isTr ? "Saksı Boyutu" : "Pot Size"}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {potSizes.map(ps => (
-                        <button key={ps.key} onClick={() => { setManualData({ ...manualData, potSize: isTr ? ps.tr : ps.en }); setManualStep("frequency"); }}
-                          className="bg-secondary rounded-xl p-3 text-sm text-foreground text-center hover:bg-primary/10 transition-colors">
-                          {isTr ? ps.tr : ps.en}
+                        <button key={ps.key} onClick={() => { setManualData({ ...manualData, potSize: isTr ? ps.tr : ps.en }); setManualStep("potType"); }}
+                          className="bg-secondary rounded-xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                          <span className="text-2xl">{ps.emoji}</span>
+                          <span className="text-xs font-semibold text-foreground">{isTr ? ps.tr : ps.en}</span>
+                          <span className="text-[9px] text-muted-foreground">{isTr ? ps.hint.tr : ps.hint.en}</span>
                         </button>
                       ))}
                     </div>
                     <button onClick={() => setManualStep("type")} className="text-xs text-primary font-medium">
+                      ← {isTr ? "Geri" : "Back"}
+                    </button>
+                  </div>
+                )}
+
+                {manualStep === "potType" && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-foreground">{isTr ? "Saksı Tipi" : "Pot Type"}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {potTypes.map(pt => (
+                        <button key={pt.key} onClick={() => { setManualData({ ...manualData, potType: isTr ? pt.tr : pt.en }); setManualStep("frequency"); }}
+                          className="bg-secondary rounded-xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                          <span className="text-2xl">{pt.emoji}</span>
+                          <span className="text-xs font-semibold text-foreground">{isTr ? pt.tr : pt.en}</span>
+                          <span className="text-[9px] text-muted-foreground">{isTr ? pt.desc.tr : pt.desc.en}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={() => setManualStep("pot")} className="text-xs text-primary font-medium">
                       ← {isTr ? "Geri" : "Back"}
                     </button>
                   </div>
@@ -443,7 +468,7 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                         </button>
                       ))}
                     </div>
-                    <button onClick={() => setManualStep("pot")} className="text-xs text-primary font-medium">
+                    <button onClick={() => setManualStep("potType")} className="text-xs text-primary font-medium">
                       ← {isTr ? "Geri" : "Back"}
                     </button>
                   </div>
@@ -452,13 +477,17 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                 {manualStep === "amount" && (
                   <div className="space-y-2">
                     <p className="text-sm font-semibold text-foreground">{isTr ? "Sulama Miktarı" : "Watering Amount"}</p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1.5">
                       {amountOptions.map(ao => (
                         <button key={ao.key} onClick={() => { setManualData({ ...manualData, amount: isTr ? ao.tr : ao.en }); }}
-                          className={`rounded-xl p-3 text-sm text-center transition-colors ${
-                            manualData.amount === (isTr ? ao.tr : ao.en) ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/10"
+                          className={`w-full rounded-xl p-3 flex items-center gap-3 transition-colors ${
+                            manualData.amount === (isTr ? ao.tr : ao.en) ? "bg-primary/10 border-2 border-primary" : "bg-secondary hover:bg-primary/5"
                           }`}>
-                          {isTr ? ao.tr : ao.en}
+                          <span className="text-xl">{ao.emoji}</span>
+                          <div className="flex-1 text-left">
+                            <span className="text-sm font-semibold text-foreground">{isTr ? ao.tr : ao.en}</span>
+                            <p className="text-[10px] text-muted-foreground">{isTr ? ao.hint.tr : ao.hint.en}</p>
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -521,16 +550,27 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
                 const isToday = day === today.getDate();
+                const isPast = day < today.getDate();
                 const hasWatering = wateringPlants.length > 0 && isToday;
+                const wasWatered = isPast && wateredPlants.length > 0;
                 return (
                   <div key={day} className={`relative w-full aspect-square flex items-center justify-center rounded-lg text-xs ${
                     isToday ? "bg-primary text-primary-foreground font-bold" : "text-foreground"
                   }`}>
                     {day}
-                    {hasWatering && <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-blue-500" />}
+                    {hasWatering && <div className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                    {wasWatered && !isToday && <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-primary/40" />}
+                    {!isPast && !isToday && wateringPlants.length > 0 && day % 3 === 0 && (
+                      <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-blue-300/50" />
+                    )}
                   </div>
                 );
               })}
+            </div>
+            <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün sulama" : "Water today"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/40" /> {isTr ? "Geçmiş" : "Past"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300/50" /> {isTr ? "Planlanan" : "Planned"}</div>
             </div>
           </div>
         </div>
