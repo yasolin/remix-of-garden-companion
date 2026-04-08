@@ -334,7 +334,7 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                   <p className="text-[11px] text-muted-foreground">{isTr ? "Fotoğraf çekerek otomatik analiz" : "Auto-analyze from photo"}</p>
                 </div>
               </button>
-              <button onClick={() => { setAnalysisMode("new_manual"); setManualStep("type"); setManualData({ plantType: "", potSize: "", frequency: "", amount: "" }); }}
+              <button onClick={() => { setAnalysisMode("new_manual"); setManualStep("type"); setManualData({ plantType: "", potSize: "", potType: "", frequency: "", amount: "" }); }}
                 className="w-full bg-card border border-border rounded-xl p-3 flex items-center gap-3 text-left">
                 <Beaker className="w-5 h-5 text-amber-500" />
                 <div className="flex-1">
