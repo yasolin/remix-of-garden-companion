@@ -424,13 +424,34 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                     <p className="text-sm font-semibold text-foreground">{isTr ? "Saksı Boyutu" : "Pot Size"}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {potSizes.map(ps => (
-                        <button key={ps.key} onClick={() => { setManualData({ ...manualData, potSize: isTr ? ps.tr : ps.en }); setManualStep("frequency"); }}
-                          className="bg-secondary rounded-xl p-3 text-sm text-foreground text-center hover:bg-primary/10 transition-colors">
-                          {isTr ? ps.tr : ps.en}
+                        <button key={ps.key} onClick={() => { setManualData({ ...manualData, potSize: isTr ? ps.tr : ps.en }); setManualStep("potType"); }}
+                          className="bg-secondary rounded-xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                          <span className="text-2xl">{ps.emoji}</span>
+                          <span className="text-xs font-semibold text-foreground">{isTr ? ps.tr : ps.en}</span>
+                          <span className="text-[9px] text-muted-foreground">{isTr ? ps.hint.tr : ps.hint.en}</span>
                         </button>
                       ))}
                     </div>
                     <button onClick={() => setManualStep("type")} className="text-xs text-primary font-medium">
+                      ← {isTr ? "Geri" : "Back"}
+                    </button>
+                  </div>
+                )}
+
+                {manualStep === "potType" && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-foreground">{isTr ? "Saksı Tipi" : "Pot Type"}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {potTypes.map(pt => (
+                        <button key={pt.key} onClick={() => { setManualData({ ...manualData, potType: isTr ? pt.tr : pt.en }); setManualStep("frequency"); }}
+                          className="bg-secondary rounded-xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                          <span className="text-2xl">{pt.emoji}</span>
+                          <span className="text-xs font-semibold text-foreground">{isTr ? pt.tr : pt.en}</span>
+                          <span className="text-[9px] text-muted-foreground">{isTr ? pt.desc.tr : pt.desc.en}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={() => setManualStep("pot")} className="text-xs text-primary font-medium">
                       ← {isTr ? "Geri" : "Back"}
                     </button>
                   </div>
@@ -447,7 +468,7 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                         </button>
                       ))}
                     </div>
-                    <button onClick={() => setManualStep("pot")} className="text-xs text-primary font-medium">
+                    <button onClick={() => setManualStep("potType")} className="text-xs text-primary font-medium">
                       ← {isTr ? "Geri" : "Back"}
                     </button>
                   </div>
@@ -456,13 +477,17 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                 {manualStep === "amount" && (
                   <div className="space-y-2">
                     <p className="text-sm font-semibold text-foreground">{isTr ? "Sulama Miktarı" : "Watering Amount"}</p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1.5">
                       {amountOptions.map(ao => (
                         <button key={ao.key} onClick={() => { setManualData({ ...manualData, amount: isTr ? ao.tr : ao.en }); }}
-                          className={`rounded-xl p-3 text-sm text-center transition-colors ${
-                            manualData.amount === (isTr ? ao.tr : ao.en) ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary/10"
+                          className={`w-full rounded-xl p-3 flex items-center gap-3 transition-colors ${
+                            manualData.amount === (isTr ? ao.tr : ao.en) ? "bg-primary/10 border-2 border-primary" : "bg-secondary hover:bg-primary/5"
                           }`}>
-                          {isTr ? ao.tr : ao.en}
+                          <span className="text-xl">{ao.emoji}</span>
+                          <div className="flex-1 text-left">
+                            <span className="text-sm font-semibold text-foreground">{isTr ? ao.tr : ao.en}</span>
+                            <p className="text-[10px] text-muted-foreground">{isTr ? ao.hint.tr : ao.hint.en}</p>
+                          </div>
                         </button>
                       ))}
                     </div>
