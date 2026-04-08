@@ -51,7 +51,7 @@ function recordWaterScan() {
 }
 
 type AnalysisMode = "none" | "choose" | "registered" | "new_photo" | "new_manual";
-type ManualStep = "type" | "pot" | "frequency" | "amount" | "analyzing";
+type ManualStep = "type" | "pot" | "potType" | "frequency" | "amount" | "analyzing";
 
 const potSizes = [
   { key: "small", tr: "Küçük (10-15 cm)", en: "Small (10-15 cm)", emoji: "🪴", hint: { tr: "Kahve fincanı boyutu", en: "Coffee cup size" } },
