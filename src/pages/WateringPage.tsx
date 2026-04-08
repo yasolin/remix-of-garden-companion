@@ -54,10 +54,17 @@ type AnalysisMode = "none" | "choose" | "registered" | "new_photo" | "new_manual
 type ManualStep = "type" | "pot" | "frequency" | "amount" | "analyzing";
 
 const potSizes = [
-  { key: "small", tr: "Küçük (10-15 cm)", en: "Small (10-15 cm)" },
-  { key: "medium", tr: "Orta (15-25 cm)", en: "Medium (15-25 cm)" },
-  { key: "large", tr: "Büyük (25-40 cm)", en: "Large (25-40 cm)" },
-  { key: "xlarge", tr: "Çok Büyük (40+ cm)", en: "Extra Large (40+ cm)" },
+  { key: "small", tr: "Küçük (10-15 cm)", en: "Small (10-15 cm)", emoji: "🪴", hint: { tr: "Kahve fincanı boyutu", en: "Coffee cup size" } },
+  { key: "medium", tr: "Orta (15-25 cm)", en: "Medium (15-25 cm)", emoji: "🌱", hint: { tr: "Tabak boyutu", en: "Plate size" } },
+  { key: "large", tr: "Büyük (25-40 cm)", en: "Large (25-40 cm)", emoji: "🌿", hint: { tr: "Kova boyutu", en: "Bucket size" } },
+  { key: "xlarge", tr: "Çok Büyük (40+ cm)", en: "Extra Large (40+ cm)", emoji: "🌳", hint: { tr: "Çamaşır sepeti boyutu", en: "Laundry basket size" } },
+];
+
+const potTypes = [
+  { key: "holed", emoji: "🕳️", tr: "Delikli Saksı", en: "Drainage Pot", desc: { tr: "Alt kısımda delikler var", en: "Has holes at the bottom" } },
+  { key: "solid", emoji: "🏺", tr: "Deliksiz Saksı", en: "Solid Pot", desc: { tr: "Delik yok, dikkatli sulama", en: "No holes, careful watering" } },
+  { key: "transparent", emoji: "🫙", tr: "Şeffaf Saksı", en: "Transparent Pot", desc: { tr: "Kök gelişimini izleyin", en: "Monitor root growth" } },
+  { key: "selfwater", emoji: "💧", tr: "Kendinden Sulu", en: "Self-Watering", desc: { tr: "Hazne ile otomatik sulama", en: "Auto-watering reservoir" } },
 ];
 
 const frequencyOptions = [
