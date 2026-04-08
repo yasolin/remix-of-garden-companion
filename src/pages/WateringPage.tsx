@@ -97,7 +97,7 @@ const WateringPage = () => {
 
   // AI analysis flow
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("none");
-  const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
+  
   const [manualStep, setManualStep] = useState<ManualStep>("type");
   const [manualData, setManualData] = useState({ plantType: "", potSize: "", potType: "", frequency: "", amount: "" });
 
