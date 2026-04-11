@@ -26,6 +26,11 @@ const KVKK_TEXT_EN = `By registering to Garden Pot, you agree to the following t
 • You can request the deletion of your data at any time.
 • Please review our privacy policy for detailed information.`;
 
+const languages = [
+  { code: "tr", label: "🇹🇷 TR" },
+  { code: "en", label: "🇬🇧 EN" },
+];
+
 const AuthPage = () => {
   const { t, i18n } = useTranslation();
   const [mode, setMode] = useState<AuthMode>("login");
@@ -42,6 +47,11 @@ const AuthPage = () => {
   const [emailSent, setEmailSent] = useState(false);
   const [kvkkAccepted, setKvkkAccepted] = useState(false);
   const [showKvkk, setShowKvkk] = useState(false);
+
+  const changeLang = (code: string) => {
+    i18n.changeLanguage(code);
+    localStorage.setItem("gardenPotLang", code);
+  };
 
   const handleSubmit = async () => {
     if (!email || !password) return;
@@ -60,13 +70,8 @@ const AuthPage = () => {
           },
         });
         if (error) throw error;
-
-        // Update profile with extra fields after signup
-        // The trigger will create the profile, we update it after
         setEmailSent(true);
         toast({ title: "✅", description: t("auth.verifyEmail") });
-
-        // Send notification to app owner
         try {
           await supabase.functions.invoke("notify-new-user", {
             body: { email, displayName, surname, gender, age, phone },
@@ -104,6 +109,20 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Language selector top-right */}
+      <div className="flex justify-end px-4 pt-3">
+        <div className="flex items-center gap-1 bg-secondary rounded-xl p-1">
+          {languages.map(lang => (
+            <button key={lang.code} onClick={() => changeLang(lang.code)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                i18n.language === lang.code ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              }`}>
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center gap-2 mb-8">
@@ -216,7 +235,7 @@ const AuthPage = () => {
           )}
 
           <motion.button whileTap={{ scale: 0.97 }} onClick={handleSubmit} disabled={loading}
-            className="w-full gradient-harvest text-primary-foreground font-bold py-3 rounded-xl disabled:opacity-50">
+            className="w-full gradient-harvest text-primary-foreground font-bold py-3.5 rounded-xl disabled:opacity-50 active:opacity-80 touch-manipulation">
             {loading ? "..." : mode === "login" ? t("auth.loginBtn") : t("auth.signupBtn")}
           </motion.button>
         </motion.div>
