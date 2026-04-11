@@ -1,4 +1,4 @@
-import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, Palette, UserX, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Settings, Bell, HelpCircle, LogOut, ChevronRight, Leaf, Globe, Shield, Star, User, Edit3, Plus, Sun, Droplets, Camera, Trash2, Award, Crown, Zap, Target, LayoutGrid, LayoutList, Palette } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
@@ -14,7 +14,7 @@ const languages = [
   { code: "en", label: "English", flag: "🇬🇧" },
 ];
 
-type ProfileView = "main" | "editProfile" | "settingsMenu" | "premium" | "accountManage";
+type ProfileView = "main" | "editProfile" | "settingsMenu" | "premium";
 type AppTheme = "green" | "light" | "dark";
 
 const ProfilePage = () => {
@@ -40,8 +40,6 @@ const ProfilePage = () => {
   const [plantSortBy, setSortBy] = useState<"name" | "date" | "harvest">(() => {
     return (localStorage.getItem("gardenPotPlantSort") as any) || "name";
   });
-  const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
@@ -52,7 +50,7 @@ const ProfilePage = () => {
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("*").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles" as any).select("*").eq("id", user!.id).maybeSingle();
       const p = data as any;
       if (p) {
         setDisplayName(p.display_name || "");
@@ -126,7 +124,7 @@ const ProfilePage = () => {
       if (error) throw error;
       const { data } = supabase.storage.from("plant-photos").getPublicUrl(path);
       const url = data.publicUrl;
-      await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
+      await supabase.from("profiles" as any).update({ avatar_url: url } as any).eq("id", user.id);
       setAvatarUrl(url);
       toast({ title: "✅", description: t("profile.photoUpdated") });
     } catch (e: any) {
@@ -136,7 +134,7 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("user_id", user.id);
+    const { error } = await supabase.from("profiles" as any).update({ display_name: displayName } as any).eq("id", user.id);
     if (error) toast({ title: "❌", description: error.message, variant: "destructive" });
     else { toast({ title: "✅", description: t("profile.saveProfile") }); refetchProfile(); setView("main"); }
   };
@@ -154,20 +152,11 @@ const ProfilePage = () => {
 
   const handleLogout = async () => { await signOut(); };
 
-  const handleDeleteAccount = async () => {
-    if (!user) return;
-    // Sign out and show message
-    toast({ title: "⚠️", description: i18n.language === "tr" ? "Hesap silme talebi alındı. Verileriniz 30 gün içinde silinecektir." : "Account deletion request received. Your data will be deleted within 30 days." });
-    await signOut();
-  };
-
-  const isTr = i18n.language === "tr";
-
   const achievements = [
-    { icon: Leaf, label: t("profile.firstPlanting"), color: "bg-primary/15 text-primary", unlocked: plants.length > 0, reason: isTr ? "İlk bitkini ekleyerek bu rozeti kazandın!" : "You earned this by adding your first plant!" },
-    { icon: Droplets, label: t("profile.loyalWaterer"), color: "bg-blue-500/15 text-blue-500", unlocked: plants.some(p => !p.needs_watering), reason: isTr ? "Bitkilerini düzenli sulayarak bu rozeti kazandın!" : "You earned this by watering your plants regularly!" },
-    { icon: Target, label: t("profile.firstHarvest"), color: "bg-accent/15 text-accent", unlocked: plants.some(p => (p.days_to_harvest ?? 30) <= 0), reason: isTr ? "İlk hasatını yaparak bu rozeti kazandın!" : "You earned this by completing your first harvest!" },
-    { icon: Crown, label: t("profile.plantFriend"), color: "bg-purple-500/15 text-purple-500", unlocked: plants.length >= 5, reason: isTr ? "5 veya daha fazla bitki ekleyerek bu rozeti kazandın!" : "You earned this by adding 5 or more plants!" },
+    { icon: Leaf, label: t("profile.firstPlanting"), color: "bg-primary/15 text-primary", unlocked: plants.length > 0 },
+    { icon: Droplets, label: t("profile.loyalWaterer"), color: "bg-blue-500/15 text-blue-500", unlocked: plants.some(p => !p.needs_watering) },
+    { icon: Target, label: t("profile.firstHarvest"), color: "bg-accent/15 text-accent", unlocked: plants.some(p => (p.days_to_harvest ?? 30) <= 0) },
+    { icon: Crown, label: t("profile.plantFriend"), color: "bg-purple-500/15 text-purple-500", unlocked: plants.length >= 5 },
   ];
 
   // Edit Profile sub-view
@@ -207,65 +196,6 @@ const ProfilePage = () => {
             className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl">
             {t("profile.saveProfile")}
           </motion.button>
-        </div>
-      </div>
-    );
-  }
-
-  // Account management sub-view
-  if (view === "accountManage") {
-    return (
-      <div className="pb-24 max-w-lg mx-auto">
-        <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-          <button onClick={() => setView("settingsMenu")} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          <h1 className="text-xl font-bold text-foreground">{isTr ? "Hesap Yönetimi" : "Account Management"}</h1>
-        </div>
-        <div className="px-4 mt-4 space-y-4">
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
-              <UserX className="w-4 h-4" /> {isTr ? "Hesabı Devre Dışı Bırak" : "Deactivate Account"}
-            </h3>
-            <p className="text-xs text-muted-foreground mb-3">
-              {isTr ? "Hesabınız geçici olarak devre dışı bırakılır. Tekrar giriş yaptığınızda hesabınız aktif olur." : "Your account will be temporarily deactivated. It will reactivate when you log in again."}
-            </p>
-            <button onClick={handleLogout}
-              className="w-full bg-secondary text-foreground font-semibold py-2.5 rounded-xl text-sm">
-              {isTr ? "Hesabı Devre Dışı Bırak" : "Deactivate Account"}
-            </button>
-          </div>
-
-          <div className="bg-card rounded-xl p-4 border border-destructive/30">
-            <h3 className="text-sm font-bold text-destructive mb-2 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" /> {isTr ? "Hesabı Sil" : "Delete Account"}
-            </h3>
-            <p className="text-xs text-muted-foreground mb-3">
-              {isTr ? "Hesabınız ve tüm verileriniz kalıcı olarak silinir. Bu işlem geri alınamaz." : "Your account and all data will be permanently deleted. This action cannot be undone."}
-            </p>
-            {!deleteConfirm ? (
-              <button onClick={() => setDeleteConfirm(true)}
-                className="w-full bg-destructive/10 text-destructive font-semibold py-2.5 rounded-xl text-sm">
-                {isTr ? "Hesabı Sil" : "Delete Account"}
-              </button>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-xs text-destructive font-semibold">
-                  {isTr ? "Emin misiniz? Bu işlem geri alınamaz!" : "Are you sure? This cannot be undone!"}
-                </p>
-                <div className="flex gap-2">
-                  <button onClick={() => setDeleteConfirm(false)}
-                    className="flex-1 bg-secondary text-foreground font-semibold py-2.5 rounded-xl text-sm">
-                    {isTr ? "Vazgeç" : "Cancel"}
-                  </button>
-                  <button onClick={handleDeleteAccount}
-                    className="flex-1 bg-destructive text-destructive-foreground font-semibold py-2.5 rounded-xl text-sm">
-                    {isTr ? "Evet, Sil" : "Yes, Delete"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     );
@@ -349,7 +279,6 @@ const ProfilePage = () => {
               ))}
             </div>
           </div>
-
           <div className="bg-card rounded-xl p-4 border border-border">
             <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
               <Shield className="w-4 h-4" /> {t("profile.privacy")}
@@ -357,25 +286,12 @@ const ProfilePage = () => {
             <p className="text-xs text-muted-foreground">{t("profile.privacyText")}</p>
           </div>
 
-          <div className="bg-card rounded-xl p-4 border border-border">
+        <div className="bg-card rounded-xl p-4 border border-border">
             <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
               <HelpCircle className="w-4 h-4" /> {t("profile.help")}
             </h3>
             <p className="text-xs text-muted-foreground">{t("profile.helpText")}</p>
           </div>
-
-          {/* Account Management */}
-          <button onClick={() => setView("accountManage")}
-            className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-secondary transition-colors">
-            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-              <UserX className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="text-sm font-semibold text-foreground">{isTr ? "Hesap Yönetimi" : "Account Management"}</span>
-              <p className="text-[11px] text-muted-foreground">{isTr ? "Hesap deaktive etme veya silme" : "Deactivate or delete account"}</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
 
           <button onClick={handleLogout}
             className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-destructive/5 transition-colors">
@@ -409,6 +325,7 @@ const ProfilePage = () => {
           <h1 className="text-xl font-bold text-foreground">{t("profile.premiumTitle")}</h1>
         </div>
 
+        {/* Premium hero */}
         <div className="mx-4 mt-4 bg-gradient-to-br from-primary/10 via-accent/5 to-purple-500/10 rounded-2xl p-6 border border-primary/20">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
@@ -483,7 +400,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Profile card */}
+      {/* Profile card - social style */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="mx-4 mt-3 bg-card rounded-2xl p-5 border border-border shadow-card">
         <div className="flex flex-col items-center">
@@ -517,7 +434,7 @@ const ProfilePage = () => {
         </div>
       </motion.div>
 
-      {/* Achievements */}
+      {/* Achievements - modern badges */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="mx-4 mt-3 bg-card rounded-2xl p-4 shadow-card border border-border">
         <div className="flex items-center justify-between mb-3">
@@ -527,32 +444,18 @@ const ProfilePage = () => {
         </div>
         <div className="grid grid-cols-4 gap-2">
           {achievements.map((badge) => (
-            <button key={badge.label} onClick={() => setSelectedBadge(selectedBadge === badge.label ? null : badge.label)}
-              className="flex flex-col items-center gap-1.5">
+            <div key={badge.label} className="flex flex-col items-center gap-1.5">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
                 badge.unlocked ? badge.color : "bg-muted/50 text-muted-foreground/30"
-              } ${selectedBadge === badge.label ? "ring-2 ring-primary" : ""}`}>
+              }`}>
                 <badge.icon className="w-6 h-6" />
               </div>
               <span className={`text-[9px] font-semibold text-center leading-tight ${
                 badge.unlocked ? "text-foreground" : "text-muted-foreground/50"
               }`}>{badge.label}</span>
-            </button>
+            </div>
           ))}
         </div>
-        {selectedBadge && (
-          <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-            className="mt-3 bg-secondary rounded-xl p-3">
-            <p className="text-xs text-foreground">
-              {achievements.find(a => a.label === selectedBadge)?.reason}
-            </p>
-            {!achievements.find(a => a.label === selectedBadge)?.unlocked && (
-              <p className="text-[10px] text-muted-foreground mt-1">
-                {isTr ? "🔒 Bu rozeti henüz kazanmadınız" : "🔒 You haven't earned this badge yet"}
-              </p>
-            )}
-          </motion.div>
-        )}
       </motion.div>
 
       {/* My Plants */}
@@ -560,6 +463,7 @@ const ProfilePage = () => {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-foreground">{t("profile.myPlants")}</h3>
           <div className="flex items-center gap-2">
+            {/* Sort */}
             <select value={plantSortBy} onChange={e => {
               const val = e.target.value as any;
               setSortBy(val);
@@ -570,6 +474,7 @@ const ProfilePage = () => {
               <option value="date">{t("profile.sortDate")}</option>
               <option value="harvest">{t("profile.sortHarvest")}</option>
             </select>
+            {/* View toggle */}
             <button onClick={() => {
               const newMode = plantViewMode === "list" ? "grid" : "list";
               setPlantViewMode(newMode);
@@ -686,6 +591,7 @@ const ProfilePage = () => {
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </motion.button>
+
       </div>
 
       <p className="text-center text-[10px] text-muted-foreground mt-6 mb-4">Garden Pot v1.0.0 🌿</p>

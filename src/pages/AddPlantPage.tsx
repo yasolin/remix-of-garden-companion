@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, PenLine, Sparkles, Save, HelpCircle } from "lucide-react";
+import { ArrowLeft, Camera, PenLine, Sparkles, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
@@ -22,10 +22,6 @@ const AddPlantPage = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
-  // AI confidence
-  const [aiAlternatives, setAiAlternatives] = useState<string[]>([]);
-  const [showAlternatives, setShowAlternatives] = useState(false);
-
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id || null));
   }, []);
@@ -38,8 +34,6 @@ const AddPlantPage = () => {
   });
 
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
-
-  const isTr = i18n.language === "tr";
 
   const stageLabels: Record<string, string> = {
     planting: t("stages.planting"), germination: t("stages.germination"),
@@ -78,14 +72,6 @@ const AddPlantPage = () => {
             fertilizer: result.fertilizer || "",
             notes: result.notes || "",
           }));
-          // Parse alternatives if available
-          if (result.alternatives) {
-            const alts = typeof result.alternatives === "string"
-              ? result.alternatives.split(",").map((s: string) => s.trim())
-              : Array.isArray(result.alternatives) ? result.alternatives : [];
-            setAiAlternatives(alts.filter(Boolean));
-            if (alts.length > 0) setShowAlternatives(true);
-          }
           setMode("manual");
         } catch (e: any) {
           toast({ title: "AI Error", description: e.message, variant: "destructive" });
@@ -102,7 +88,7 @@ const AddPlantPage = () => {
 
   const handleSave = async () => {
     if (!userId) {
-      toast({ title: "⚠️", description: isTr ? "Lütfen giriş yapın" : "Please sign in", variant: "destructive" });
+      toast({ title: "⚠️", description: "Please sign in to save plants", variant: "destructive" });
       return;
     }
     try {
@@ -111,6 +97,7 @@ const AddPlantPage = () => {
         photoUrl = await uploadPlantPhoto(userId, photoFile);
       }
 
+      // Auto-set needs_watering to true when a plant is added
       await insertPlant({
         user_id: userId,
         name: form.name,
@@ -155,7 +142,7 @@ const AddPlantPage = () => {
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
           onChange={(e) => e.target.files?.[0] && handleAiPhotoSelected(e.target.files[0])} />
         <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-lg hover:bg-secondary touch-manipulation">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <h1 className="text-xl font-bold text-foreground">{t("add.title")}</h1>
@@ -163,7 +150,7 @@ const AddPlantPage = () => {
         <div className="px-4 mt-8 space-y-4">
           <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             onClick={() => setMode("manual")}
-            className="w-full bg-card rounded-2xl p-6 shadow-card border border-border flex items-center gap-4 hover:bg-secondary transition-colors touch-manipulation active:scale-[0.98]">
+            className="w-full bg-card rounded-2xl p-6 shadow-card border border-border flex items-center gap-4 hover:bg-secondary transition-colors">
             <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
               <PenLine className="w-7 h-7 text-primary" />
             </div>
@@ -174,7 +161,7 @@ const AddPlantPage = () => {
           </motion.button>
           <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             onClick={handleAiAnalyze}
-            className="w-full gradient-help rounded-2xl p-6 shadow-card flex items-center gap-4 touch-manipulation active:scale-[0.98]">
+            className="w-full gradient-help rounded-2xl p-6 shadow-card flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
               <Sparkles className="w-7 h-7 text-primary-foreground" />
             </div>
@@ -205,7 +192,7 @@ const AddPlantPage = () => {
   return (
     <div className="pb-24 max-w-lg mx-auto">
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-        <button onClick={() => setMode("select")} className="p-2 -ml-2 rounded-lg hover:bg-secondary touch-manipulation">
+        <button onClick={() => setMode("select")} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
         <h1 className="text-xl font-bold text-foreground">{t("add.plantInfo")}</h1>
@@ -219,43 +206,18 @@ const AddPlantPage = () => {
           <div className="relative">
             <img src={photoPreview} alt="Plant" className="w-full h-40 rounded-2xl object-cover" />
             <button onClick={() => fileRef.current?.click()}
-              className="absolute bottom-2 right-2 bg-background/60 backdrop-blur-sm rounded-full p-2 touch-manipulation">
+              className="absolute bottom-2 right-2 bg-background/60 backdrop-blur-sm rounded-full p-2">
               <Camera className="w-5 h-5 text-foreground" />
             </button>
           </div>
         ) : (
           <button onClick={() => fileRef.current?.click()}
-            className="w-full h-40 rounded-2xl border-2 border-dashed border-border bg-secondary/50 flex flex-col items-center justify-center gap-2 hover:bg-secondary transition-colors touch-manipulation">
+            className="w-full h-40 rounded-2xl border-2 border-dashed border-border bg-secondary/50 flex flex-col items-center justify-center gap-2 hover:bg-secondary transition-colors">
             <Camera className="w-8 h-8 text-muted-foreground" />
             <span className="text-sm font-semibold text-muted-foreground">{t("add.addPhoto")}</span>
           </button>
         )}
       </div>
-
-      {/* AI confidence alternatives */}
-      {showAlternatives && aiAlternatives.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mt-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <HelpCircle className="w-4 h-4 text-amber-600" />
-            <span className="text-xs font-semibold text-foreground">
-              {isTr ? "Bu bitki doğru mu? Diğer olasılıklar:" : "Is this correct? Other possibilities:"}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {aiAlternatives.map((alt, i) => (
-              <button key={i} onClick={() => { setForm(prev => ({ ...prev, name: alt })); setShowAlternatives(false); }}
-                className="bg-card px-3 py-1.5 rounded-full text-xs font-medium text-foreground border border-border hover:bg-primary/10 transition-colors touch-manipulation">
-                {alt}
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setShowAlternatives(false)}
-            className="text-[10px] text-primary font-semibold mt-2">
-            {isTr ? "✓ Evet, doğru" : "✓ Yes, it's correct"}
-          </button>
-        </motion.div>
-      )}
 
       <div className="px-4 mt-4 space-y-3">
         {fields.map((field) => (
@@ -278,7 +240,7 @@ const AddPlantPage = () => {
           <div className="flex gap-2 mt-2 flex-wrap">
             {stages.map((stage) => (
               <button key={stage} onClick={() => setForm({ ...form, currentStage: stage })}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors touch-manipulation ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                   form.currentStage === stage ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
                 }`}>{stageLabels[stage]}</button>
             ))}
@@ -293,7 +255,7 @@ const AddPlantPage = () => {
         </div>
 
         <motion.button whileTap={{ scale: 0.97 }} onClick={handleSave}
-          className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-xl flex items-center justify-center gap-2 mt-2 touch-manipulation active:opacity-80">
+          className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 mt-2">
           <Save className="w-5 h-5" /> {t("add.savePlant")}
         </motion.button>
       </div>
