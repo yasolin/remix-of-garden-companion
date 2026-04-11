@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Phone, Briefcase, Calendar, Users, Globe } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Phone, Briefcase, Calendar, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
