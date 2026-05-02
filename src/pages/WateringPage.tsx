@@ -118,6 +118,15 @@ const WateringPage = () => {
     enabled: !!user,
   });
 
+  // Fetch watering events for current month +/- range
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+  const { data: events = [] } = useQuery({
+    queryKey: ["watering_events", user?.id, today.getFullYear(), today.getMonth()],
+    queryFn: () => fetchUserWateringEvents(user!.id, monthStart, monthEnd),
+    enabled: !!user,
+  });
+
   useEffect(() => {
     const fetchWeather = async () => {
       try {
