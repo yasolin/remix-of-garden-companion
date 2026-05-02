@@ -50,7 +50,7 @@ const ProfilePage = () => {
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles" as any).select("*").eq("id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles" as any).select("*").eq("user_id", user!.id).maybeSingle();
       const p = data as any;
       if (p) {
         setDisplayName(p.display_name || "");
