@@ -134,9 +134,36 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    const { error } = await supabase.from("profiles" as any).update({ display_name: displayName } as any).eq("id", user.id);
+    const { error } = await supabase.from("profiles" as any).update({ display_name: displayName } as any).eq("user_id", user.id);
     if (error) toast({ title: "❌", description: error.message, variant: "destructive" });
     else { toast({ title: "✅", description: t("profile.saveProfile") }); refetchProfile(); setView("main"); }
+  };
+
+  const handleFreezeAccount = async () => {
+    if (!user) return;
+    if (!confirm(i18n.language === "tr" ? "Hesabınızı dondurmak istediğinize emin misiniz? Tekrar giriş yaptığınızda aktif olacaktır." : "Are you sure you want to freeze your account? It will reactivate on next login.")) return;
+    try {
+      await supabase.from("profiles" as any).update({ account_status: "frozen", frozen_at: new Date().toISOString() } as any).eq("user_id", user.id);
+      toast({ title: "❄️", description: i18n.language === "tr" ? "Hesabınız donduruldu" : "Account frozen" });
+      await signOut();
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    const confirm1 = confirm(i18n.language === "tr" ? "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz." : "Are you sure you want to delete your account? This cannot be undone.");
+    if (!confirm1) return;
+    const confirm2 = confirm(i18n.language === "tr" ? "Tüm verileriniz silinecek. Devam edilsin mi?" : "All your data will be deleted. Continue?");
+    if (!confirm2) return;
+    try {
+      await supabase.from("profiles" as any).update({ account_status: "deletion_requested", deletion_requested_at: new Date().toISOString() } as any).eq("user_id", user.id);
+      toast({ title: "🗑️", description: i18n.language === "tr" ? "Hesap silme talebiniz alındı" : "Deletion request received" });
+      await signOut();
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    }
   };
 
   const handleDeletePlant = async (plantId: string, plantName: string) => {
