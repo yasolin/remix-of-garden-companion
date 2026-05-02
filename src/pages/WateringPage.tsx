@@ -4,9 +4,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
+import {
+  fetchUserWateringEvents,
+  completeWateringEvent,
+  uncompleteWateringEvent,
+  generateWateringPlan,
+  frequencyToDays,
+} from "@/lib/wateringService";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const waterAmounts: Record<string, string> = {
   domates: "250 ml", tomato: "250 ml", biber: "200 ml", pepper: "200 ml",
@@ -104,9 +112,20 @@ const WateringPage = () => {
   // View mode: list or calendar
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
+  const today = new Date();
+
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
     queryFn: () => fetchUserPlants(user!.id),
+    enabled: !!user,
+  });
+
+  // Fetch watering events for current month +/- range
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+  const { data: events = [] } = useQuery({
+    queryKey: ["watering_events", user?.id, today.getFullYear(), today.getMonth()],
+    queryFn: () => fetchUserWateringEvents(user!.id, monthStart, monthEnd),
     enabled: !!user,
   });
 
@@ -136,10 +155,51 @@ const WateringPage = () => {
   ];
 
   const handleWater = async (id: string) => {
+    if (!user) return;
     try {
-      await updatePlant(id, { needs_watering: false });
+      const plant = plants.find(p => p.id === id);
+      const intervalDays = plant?.watering_interval_days ?? frequencyToDays(plant?.water_frequency || "");
+
+      // Find an existing scheduled event for today/past, else create a completed event
+      const now = new Date();
+      const todayEvent = events.find(e =>
+        e.plant_id === id && e.status === "scheduled" &&
+        new Date(e.scheduled_at) <= now
+      );
+
+      if (todayEvent) {
+        await completeWateringEvent(todayEvent.id);
+      } else {
+        // Insert a completed event right now
+        await supabase.from("watering_events").insert({
+          user_id: user.id,
+          plant_id: id,
+          scheduled_at: now.toISOString(),
+          completed_at: now.toISOString(),
+          status: "completed",
+          amount_ml: plant?.watering_amount_ml ?? null,
+        });
+        // Make sure plant has a forward-looking plan
+        const hasFuture = events.some(e =>
+          e.plant_id === id && e.status === "scheduled" && new Date(e.scheduled_at) > now
+        );
+        if (!hasFuture) {
+          await generateWateringPlan({
+            userId: user.id,
+            plantId: id,
+            intervalDays,
+            amountMl: plant?.watering_amount_ml ?? undefined,
+            startDate: now,
+            occurrences: 12,
+          });
+        } else {
+          await updatePlant(id, { last_watered_at: now.toISOString(), needs_watering: false });
+        }
+      }
+
       setRecentlyWatered(prev => [...prev, id]);
       queryClient.invalidateQueries({ queryKey: ["plants"] });
+      queryClient.invalidateQueries({ queryKey: ["watering_events"] });
       toast({ title: "💧", description: t("watering.watered") });
     } catch (e: any) {
       toast({ title: "❌", description: e.message, variant: "destructive" });
@@ -147,10 +207,23 @@ const WateringPage = () => {
   };
 
   const handleUndo = async (id: string) => {
+    if (!user) return;
     try {
+      // Find latest completed event for this plant today
+      const { data: latest } = await supabase
+        .from("watering_events")
+        .select("*")
+        .eq("plant_id", id)
+        .eq("status", "completed")
+        .order("completed_at", { ascending: false })
+        .limit(1);
+      if (latest && latest[0]) {
+        await uncompleteWateringEvent(latest[0].id);
+      }
       await updatePlant(id, { needs_watering: true });
       setRecentlyWatered(prev => prev.filter(pid => pid !== id));
       queryClient.invalidateQueries({ queryKey: ["plants"] });
+      queryClient.invalidateQueries({ queryKey: ["watering_events"] });
       toast({ title: "↩️", description: t("watering.undone") });
     } catch (e: any) {
       toast({ title: "❌", description: e.message, variant: "destructive" });
@@ -260,9 +333,20 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
   const isTr = i18n.language === "tr";
 
   // Calendar view helpers
-  const today = new Date();
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   const firstDayOfWeek = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+
+  // Group events by day
+  const eventsByDay = new Map<number, typeof events>();
+  events.forEach(ev => {
+    const d = new Date(ev.scheduled_at);
+    if (d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()) {
+      const day = d.getDate();
+      const arr = eventsByDay.get(day) || [];
+      arr.push(ev);
+      eventsByDay.set(day, arr);
+    }
+  });
 
   return (
     <div className="pb-24 max-w-lg mx-auto">
@@ -551,26 +635,34 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                 const day = i + 1;
                 const isToday = day === today.getDate();
                 const isPast = day < today.getDate();
-                const hasWatering = wateringPlants.length > 0 && isToday;
-                const wasWatered = isPast && wateredPlants.length > 0;
+                const dayEvents = eventsByDay.get(day) || [];
+                const completedCount = dayEvents.filter(e => e.status === "completed").length;
+                const scheduledCount = dayEvents.filter(e => e.status === "scheduled").length;
                 return (
-                  <div key={day} className={`relative w-full aspect-square flex items-center justify-center rounded-lg text-xs ${
-                    isToday ? "bg-primary text-primary-foreground font-bold" : "text-foreground"
-                  }`}>
+                  <div key={day}
+                    title={dayEvents.map(e => {
+                      const p = plants.find(pl => pl.id === e.plant_id);
+                      return `${p?.name || ""} (${e.status})`;
+                    }).join(", ")}
+                    className={`relative w-full aspect-square flex items-center justify-center rounded-lg text-xs ${
+                      isToday ? "bg-primary text-primary-foreground font-bold" : "text-foreground"
+                    }`}>
                     {day}
-                    {hasWatering && <div className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                    {wasWatered && !isToday && <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-primary/40" />}
-                    {!isPast && !isToday && wateringPlants.length > 0 && day % 3 === 0 && (
-                      <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-blue-300/50" />
-                    )}
+                    <div className="absolute bottom-0.5 flex gap-0.5">
+                      {completedCount > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />}
+                      {scheduledCount > 0 && (
+                        <div className={`w-1.5 h-1.5 rounded-full ${isPast ? "bg-destructive/50" : isToday ? "bg-blue-500" : "bg-blue-300"}`} />
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
-            <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün sulama" : "Water today"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/40" /> {isTr ? "Geçmiş" : "Past"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300/50" /> {isTr ? "Planlanan" : "Planned"}</div>
+            <div className="flex flex-wrap items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/60" /> {isTr ? "Tamamlandı" : "Completed"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün" : "Today"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300" /> {isTr ? "Planlanan" : "Planned"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive/50" /> {isTr ? "Kaçırıldı" : "Missed"}</div>
             </div>
           </div>
         </div>

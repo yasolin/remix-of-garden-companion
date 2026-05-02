@@ -155,12 +155,16 @@ export type Database = {
           fertilizer: string | null
           humidity: string | null
           id: string
+          last_watered_at: string | null
           name: string
           needs_watering: boolean | null
+          next_watering_at: string | null
           notes: string | null
           photo_url: string | null
           placement: string | null
           planted_date: string | null
+          pot_size: string | null
+          pot_type: string | null
           scientific_name: string | null
           soil_type: string | null
           sunlight: string | null
@@ -169,6 +173,8 @@ export type Database = {
           updated_at: string
           user_id: string
           water_frequency: string | null
+          watering_amount_ml: number | null
+          watering_interval_days: number | null
           wind_sensitivity: string | null
         }
         Insert: {
@@ -178,12 +184,16 @@ export type Database = {
           fertilizer?: string | null
           humidity?: string | null
           id?: string
+          last_watered_at?: string | null
           name: string
           needs_watering?: boolean | null
+          next_watering_at?: string | null
           notes?: string | null
           photo_url?: string | null
           placement?: string | null
           planted_date?: string | null
+          pot_size?: string | null
+          pot_type?: string | null
           scientific_name?: string | null
           soil_type?: string | null
           sunlight?: string | null
@@ -192,6 +202,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           water_frequency?: string | null
+          watering_amount_ml?: number | null
+          watering_interval_days?: number | null
           wind_sensitivity?: string | null
         }
         Update: {
@@ -201,12 +213,16 @@ export type Database = {
           fertilizer?: string | null
           humidity?: string | null
           id?: string
+          last_watered_at?: string | null
           name?: string
           needs_watering?: boolean | null
+          next_watering_at?: string | null
           notes?: string | null
           photo_url?: string | null
           placement?: string | null
           planted_date?: string | null
+          pot_size?: string | null
+          pot_type?: string | null
           scientific_name?: string | null
           soil_type?: string | null
           sunlight?: string | null
@@ -215,16 +231,21 @@ export type Database = {
           updated_at?: string
           user_id?: string
           water_frequency?: string | null
+          watering_amount_ml?: number | null
+          watering_interval_days?: number | null
           wind_sensitivity?: string | null
         }
         Relationships: []
       }
       profiles: {
         Row: {
+          account_status: string
           age: number | null
           avatar_url: string | null
           created_at: string
+          deletion_requested_at: string | null
           display_name: string | null
+          frozen_at: string | null
           gender: string | null
           id: string
           kvkk_accepted: boolean | null
@@ -235,10 +256,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_status?: string
           age?: number | null
           avatar_url?: string | null
           created_at?: string
+          deletion_requested_at?: string | null
           display_name?: string | null
+          frozen_at?: string | null
           gender?: string | null
           id?: string
           kvkk_accepted?: boolean | null
@@ -249,10 +273,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_status?: string
           age?: number | null
           avatar_url?: string | null
           created_at?: string
+          deletion_requested_at?: string | null
           display_name?: string | null
+          frozen_at?: string | null
           gender?: string | null
           id?: string
           kvkk_accepted?: boolean | null
@@ -263,6 +290,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      watering_events: {
+        Row: {
+          amount_ml: number | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          plant_id: string
+          scheduled_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_ml?: number | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plant_id: string
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_ml?: number | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plant_id?: string
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watering_events_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
