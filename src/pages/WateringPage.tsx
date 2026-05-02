@@ -155,10 +155,51 @@ const WateringPage = () => {
   ];
 
   const handleWater = async (id: string) => {
+    if (!user) return;
     try {
-      await updatePlant(id, { needs_watering: false });
+      const plant = plants.find(p => p.id === id);
+      const intervalDays = plant?.watering_interval_days ?? frequencyToDays(plant?.water_frequency || "");
+
+      // Find an existing scheduled event for today/past, else create a completed event
+      const now = new Date();
+      const todayEvent = events.find(e =>
+        e.plant_id === id && e.status === "scheduled" &&
+        new Date(e.scheduled_at) <= now
+      );
+
+      if (todayEvent) {
+        await completeWateringEvent(todayEvent.id);
+      } else {
+        // Insert a completed event right now
+        await supabase.from("watering_events").insert({
+          user_id: user.id,
+          plant_id: id,
+          scheduled_at: now.toISOString(),
+          completed_at: now.toISOString(),
+          status: "completed",
+          amount_ml: plant?.watering_amount_ml ?? null,
+        });
+        // Make sure plant has a forward-looking plan
+        const hasFuture = events.some(e =>
+          e.plant_id === id && e.status === "scheduled" && new Date(e.scheduled_at) > now
+        );
+        if (!hasFuture) {
+          await generateWateringPlan({
+            userId: user.id,
+            plantId: id,
+            intervalDays,
+            amountMl: plant?.watering_amount_ml ?? undefined,
+            startDate: now,
+            occurrences: 12,
+          });
+        } else {
+          await updatePlant(id, { last_watered_at: now.toISOString(), needs_watering: false });
+        }
+      }
+
       setRecentlyWatered(prev => [...prev, id]);
       queryClient.invalidateQueries({ queryKey: ["plants"] });
+      queryClient.invalidateQueries({ queryKey: ["watering_events"] });
       toast({ title: "💧", description: t("watering.watered") });
     } catch (e: any) {
       toast({ title: "❌", description: e.message, variant: "destructive" });
@@ -166,10 +207,23 @@ const WateringPage = () => {
   };
 
   const handleUndo = async (id: string) => {
+    if (!user) return;
     try {
+      // Find latest completed event for this plant today
+      const { data: latest } = await supabase
+        .from("watering_events")
+        .select("*")
+        .eq("plant_id", id)
+        .eq("status", "completed")
+        .order("completed_at", { ascending: false })
+        .limit(1);
+      if (latest && latest[0]) {
+        await uncompleteWateringEvent(latest[0].id);
+      }
       await updatePlant(id, { needs_watering: true });
       setRecentlyWatered(prev => prev.filter(pid => pid !== id));
       queryClient.invalidateQueries({ queryKey: ["plants"] });
+      queryClient.invalidateQueries({ queryKey: ["watering_events"] });
       toast({ title: "↩️", description: t("watering.undone") });
     } catch (e: any) {
       toast({ title: "❌", description: e.message, variant: "destructive" });
