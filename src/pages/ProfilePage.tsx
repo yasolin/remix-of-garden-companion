@@ -119,12 +119,12 @@ const ProfilePage = () => {
     if (!user) return;
     try {
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `avatars/${user.id}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("plant-photos").upload(path, file);
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("avatars").upload(path, file);
       if (error) throw error;
-      const { data } = supabase.storage.from("plant-photos").getPublicUrl(path);
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
       const url = data.publicUrl;
-      await supabase.from("profiles" as any).update({ avatar_url: url } as any).eq("id", user.id);
+      await supabase.from("profiles" as any).update({ avatar_url: url } as any).eq("user_id", user.id);
       setAvatarUrl(url);
       toast({ title: "✅", description: t("profile.photoUpdated") });
     } catch (e: any) {
