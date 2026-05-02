@@ -658,10 +658,11 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                 );
               })}
             </div>
-            <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün sulama" : "Water today"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/40" /> {isTr ? "Geçmiş" : "Past"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300/50" /> {isTr ? "Planlanan" : "Planned"}</div>
+            <div className="flex flex-wrap items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/60" /> {isTr ? "Tamamlandı" : "Completed"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün" : "Today"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300" /> {isTr ? "Planlanan" : "Planned"}</div>
+              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive/50" /> {isTr ? "Kaçırıldı" : "Missed"}</div>
             </div>
           </div>
         </div>
