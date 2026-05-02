@@ -4,9 +4,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
+import {
+  fetchUserWateringEvents,
+  completeWateringEvent,
+  uncompleteWateringEvent,
+  generateWateringPlan,
+  frequencyToDays,
+} from "@/lib/wateringService";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const waterAmounts: Record<string, string> = {
   domates: "250 ml", tomato: "250 ml", biber: "200 ml", pepper: "200 ml",
