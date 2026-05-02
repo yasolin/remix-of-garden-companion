@@ -152,6 +152,7 @@ export type Database = {
           created_at: string
           current_stage: number | null
           days_to_harvest: number | null
+          direction: string | null
           fertilizer: string | null
           humidity: string | null
           id: string
@@ -181,6 +182,7 @@ export type Database = {
           created_at?: string
           current_stage?: number | null
           days_to_harvest?: number | null
+          direction?: string | null
           fertilizer?: string | null
           humidity?: string | null
           id?: string
@@ -210,6 +212,7 @@ export type Database = {
           created_at?: string
           current_stage?: number | null
           days_to_harvest?: number | null
+          direction?: string | null
           fertilizer?: string | null
           humidity?: string | null
           id?: string
