@@ -102,8 +102,23 @@ const AuthPage = () => {
 
   const isTr = i18n.language === "tr";
 
+  const switchLang = (code: string) => {
+    i18n.changeLanguage(code);
+    localStorage.setItem("gardenPotLang", code);
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Language switcher top-right */}
+      <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+        <button onClick={() => switchLang("tr")}
+          className={`text-xl px-2 py-1 rounded-lg transition-all ${i18n.language === "tr" ? "bg-primary/15 ring-2 ring-primary/40" : "opacity-50 hover:opacity-100"}`}
+          aria-label="Türkçe">🇹🇷</button>
+        <button onClick={() => switchLang("en")}
+          className={`text-xl px-2 py-1 rounded-lg transition-all ${i18n.language === "en" ? "bg-primary/15 ring-2 ring-primary/40" : "opacity-50 hover:opacity-100"}`}
+          aria-label="English">🇬🇧</button>
+      </div>
+
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center gap-2 mb-8">
