@@ -112,6 +112,8 @@ const WateringPage = () => {
   // View mode: list or calendar
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
+  const today = new Date();
+
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
     queryFn: () => fetchUserPlants(user!.id),
