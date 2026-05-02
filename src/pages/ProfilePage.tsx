@@ -320,6 +320,26 @@ const ProfilePage = () => {
             <p className="text-xs text-muted-foreground">{t("profile.helpText")}</p>
           </div>
 
+          <div className="bg-card rounded-xl p-4 border border-border space-y-2">
+            <h3 className="text-sm font-bold text-foreground mb-1">{i18n.language === "tr" ? "Hesap Yönetimi" : "Account Management"}</h3>
+            <button onClick={handleFreezeAccount}
+              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary text-left">
+              <span className="text-lg">❄️</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">{i18n.language === "tr" ? "Hesabı Dondur" : "Freeze Account"}</p>
+                <p className="text-[11px] text-muted-foreground">{i18n.language === "tr" ? "Geçici olarak hesabı pasifleştir" : "Temporarily disable your account"}</p>
+              </div>
+            </button>
+            <button onClick={handleDeleteAccount}
+              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-destructive/5 text-left">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-destructive">{i18n.language === "tr" ? "Hesabı Sil" : "Delete Account"}</p>
+                <p className="text-[11px] text-muted-foreground">{i18n.language === "tr" ? "Tüm verileri kalıcı olarak sil" : "Permanently delete all data"}</p>
+              </div>
+            </button>
+          </div>
+
           <button onClick={handleLogout}
             className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-destructive/5 transition-colors">
             <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
