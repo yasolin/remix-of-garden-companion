@@ -117,9 +117,10 @@ export async function getUserLikes(userId: string): Promise<Set<string>> {
 
 export async function uploadPostImage(userId: string, file: File): Promise<string> {
   const ext = file.name.split(".").pop() || "jpg";
-  const path = `community/${userId}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("plant-photos").upload(path, file);
+  // RLS expects auth.uid() as first folder segment
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("community-photos").upload(path, file);
   if (error) throw error;
-  const { data } = supabase.storage.from("plant-photos").getPublicUrl(path);
+  const { data } = supabase.storage.from("community-photos").getPublicUrl(path);
   return data.publicUrl;
 }
