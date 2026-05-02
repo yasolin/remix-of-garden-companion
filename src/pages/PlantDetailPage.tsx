@@ -58,6 +58,7 @@ const PlantDetailPage = () => {
         soil_type: plant.soil_type || "",
         fertilizer: plant.fertilizer || "",
         notes: plant.notes || "",
+        direction: plant.direction || "",
       });
     }
   }, [plant?.id]);

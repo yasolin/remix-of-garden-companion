@@ -50,7 +50,7 @@ const ProfilePage = () => {
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles" as any).select("*").eq("id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles" as any).select("*").eq("user_id", user!.id).maybeSingle();
       const p = data as any;
       if (p) {
         setDisplayName(p.display_name || "");
@@ -119,12 +119,12 @@ const ProfilePage = () => {
     if (!user) return;
     try {
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `avatars/${user.id}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("plant-photos").upload(path, file);
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("avatars").upload(path, file);
       if (error) throw error;
-      const { data } = supabase.storage.from("plant-photos").getPublicUrl(path);
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
       const url = data.publicUrl;
-      await supabase.from("profiles" as any).update({ avatar_url: url } as any).eq("id", user.id);
+      await supabase.from("profiles" as any).update({ avatar_url: url } as any).eq("user_id", user.id);
       setAvatarUrl(url);
       toast({ title: "✅", description: t("profile.photoUpdated") });
     } catch (e: any) {
@@ -134,9 +134,36 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    const { error } = await supabase.from("profiles" as any).update({ display_name: displayName } as any).eq("id", user.id);
+    const { error } = await supabase.from("profiles" as any).update({ display_name: displayName } as any).eq("user_id", user.id);
     if (error) toast({ title: "❌", description: error.message, variant: "destructive" });
     else { toast({ title: "✅", description: t("profile.saveProfile") }); refetchProfile(); setView("main"); }
+  };
+
+  const handleFreezeAccount = async () => {
+    if (!user) return;
+    if (!confirm(i18n.language === "tr" ? "Hesabınızı dondurmak istediğinize emin misiniz? Tekrar giriş yaptığınızda aktif olacaktır." : "Are you sure you want to freeze your account? It will reactivate on next login.")) return;
+    try {
+      await supabase.from("profiles" as any).update({ account_status: "frozen", frozen_at: new Date().toISOString() } as any).eq("user_id", user.id);
+      toast({ title: "❄️", description: i18n.language === "tr" ? "Hesabınız donduruldu" : "Account frozen" });
+      await signOut();
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    const confirm1 = confirm(i18n.language === "tr" ? "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz." : "Are you sure you want to delete your account? This cannot be undone.");
+    if (!confirm1) return;
+    const confirm2 = confirm(i18n.language === "tr" ? "Tüm verileriniz silinecek. Devam edilsin mi?" : "All your data will be deleted. Continue?");
+    if (!confirm2) return;
+    try {
+      await supabase.from("profiles" as any).update({ account_status: "deletion_requested", deletion_requested_at: new Date().toISOString() } as any).eq("user_id", user.id);
+      toast({ title: "🗑️", description: i18n.language === "tr" ? "Hesap silme talebiniz alındı" : "Deletion request received" });
+      await signOut();
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    }
   };
 
   const handleDeletePlant = async (plantId: string, plantName: string) => {
@@ -291,6 +318,26 @@ const ProfilePage = () => {
               <HelpCircle className="w-4 h-4" /> {t("profile.help")}
             </h3>
             <p className="text-xs text-muted-foreground">{t("profile.helpText")}</p>
+          </div>
+
+          <div className="bg-card rounded-xl p-4 border border-border space-y-2">
+            <h3 className="text-sm font-bold text-foreground mb-1">{i18n.language === "tr" ? "Hesap Yönetimi" : "Account Management"}</h3>
+            <button onClick={handleFreezeAccount}
+              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary text-left">
+              <span className="text-lg">❄️</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">{i18n.language === "tr" ? "Hesabı Dondur" : "Freeze Account"}</p>
+                <p className="text-[11px] text-muted-foreground">{i18n.language === "tr" ? "Geçici olarak hesabı pasifleştir" : "Temporarily disable your account"}</p>
+              </div>
+            </button>
+            <button onClick={handleDeleteAccount}
+              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-destructive/5 text-left">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-destructive">{i18n.language === "tr" ? "Hesabı Sil" : "Delete Account"}</p>
+                <p className="text-[11px] text-muted-foreground">{i18n.language === "tr" ? "Tüm verileri kalıcı olarak sil" : "Permanently delete all data"}</p>
+              </div>
+            </button>
           </div>
 
           <button onClick={handleLogout}
