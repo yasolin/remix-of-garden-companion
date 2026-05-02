@@ -156,8 +156,9 @@ const LocationAnalysisPage = () => {
   const handleSaveLocation = async () => {
     if (!selectedPlantId || !currentDir) return;
     try {
-      const locationData = `${dirLabels[lang][currentDir]}${selectedCountry ? ` - ${countries[selectedCountry]?.label[lang]}` : ""}${selectedState ? `, ${selectedState}` : ""}`;
-      await updatePlant(selectedPlantId, { placement: locationData } as any);
+      const dirText = dirLabels[lang][currentDir];
+      const locationData = `${dirText}${selectedCountry ? ` - ${countries[selectedCountry]?.label[lang]}` : ""}${selectedState ? `, ${selectedState}` : ""}`;
+      await updatePlant(selectedPlantId, { placement: locationData, direction: dirText } as any);
       toast({ title: "✅", description: t("location.locationSaved") });
     } catch (e: any) {
       toast({ title: "❌", description: e.message, variant: "destructive" });
