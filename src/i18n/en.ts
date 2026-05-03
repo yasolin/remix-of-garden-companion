@@ -115,6 +115,12 @@ export default {
       takePhoto: "Take Photo",
       chooseFromGallery: "Choose from Gallery",
       toxicToPets: "Toxic to pets",
+      lastUpdate: "Last update",
+      showAll: "Show All",
+      soilFertilizer: "Soil & Fertilizer",
+      soilTypeShort: "Soil Type",
+      fertilizerShort: "Fertilizer",
+      notesShort: "Notes",
     },
     add: {
       title: "Add Plant",
@@ -147,6 +153,10 @@ export default {
       savePlant: "Save Plant",
       takePhotoFirst: "Take a photo first",
       plantedDate: "Planting Date",
+      lastWateredQ: "When did you last water it?",
+      lastWateredHint: "Watering plan will be generated from this date.",
+      neverWatered: "Just bought, not watered yet",
+      invalidName: "Please enter a valid plant name",
     },
     stages: {
       planting: "Planting",

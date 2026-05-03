@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { stages, insertPlant, uploadPlantPhoto } from "@/lib/plantService";
+import { generateWateringPlan, frequencyToDays } from "@/lib/wateringService";
 import { analyzePlantPhoto } from "@/lib/plantAI";
 import { toast } from "@/hooks/use-toast";
 
@@ -31,6 +32,8 @@ const AddPlantPage = () => {
     sunlight: "", windSensitivity: "", currentStage: "planting" as string,
     temperature: "", humidity: "", soilType: "", notes: "", fertilizer: "",
     plantedDate: new Date().toISOString().split("T")[0],
+    lastWateredDate: "", // empty = never
+    neverWatered: false,
   });
 
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
@@ -91,16 +94,25 @@ const AddPlantPage = () => {
       toast({ title: "⚠️", description: "Please sign in to save plants", variant: "destructive" });
       return;
     }
+    // Validate plant name
+    if (!form.name.trim() || form.name.trim().length < 2) {
+      toast({ title: "❌", description: t("add.invalidName"), variant: "destructive" });
+      return;
+    }
     try {
       let photoUrl = "";
       if (photoFile) {
         photoUrl = await uploadPlantPhoto(userId, photoFile);
       }
 
-      // Auto-set needs_watering to true when a plant is added
-      await insertPlant({
+      const intervalDays = frequencyToDays(form.waterFrequency);
+      const lastWateredAt = form.neverWatered || !form.lastWateredDate
+        ? null
+        : new Date(form.lastWateredDate).toISOString();
+
+      const inserted = await insertPlant({
         user_id: userId,
-        name: form.name,
+        name: form.name.trim(),
         scientific_name: form.scientificName,
         placement: form.placement,
         water_frequency: form.waterFrequency,
@@ -114,9 +126,26 @@ const AddPlantPage = () => {
         notes: form.notes,
         photo_url: photoUrl,
         planted_date: form.plantedDate || new Date().toISOString(),
-        needs_watering: true,
-      });
+        needs_watering: !lastWateredAt,
+        watering_interval_days: intervalDays,
+        last_watered_at: lastWateredAt,
+      } as any);
+
+      // Generate forward-looking plan
+      try {
+        await generateWateringPlan({
+          userId,
+          plantId: inserted.id,
+          intervalDays,
+          startDate: lastWateredAt ? new Date(lastWateredAt) : new Date(),
+          occurrences: 12,
+        });
+      } catch (e) {
+        console.error("plan generation failed", e);
+      }
+
       queryClient.invalidateQueries({ queryKey: ["plants"] });
+      queryClient.invalidateQueries({ queryKey: ["watering_events"] });
       toast({ title: "✅", description: t("add.savePlant") });
       navigate("/profile");
     } catch (e: any) {
@@ -233,6 +262,21 @@ const AddPlantPage = () => {
           <label className="text-sm font-semibold text-foreground">{t("add.plantedDate")}</label>
           <input type="date" value={form.plantedDate} onChange={(e) => setForm({ ...form, plantedDate: e.target.value })}
             className="w-full mt-1 bg-secondary rounded-xl px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30" />
+        </div>
+
+        <div className="bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200/40 dark:border-blue-800/30 rounded-xl p-3 space-y-2">
+          <label className="text-sm font-semibold text-foreground">💧 {t("add.lastWateredQ")}</label>
+          <p className="text-[11px] text-muted-foreground">{t("add.lastWateredHint")}</p>
+          <input type="date" disabled={form.neverWatered}
+            value={form.lastWateredDate} onChange={(e) => setForm({ ...form, lastWateredDate: e.target.value })}
+            max={new Date().toISOString().split("T")[0]}
+            className="w-full bg-secondary rounded-xl px-3 py-2.5 text-sm text-foreground outline-none disabled:opacity-50" />
+          <label className="flex items-center gap-2 text-xs text-foreground">
+            <input type="checkbox" checked={form.neverWatered}
+              onChange={(e) => setForm({ ...form, neverWatered: e.target.checked, lastWateredDate: e.target.checked ? "" : form.lastWateredDate })}
+              className="w-4 h-4 accent-primary" />
+            {t("add.neverWatered")}
+          </label>
         </div>
 
         <div>
