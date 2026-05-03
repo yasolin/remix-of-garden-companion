@@ -264,7 +264,21 @@ const AddPlantPage = () => {
             className="w-full mt-1 bg-secondary rounded-xl px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
 
-        <div>
+        <div className="bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200/40 dark:border-blue-800/30 rounded-xl p-3 space-y-2">
+          <label className="text-sm font-semibold text-foreground">💧 {t("add.lastWateredQ")}</label>
+          <p className="text-[11px] text-muted-foreground">{t("add.lastWateredHint")}</p>
+          <input type="date" disabled={form.neverWatered}
+            value={form.lastWateredDate} onChange={(e) => setForm({ ...form, lastWateredDate: e.target.value })}
+            max={new Date().toISOString().split("T")[0]}
+            className="w-full bg-secondary rounded-xl px-3 py-2.5 text-sm text-foreground outline-none disabled:opacity-50" />
+          <label className="flex items-center gap-2 text-xs text-foreground">
+            <input type="checkbox" checked={form.neverWatered}
+              onChange={(e) => setForm({ ...form, neverWatered: e.target.checked, lastWateredDate: e.target.checked ? "" : form.lastWateredDate })}
+              className="w-4 h-4 accent-primary" />
+            {t("add.neverWatered")}
+          </label>
+        </div>
+
           <label className="text-sm font-semibold text-foreground">{t("add.growthStage")}</label>
           <div className="flex gap-2 mt-2 flex-wrap">
             {stages.map((stage) => (
