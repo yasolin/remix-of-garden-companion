@@ -127,9 +127,7 @@ const WateringPage = () => {
   const [manualStep, setManualStep] = useState<ManualStep>("type");
   const [manualData, setManualData] = useState({ plantType: "", potSize: "", potType: "", frequency: "", amount: "" });
 
-  // View mode: list or calendar
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
-
+  // Calendar is the only view now
   const today = new Date();
 
   const { data: plants = [] } = useQuery({
@@ -378,16 +376,6 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
         <div className="flex-1">
           <h1 className="text-xl font-bold text-foreground">{t("watering.title")}</h1>
           <p className="text-sm text-muted-foreground">{t("watering.subtitle", { count: wateringPlants.length })}</p>
-        </div>
-        <div className="flex items-center gap-1">
-          <button onClick={() => setViewMode("list")}
-            className={`p-2 rounded-lg ${viewMode === "list" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>
-            <List className="w-4 h-4" />
-          </button>
-          <button onClick={() => setViewMode("calendar")}
-            className={`p-2 rounded-lg ${viewMode === "calendar" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>
-            <CalendarIcon className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
