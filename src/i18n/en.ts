@@ -115,6 +115,12 @@ export default {
       takePhoto: "Take Photo",
       chooseFromGallery: "Choose from Gallery",
       toxicToPets: "Toxic to pets",
+      lastUpdate: "Last update",
+      showAll: "Show All",
+      soilFertilizer: "Soil & Fertilizer",
+      soilTypeShort: "Soil Type",
+      fertilizerShort: "Fertilizer",
+      notesShort: "Notes",
     },
     add: {
       title: "Add Plant",

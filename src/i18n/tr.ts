@@ -115,6 +115,12 @@ export default {
       takePhoto: "Fotoğraf Çek",
       chooseFromGallery: "Galeriden Seç",
       toxicToPets: "Evcil hayvanlar için toksik",
+      lastUpdate: "Son güncelleme",
+      showAll: "Tümünü Göster",
+      soilFertilizer: "Toprak & Gübreleme",
+      soilTypeShort: "Toprak Tipi",
+      fertilizerShort: "Gübreleme",
+      notesShort: "Notlar",
     },
     add: {
       title: "Bitki Ekle",
