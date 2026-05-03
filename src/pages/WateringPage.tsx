@@ -624,7 +624,7 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
       )}
 
       {/* Calendar View */}
-      {viewMode === "calendar" && (
+      {true && (
         <div className="px-4 mt-4">
           <div className="bg-card rounded-2xl border border-border p-3">
             <h3 className="text-sm font-bold text-foreground mb-2">
