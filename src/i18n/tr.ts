@@ -153,6 +153,10 @@ export default {
       savePlant: "Bitkiyi Kaydet",
       takePhotoFirst: "Önce fotoğraf çekin",
       plantedDate: "Ekim Tarihi",
+      lastWateredQ: "En son ne zaman suladınız?",
+      lastWateredHint: "Sulama planı bu tarihe göre oluşturulacak.",
+      neverWatered: "Yeni aldım, henüz sulamadım",
+      invalidName: "Lütfen geçerli bir bitki adı girin",
     },
     stages: {
       planting: "Ekim",
