@@ -76,12 +76,30 @@ const potTypes = [
 ];
 
 const frequencyOptions = [
+  { key: "new", tr: "Yeni aldım (henüz sulamadım)", en: "Just bought (not watered yet)" },
   { key: "daily", tr: "Her gün", en: "Every day" },
   { key: "2days", tr: "2 günde bir", en: "Every 2 days" },
   { key: "3days", tr: "3 günde bir", en: "Every 3 days" },
   { key: "weekly", tr: "Haftada bir", en: "Once a week" },
   { key: "biweekly", tr: "2 haftada bir", en: "Every 2 weeks" },
 ];
+
+// Common plant names for validation (subset)
+const validPlantHints = [
+  "domates","tomato","biber","pepper","patlıcan","eggplant","salatalık","cucumber",
+  "nane","mint","fesleğen","basil","maydanoz","parsley","marul","lettuce","kekik","thyme",
+  "sardunya","geranium","menekşe","violet","gül","rose","kaktüs","cactus","sukulent","succulent",
+  "orkide","orchid","papatya","daisy","lavanta","lavender","rosemary","biberiye","aloe","sedum","damkoruğu",
+  "monstera","ficus","filodendron","philodendron","yucca","palmiye","palm","çilek","strawberry",
+  "üzüm","grape","limon","lemon","portakal","orange","elma","apple","kiraz","cherry",
+];
+function isValidPlantName(s: string): boolean {
+  const trimmed = s.trim().toLowerCase();
+  if (trimmed.length < 2) return false;
+  // letters, spaces, dashes only
+  if (!/^[a-zA-ZçğıöşüÇĞİÖŞÜ\s-]+$/.test(trimmed)) return false;
+  return true;
+}
 
 const amountOptions = [
   { key: "50ml", tr: "50 ml", en: "50 ml", emoji: "🥄", hint: { tr: "~3 yemek kaşığı", en: "~3 tablespoons" } },
