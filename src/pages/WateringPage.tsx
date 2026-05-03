@@ -502,7 +502,13 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                     <p className="text-[10px] text-muted-foreground">
                       💡 {isTr ? "Bitki türünü bilmiyorsanız AI Asistan'da 'Bitki Tanıma' kullanın" : "Don't know the type? Use 'Plant Recognition' in AI Assistant"}
                     </p>
-                    <button onClick={() => manualData.plantType && setManualStep("pot")} disabled={!manualData.plantType}
+                    <button onClick={() => {
+                      if (!isValidPlantName(manualData.plantType)) {
+                        toast({ title: "❌", description: isTr ? "Lütfen geçerli bir bitki adı girin" : "Please enter a valid plant name", variant: "destructive" });
+                        return;
+                      }
+                      setManualStep("pot");
+                    }} disabled={!manualData.plantType}
                       className="w-full bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50">
                       {isTr ? "Devam" : "Continue"}
                     </button>
