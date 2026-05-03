@@ -279,6 +279,7 @@ const AddPlantPage = () => {
           </label>
         </div>
 
+        <div>
           <label className="text-sm font-semibold text-foreground">{t("add.growthStage")}</label>
           <div className="flex gap-2 mt-2 flex-wrap">
             {stages.map((stage) => (
