@@ -679,56 +679,111 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
         </motion.div>
       )}
 
-      {/* Calendar View */}
-      {true && (
-        <div className="px-4 mt-4">
-          <div className="bg-card rounded-2xl border border-border p-3">
-            <h3 className="text-sm font-bold text-foreground mb-2">
-              {today.toLocaleDateString(isTr ? "tr-TR" : "en-US", { month: "long", year: "numeric" })}
+      {/* Calendar View — with month nav + clickable days */}
+      <div className="px-4 mt-4">
+        <div className="bg-card rounded-2xl border border-border p-3">
+          <div className="flex items-center justify-between mb-2">
+            <button onClick={() => { setSelectedDay(null); setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1)); }}
+              className="p-1.5 rounded-lg hover:bg-secondary" aria-label="prev month">
+              <ChevronLeft className="w-4 h-4 text-foreground" />
+            </button>
+            <h3 className="text-sm font-bold text-foreground">
+              {viewMonth.toLocaleDateString(isTr ? "tr-TR" : "en-US", { month: "long", year: "numeric" })}
             </h3>
-            <div className="grid grid-cols-7 gap-1 text-center">
-              {(isTr ? ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]).map(d => (
-                <span key={d} className="text-[10px] font-medium text-muted-foreground">{d}</span>
-              ))}
-              {Array.from({ length: (firstDayOfWeek + 6) % 7 }).map((_, i) => (
-                <div key={`empty-${i}`} />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1;
-                const isToday = day === today.getDate();
-                const isPast = day < today.getDate();
-                const dayEvents = eventsByDay.get(day) || [];
-                const completedCount = dayEvents.filter(e => e.status === "completed").length;
-                const scheduledCount = dayEvents.filter(e => e.status === "scheduled").length;
-                return (
-                  <div key={day}
-                    title={dayEvents.map(e => {
-                      const p = plants.find(pl => pl.id === e.plant_id);
-                      return `${p?.name || ""} (${e.status})`;
-                    }).join(", ")}
-                    className={`relative w-full aspect-square flex items-center justify-center rounded-lg text-xs ${
-                      isToday ? "bg-primary text-primary-foreground font-bold" : "text-foreground"
-                    }`}>
-                    {day}
-                    <div className="absolute bottom-0.5 flex gap-0.5">
-                      {completedCount > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />}
-                      {scheduledCount > 0 && (
-                        <div className={`w-1.5 h-1.5 rounded-full ${isPast ? "bg-destructive/50" : isToday ? "bg-blue-500" : "bg-blue-300"}`} />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex flex-wrap items-center gap-3 mt-3 text-[10px] text-muted-foreground">
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/60" /> {isTr ? "Tamamlandı" : "Completed"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün" : "Today"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300" /> {isTr ? "Planlanan" : "Planned"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive/50" /> {isTr ? "Kaçırıldı" : "Missed"}</div>
-            </div>
+            <button onClick={() => { setSelectedDay(null); setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1)); }}
+              className="p-1.5 rounded-lg hover:bg-secondary" aria-label="next month">
+              <ChevronRight className="w-4 h-4 text-foreground" />
+            </button>
           </div>
+          {!isCurrentMonth && (
+            <button onClick={() => { setViewMonth(new Date(today.getFullYear(), today.getMonth(), 1)); setSelectedDay(null); }}
+              className="text-[11px] text-primary font-medium mb-2">
+              ↺ {isTr ? "Bu aya dön" : "Back to current month"}
+            </button>
+          )}
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {(isTr ? ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]).map(d => (
+              <span key={d} className="text-[10px] font-medium text-muted-foreground">{d}</span>
+            ))}
+            {Array.from({ length: (firstDayOfWeek + 6) % 7 }).map((_, i) => (
+              <div key={`empty-${i}`} />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const isToday = isCurrentMonth && day === today.getDate();
+              const isPast = isCurrentMonth ? day < today.getDate() : viewMonth < new Date(today.getFullYear(), today.getMonth(), 1);
+              const dayEvents = eventsByDay.get(day) || [];
+              const completedCount = dayEvents.filter(e => e.status === "completed").length;
+              const scheduledCount = dayEvents.filter(e => e.status === "scheduled").length;
+              const isSelected = selectedDay === day;
+              return (
+                <button key={day} onClick={() => setSelectedDay(isSelected ? null : day)}
+                  className={`relative w-full aspect-square flex items-center justify-center rounded-lg text-xs transition-colors ${
+                    isSelected ? "bg-primary text-primary-foreground font-bold ring-2 ring-primary"
+                      : isToday ? "bg-primary/15 text-primary font-bold"
+                      : "text-foreground hover:bg-secondary"
+                  }`}>
+                  {day}
+                  <div className="absolute bottom-0.5 flex gap-0.5">
+                    {completedCount > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />}
+                    {scheduledCount > 0 && (
+                      <div className={`w-1.5 h-1.5 rounded-full ${isPast ? "bg-destructive/50" : isToday ? "bg-blue-500" : "bg-blue-300"}`} />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/60" /> {isTr ? "Tamamlandı" : "Completed"}</div>
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün" : "Today"}</div>
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300" /> {isTr ? "Planlanan" : "Planned"}</div>
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive/50" /> {isTr ? "Kaçırıldı" : "Missed"}</div>
+          </div>
+
+          {/* Selected day details */}
+          {selectedDay && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold text-foreground">
+                  {new Date(viewMonth.getFullYear(), viewMonth.getMonth(), selectedDay).toLocaleDateString(isTr ? "tr-TR" : "en-US", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+                <button onClick={() => setSelectedDay(null)} className="p-1 rounded hover:bg-secondary">
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </div>
+              {selectedDayEvents.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{isTr ? "Bu gün sulama yok" : "No watering on this day"}</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {selectedDayEvents.map(ev => {
+                    const p = plants.find(pl => pl.id === ev.plant_id);
+                    return (
+                      <li key={ev.id} className="flex items-center gap-2 text-xs">
+                        {p?.photo_url ? (
+                          <img src={p.photo_url} alt="" className="w-7 h-7 rounded-md object-cover" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-md bg-blue-50 flex items-center justify-center">
+                            <Droplets className="w-3.5 h-3.5 text-blue-400" />
+                          </div>
+                        )}
+                        <span className="flex-1 font-medium text-foreground">{p?.name || (isTr ? "Bilinmeyen bitki" : "Unknown plant")}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                          ev.status === "completed" ? "bg-primary/15 text-primary" : "bg-blue-100 text-blue-700"
+                        }`}>
+                          {ev.status === "completed"
+                            ? (isTr ? "Sulandı" : "Watered")
+                            : (isTr ? "Planlı" : "Scheduled")}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* List View */}
       {wateringPlants.length === 0 && wateredPlants.length === 0 ? (
