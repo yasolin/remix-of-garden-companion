@@ -508,36 +508,62 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
               className="mt-2 overflow-hidden">
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                {/* Step indicator */}
+                {/* Step indicator — new order: type → pot → potType → amount → frequency */}
                 <div className="flex items-center gap-1 mb-2">
-                  {["type", "pot", "potType", "frequency", "amount"].map((s, i) => (
+                  {(["type", "pot", "potType", "amount", "frequency"] as const).map((s, i) => (
                     <div key={s} className={`flex-1 h-1 rounded-full ${
-                      ["type", "pot", "potType", "frequency", "amount"].indexOf(manualStep) >= i ? "bg-primary" : "bg-secondary"
+                      (["type", "pot", "potType", "amount", "frequency"] as const).indexOf(manualStep as any) >= i ? "bg-primary" : "bg-secondary"
                     }`} />
                   ))}
                 </div>
 
-                {manualStep === "type" && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-foreground">{isTr ? "Bitki Türü" : "Plant Type"}</p>
-                    <input value={manualData.plantType} onChange={e => setManualData({ ...manualData, plantType: e.target.value })}
-                      placeholder={isTr ? "Ör: Domates, Fesleğen..." : "e.g. Tomato, Basil..."}
-                      className="w-full bg-secondary rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
-                    <p className="text-[10px] text-muted-foreground">
-                      💡 {isTr ? "Bitki türünü bilmiyorsanız AI Asistan'da 'Bitki Tanıma' kullanın" : "Don't know the type? Use 'Plant Recognition' in AI Assistant"}
-                    </p>
-                    <button onClick={() => {
-                      if (!isValidPlantName(manualData.plantType)) {
-                        toast({ title: "❌", description: isTr ? "Lütfen geçerli bir bitki adı girin" : "Please enter a valid plant name", variant: "destructive" });
-                        return;
-                      }
-                      setManualStep("pot");
-                    }} disabled={!manualData.plantType}
-                      className="w-full bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50">
-                      {isTr ? "Devam" : "Continue"}
-                    </button>
-                  </div>
-                )}
+                {manualStep === "type" && (() => {
+                  const q = manualData.plantType.trim().toLowerCase();
+                  const matches = q.length >= 1
+                    ? plantSuggestions.filter(p => p.toLowerCase().includes(q)).slice(0, 6)
+                    : [];
+                  return (
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-foreground">{isTr ? "Bitki Türü" : "Plant Type"}</p>
+                      <div className="relative">
+                        <input
+                          value={manualData.plantType}
+                          onChange={e => { setManualData({ ...manualData, plantType: e.target.value }); setShowSuggestions(true); }}
+                          onFocus={() => setShowSuggestions(true)}
+                          placeholder={isTr ? "Ör: Domates, Fesleğen..." : "e.g. Tomato, Basil..."}
+                          className="w-full bg-secondary rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+                        {showSuggestions && matches.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                            {matches.map(m => (
+                              <button key={m} onClick={() => { setManualData({ ...manualData, plantType: m }); setShowSuggestions(false); }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 text-foreground">
+                                🌿 {m}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        💡 {isTr ? "Listeden seçin veya tam ad yazın. Bilinmeyen adlar kabul edilmez." : "Pick from the list or type a full name. Unknown names are rejected."}
+                      </p>
+                      <button onClick={() => {
+                        if (!isValidPlantName(manualData.plantType)) {
+                          toast({ title: "❌", description: isTr ? "Lütfen geçerli bir bitki adı girin" : "Please enter a valid plant name", variant: "destructive" });
+                          return;
+                        }
+                        if (!isKnownPlantName(manualData.plantType)) {
+                          toast({ title: "❌", description: isTr ? "Bu bitki listemizde yok. Lütfen önerilerden birini seçin." : "This plant isn't in our list. Please pick one of the suggestions.", variant: "destructive" });
+                          return;
+                        }
+                        setShowSuggestions(false);
+                        setManualStep("pot");
+                      }} disabled={!manualData.plantType}
+                        className="w-full bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50">
+                        {isTr ? "Devam" : "Continue"}
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 {manualStep === "pot" && (
                   <div className="space-y-2">
@@ -545,10 +571,10 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                     <div className="grid grid-cols-2 gap-2">
                       {potSizes.map(ps => (
                         <button key={ps.key} onClick={() => { setManualData({ ...manualData, potSize: isTr ? ps.tr : ps.en }); setManualStep("potType"); }}
-                          className="bg-secondary rounded-xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
-                          <span className="text-2xl">{ps.emoji}</span>
-                          <span className="text-xs font-semibold text-foreground">{isTr ? ps.tr : ps.en}</span>
-                          <span className="text-[9px] text-muted-foreground">{isTr ? ps.hint.tr : ps.hint.en}</span>
+                          className="bg-secondary rounded-2xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                          <img src={ps.img} alt="" loading="lazy" className="w-16 h-16 object-contain" />
+                          <span className="text-xs font-bold text-foreground leading-tight">{isTr ? ps.tr : ps.en}</span>
+                          <span className="text-[10px] text-muted-foreground leading-tight">{isTr ? ps.hint.tr : ps.hint.en}</span>
                         </button>
                       ))}
                     </div>
@@ -563,32 +589,15 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                     <p className="text-sm font-semibold text-foreground">{isTr ? "Saksı Tipi" : "Pot Type"}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {potTypes.map(pt => (
-                        <button key={pt.key} onClick={() => { setManualData({ ...manualData, potType: isTr ? pt.tr : pt.en }); setManualStep("frequency"); }}
-                          className="bg-secondary rounded-xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
-                          <span className="text-2xl">{pt.emoji}</span>
-                          <span className="text-xs font-semibold text-foreground">{isTr ? pt.tr : pt.en}</span>
-                          <span className="text-[9px] text-muted-foreground">{isTr ? pt.desc.tr : pt.desc.en}</span>
+                        <button key={pt.key} onClick={() => { setManualData({ ...manualData, potType: isTr ? pt.tr : pt.en }); setManualStep("amount"); }}
+                          className="bg-secondary rounded-2xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                          <img src={pt.img} alt="" loading="lazy" className="w-16 h-16 object-contain" />
+                          <span className="text-xs font-bold text-foreground leading-tight">{isTr ? pt.tr : pt.en}</span>
+                          <span className="text-[10px] text-muted-foreground leading-tight">{isTr ? pt.desc.tr : pt.desc.en}</span>
                         </button>
                       ))}
                     </div>
                     <button onClick={() => setManualStep("pot")} className="text-xs text-primary font-medium">
-                      ← {isTr ? "Geri" : "Back"}
-                    </button>
-                  </div>
-                )}
-
-                {manualStep === "frequency" && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-foreground">{isTr ? "Mevcut Sulama Sıklığı" : "Current Watering Frequency"}</p>
-                    <div className="space-y-1.5">
-                      {frequencyOptions.map(fo => (
-                        <button key={fo.key} onClick={() => { setManualData({ ...manualData, frequency: isTr ? fo.tr : fo.en }); setManualStep("amount"); }}
-                          className="w-full bg-secondary rounded-xl p-3 text-sm text-foreground text-left hover:bg-primary/10 transition-colors">
-                          {isTr ? fo.tr : fo.en}
-                        </button>
-                      ))}
-                    </div>
-                    <button onClick={() => setManualStep("potType")} className="text-xs text-primary font-medium">
                       ← {isTr ? "Geri" : "Back"}
                     </button>
                   </div>
@@ -599,10 +608,8 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                     <p className="text-sm font-semibold text-foreground">{isTr ? "Sulama Miktarı" : "Watering Amount"}</p>
                     <div className="space-y-1.5">
                       {amountOptions.map(ao => (
-                        <button key={ao.key} onClick={() => { setManualData({ ...manualData, amount: isTr ? ao.tr : ao.en }); }}
-                          className={`w-full rounded-xl p-3 flex items-center gap-3 transition-colors ${
-                            manualData.amount === (isTr ? ao.tr : ao.en) ? "bg-primary/10 border-2 border-primary" : "bg-secondary hover:bg-primary/5"
-                          }`}>
+                        <button key={ao.key} onClick={() => { setManualData({ ...manualData, amount: isTr ? ao.tr : ao.en }); setManualStep("frequency"); }}
+                          className="w-full bg-secondary rounded-xl p-3 flex items-center gap-3 hover:bg-primary/10 transition-colors">
                           <span className="text-xl">{ao.emoji}</span>
                           <div className="flex-1 text-left">
                             <span className="text-sm font-semibold text-foreground">{isTr ? ao.tr : ao.en}</span>
@@ -611,13 +618,32 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                         </button>
                       ))}
                     </div>
-                    {manualData.amount && (
+                    <button onClick={() => setManualStep("potType")} className="text-xs text-primary font-medium">
+                      ← {isTr ? "Geri" : "Back"}
+                    </button>
+                  </div>
+                )}
+
+                {manualStep === "frequency" && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-foreground">{isTr ? "Mevcut Sulama Sıklığı" : "Current Watering Frequency"}</p>
+                    <div className="space-y-1.5">
+                      {frequencyOptions.map(fo => (
+                        <button key={fo.key} onClick={() => { setManualData({ ...manualData, frequency: isTr ? fo.tr : fo.en }); }}
+                          className={`w-full rounded-xl p-3 text-sm text-foreground text-left transition-colors ${
+                            manualData.frequency === (isTr ? fo.tr : fo.en) ? "bg-primary/10 border-2 border-primary" : "bg-secondary hover:bg-primary/5"
+                          }`}>
+                          {isTr ? fo.tr : fo.en}
+                        </button>
+                      ))}
+                    </div>
+                    {manualData.frequency && (
                       <button onClick={handleManualAnalysis}
                         className="w-full bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-semibold mt-2">
                         {isTr ? "Analiz Et" : "Analyze"}
                       </button>
                     )}
-                    <button onClick={() => setManualStep("frequency")} className="text-xs text-primary font-medium">
+                    <button onClick={() => setManualStep("amount")} className="text-xs text-primary font-medium">
                       ← {isTr ? "Geri" : "Back"}
                     </button>
                   </div>
