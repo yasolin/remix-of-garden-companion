@@ -1,9 +1,17 @@
-import { ArrowLeft, Droplets, Check, Undo2, Beaker, CloudRain, Sparkles, ChevronRight, Camera, Flower2, Calendar as CalendarIcon, List } from "lucide-react";
+import { ArrowLeft, Droplets, Check, Undo2, Beaker, CloudRain, Sparkles, ChevronRight, ChevronLeft, Camera, Flower2, Calendar as CalendarIcon, List, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
+import potHoled from "@/assets/pot-holed.png";
+import potSolid from "@/assets/pot-solid.png";
+import potTransparent from "@/assets/pot-transparent.png";
+import potSelfwater from "@/assets/pot-selfwater.png";
+import sizeSmall from "@/assets/size-small.png";
+import sizeMedium from "@/assets/size-medium.png";
+import sizeLarge from "@/assets/size-large.png";
+import sizeXLarge from "@/assets/size-xlarge.png";
 import {
   fetchUserWateringEvents,
   completeWateringEvent,
