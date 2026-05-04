@@ -369,21 +369,24 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
 
   const isTr = i18n.language === "tr";
 
-  // Calendar view helpers
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  const firstDayOfWeek = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+  // Calendar view helpers (use viewMonth, not today)
+  const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+  const firstDayOfWeek = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1).getDay();
+  const isCurrentMonth = viewMonth.getFullYear() === today.getFullYear() && viewMonth.getMonth() === today.getMonth();
 
-  // Group events by day
+  // Group events by day for the visible month
   const eventsByDay = new Map<number, typeof events>();
   events.forEach(ev => {
     const d = new Date(ev.scheduled_at);
-    if (d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()) {
+    if (d.getMonth() === viewMonth.getMonth() && d.getFullYear() === viewMonth.getFullYear()) {
       const day = d.getDate();
       const arr = eventsByDay.get(day) || [];
       arr.push(ev);
       eventsByDay.set(day, arr);
     }
   });
+
+  const selectedDayEvents = selectedDay ? eventsByDay.get(selectedDay) || [] : [];
 
   return (
     <div className="pb-24 max-w-lg mx-auto">
