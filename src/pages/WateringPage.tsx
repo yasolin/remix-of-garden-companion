@@ -67,20 +67,21 @@ function recordWaterScan() {
 }
 
 type AnalysisMode = "none" | "choose" | "registered" | "new_photo" | "new_manual";
-type ManualStep = "type" | "pot" | "potType" | "frequency" | "amount" | "analyzing";
+// New order: type → pot (size) → potType → amount → frequency
+type ManualStep = "type" | "pot" | "potType" | "amount" | "frequency" | "analyzing";
 
 const potSizes = [
-  { key: "small", tr: "Küçük (10-15 cm)", en: "Small (10-15 cm)", emoji: "🪴", hint: { tr: "Kahve fincanı boyutu", en: "Coffee cup size" } },
-  { key: "medium", tr: "Orta (15-25 cm)", en: "Medium (15-25 cm)", emoji: "🌱", hint: { tr: "Tabak boyutu", en: "Plate size" } },
-  { key: "large", tr: "Büyük (25-40 cm)", en: "Large (25-40 cm)", emoji: "🌿", hint: { tr: "Kova boyutu", en: "Bucket size" } },
-  { key: "xlarge", tr: "Çok Büyük (40+ cm)", en: "Extra Large (40+ cm)", emoji: "🌳", hint: { tr: "Çamaşır sepeti boyutu", en: "Laundry basket size" } },
+  { key: "small", tr: "Küçük (10-15 cm)", en: "Small (10-15 cm)", img: sizeSmall, hint: { tr: "Kahve fincanı boyutu", en: "Coffee cup size" } },
+  { key: "medium", tr: "Orta (15-25 cm)", en: "Medium (15-25 cm)", img: sizeMedium, hint: { tr: "Salata kasesi boyutu", en: "Salad bowl size" } },
+  { key: "large", tr: "Büyük (25-40 cm)", en: "Large (25-40 cm)", img: sizeLarge, hint: { tr: "Kova boyutu", en: "Bucket size" } },
+  { key: "xlarge", tr: "Çok Büyük (40+ cm)", en: "Extra Large (40+ cm)", img: sizeXLarge, hint: { tr: "Çamaşır sepeti boyutu", en: "Laundry basket size" } },
 ];
 
 const potTypes = [
-  { key: "holed", emoji: "🕳️", tr: "Delikli Saksı", en: "Drainage Pot", desc: { tr: "Alt kısımda delikler var", en: "Has holes at the bottom" } },
-  { key: "solid", emoji: "🏺", tr: "Deliksiz Saksı", en: "Solid Pot", desc: { tr: "Delik yok, dikkatli sulama", en: "No holes, careful watering" } },
-  { key: "transparent", emoji: "🫙", tr: "Şeffaf Saksı", en: "Transparent Pot", desc: { tr: "Kök gelişimini izleyin", en: "Monitor root growth" } },
-  { key: "selfwater", emoji: "💧", tr: "Kendinden Sulu", en: "Self-Watering", desc: { tr: "Hazne ile otomatik sulama", en: "Auto-watering reservoir" } },
+  { key: "holed", img: potHoled, tr: "Delikli Saksı", en: "Drainage Pot", desc: { tr: "Alt kısımda delikler var", en: "Has holes at the bottom" } },
+  { key: "solid", img: potSolid, tr: "Deliksiz Saksı", en: "Solid Pot", desc: { tr: "Delik yok, dikkatli sulama", en: "No holes, careful watering" } },
+  { key: "transparent", img: potTransparent, tr: "Şeffaf Saksı", en: "Transparent Pot", desc: { tr: "Kök gelişimini izleyin", en: "Monitor root growth" } },
+  { key: "selfwater", img: potSelfwater, tr: "Kendinden Sulu", en: "Self-Watering", desc: { tr: "Hazne ile otomatik sulama", en: "Auto-watering reservoir" } },
 ];
 
 const frequencyOptions = [
@@ -92,21 +93,30 @@ const frequencyOptions = [
   { key: "biweekly", tr: "2 haftada bir", en: "Every 2 weeks" },
 ];
 
-// Common plant names for validation (subset)
-const validPlantHints = [
-  "domates","tomato","biber","pepper","patlıcan","eggplant","salatalık","cucumber",
-  "nane","mint","fesleğen","basil","maydanoz","parsley","marul","lettuce","kekik","thyme",
-  "sardunya","geranium","menekşe","violet","gül","rose","kaktüs","cactus","sukulent","succulent",
-  "orkide","orchid","papatya","daisy","lavanta","lavender","rosemary","biberiye","aloe","sedum","damkoruğu",
-  "monstera","ficus","filodendron","philodendron","yucca","palmiye","palm","çilek","strawberry",
-  "üzüm","grape","limon","lemon","portakal","orange","elma","apple","kiraz","cherry",
+// Comprehensive plant name suggestions used for autocomplete + validation
+const plantSuggestions = [
+  "Domates","Tomato","Biber","Pepper","Patlıcan","Eggplant","Salatalık","Cucumber",
+  "Kabak","Squash","Karpuz","Watermelon","Kavun","Melon","Fasulye","Bean","Bezelye","Pea",
+  "Nane","Mint","Fesleğen","Basil","Maydanoz","Parsley","Marul","Lettuce","Kekik","Thyme",
+  "Roka","Arugula","Ispanak","Spinach","Havuç","Carrot","Turp","Radish","Brokoli","Broccoli",
+  "Sardunya","Geranium","Menekşe","Violet","Gül","Rose","Kaktüs","Cactus","Sukulent","Succulent",
+  "Orkide","Orchid","Papatya","Daisy","Lavanta","Lavender","Biberiye","Rosemary","Aloe Vera",
+  "Monstera","Ficus","Filodendron","Philodendron","Yucca","Palmiye","Palm","Çilek","Strawberry",
+  "Üzüm","Grape","Limon","Lemon","Portakal","Orange","Elma","Apple","Kiraz","Cherry",
+  "Sümbül","Hyacinth","Lale","Tulip","Zambak","Lily","Begonya","Begonia","Petunya","Petunia",
 ];
+
 function isValidPlantName(s: string): boolean {
   const trimmed = s.trim().toLowerCase();
   if (trimmed.length < 2) return false;
-  // letters, spaces, dashes only
   if (!/^[a-zA-ZçğıöşüÇĞİÖŞÜ\s-]+$/.test(trimmed)) return false;
   return true;
+}
+
+// Returns true only if the entered text matches one of the known plants
+function isKnownPlantName(s: string): boolean {
+  const trimmed = s.trim().toLowerCase();
+  return plantSuggestions.some(p => p.toLowerCase() === trimmed);
 }
 
 const amountOptions = [
