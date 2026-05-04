@@ -1,9 +1,17 @@
-import { ArrowLeft, Droplets, Check, Undo2, Beaker, CloudRain, Sparkles, ChevronRight, Camera, Flower2, Calendar as CalendarIcon, List } from "lucide-react";
+import { ArrowLeft, Droplets, Check, Undo2, Beaker, CloudRain, Sparkles, ChevronRight, ChevronLeft, Camera, Flower2, Calendar as CalendarIcon, List, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
+import potHoled from "@/assets/pot-holed.png";
+import potSolid from "@/assets/pot-solid.png";
+import potTransparent from "@/assets/pot-transparent.png";
+import potSelfwater from "@/assets/pot-selfwater.png";
+import sizeSmall from "@/assets/size-small.png";
+import sizeMedium from "@/assets/size-medium.png";
+import sizeLarge from "@/assets/size-large.png";
+import sizeXLarge from "@/assets/size-xlarge.png";
 import {
   fetchUserWateringEvents,
   completeWateringEvent,
@@ -59,20 +67,21 @@ function recordWaterScan() {
 }
 
 type AnalysisMode = "none" | "choose" | "registered" | "new_photo" | "new_manual";
-type ManualStep = "type" | "pot" | "potType" | "frequency" | "amount" | "analyzing";
+// New order: type → pot (size) → potType → amount → frequency
+type ManualStep = "type" | "pot" | "potType" | "amount" | "frequency" | "analyzing";
 
 const potSizes = [
-  { key: "small", tr: "Küçük (10-15 cm)", en: "Small (10-15 cm)", emoji: "🪴", hint: { tr: "Kahve fincanı boyutu", en: "Coffee cup size" } },
-  { key: "medium", tr: "Orta (15-25 cm)", en: "Medium (15-25 cm)", emoji: "🌱", hint: { tr: "Tabak boyutu", en: "Plate size" } },
-  { key: "large", tr: "Büyük (25-40 cm)", en: "Large (25-40 cm)", emoji: "🌿", hint: { tr: "Kova boyutu", en: "Bucket size" } },
-  { key: "xlarge", tr: "Çok Büyük (40+ cm)", en: "Extra Large (40+ cm)", emoji: "🌳", hint: { tr: "Çamaşır sepeti boyutu", en: "Laundry basket size" } },
+  { key: "small", tr: "Küçük (10-15 cm)", en: "Small (10-15 cm)", img: sizeSmall, hint: { tr: "Kahve fincanı boyutu", en: "Coffee cup size" } },
+  { key: "medium", tr: "Orta (15-25 cm)", en: "Medium (15-25 cm)", img: sizeMedium, hint: { tr: "Salata kasesi boyutu", en: "Salad bowl size" } },
+  { key: "large", tr: "Büyük (25-40 cm)", en: "Large (25-40 cm)", img: sizeLarge, hint: { tr: "Kova boyutu", en: "Bucket size" } },
+  { key: "xlarge", tr: "Çok Büyük (40+ cm)", en: "Extra Large (40+ cm)", img: sizeXLarge, hint: { tr: "Çamaşır sepeti boyutu", en: "Laundry basket size" } },
 ];
 
 const potTypes = [
-  { key: "holed", emoji: "🕳️", tr: "Delikli Saksı", en: "Drainage Pot", desc: { tr: "Alt kısımda delikler var", en: "Has holes at the bottom" } },
-  { key: "solid", emoji: "🏺", tr: "Deliksiz Saksı", en: "Solid Pot", desc: { tr: "Delik yok, dikkatli sulama", en: "No holes, careful watering" } },
-  { key: "transparent", emoji: "🫙", tr: "Şeffaf Saksı", en: "Transparent Pot", desc: { tr: "Kök gelişimini izleyin", en: "Monitor root growth" } },
-  { key: "selfwater", emoji: "💧", tr: "Kendinden Sulu", en: "Self-Watering", desc: { tr: "Hazne ile otomatik sulama", en: "Auto-watering reservoir" } },
+  { key: "holed", img: potHoled, tr: "Delikli Saksı", en: "Drainage Pot", desc: { tr: "Alt kısımda delikler var", en: "Has holes at the bottom" } },
+  { key: "solid", img: potSolid, tr: "Deliksiz Saksı", en: "Solid Pot", desc: { tr: "Delik yok, dikkatli sulama", en: "No holes, careful watering" } },
+  { key: "transparent", img: potTransparent, tr: "Şeffaf Saksı", en: "Transparent Pot", desc: { tr: "Kök gelişimini izleyin", en: "Monitor root growth" } },
+  { key: "selfwater", img: potSelfwater, tr: "Kendinden Sulu", en: "Self-Watering", desc: { tr: "Hazne ile otomatik sulama", en: "Auto-watering reservoir" } },
 ];
 
 const frequencyOptions = [
@@ -84,21 +93,30 @@ const frequencyOptions = [
   { key: "biweekly", tr: "2 haftada bir", en: "Every 2 weeks" },
 ];
 
-// Common plant names for validation (subset)
-const validPlantHints = [
-  "domates","tomato","biber","pepper","patlıcan","eggplant","salatalık","cucumber",
-  "nane","mint","fesleğen","basil","maydanoz","parsley","marul","lettuce","kekik","thyme",
-  "sardunya","geranium","menekşe","violet","gül","rose","kaktüs","cactus","sukulent","succulent",
-  "orkide","orchid","papatya","daisy","lavanta","lavender","rosemary","biberiye","aloe","sedum","damkoruğu",
-  "monstera","ficus","filodendron","philodendron","yucca","palmiye","palm","çilek","strawberry",
-  "üzüm","grape","limon","lemon","portakal","orange","elma","apple","kiraz","cherry",
+// Comprehensive plant name suggestions used for autocomplete + validation
+const plantSuggestions = [
+  "Domates","Tomato","Biber","Pepper","Patlıcan","Eggplant","Salatalık","Cucumber",
+  "Kabak","Squash","Karpuz","Watermelon","Kavun","Melon","Fasulye","Bean","Bezelye","Pea",
+  "Nane","Mint","Fesleğen","Basil","Maydanoz","Parsley","Marul","Lettuce","Kekik","Thyme",
+  "Roka","Arugula","Ispanak","Spinach","Havuç","Carrot","Turp","Radish","Brokoli","Broccoli",
+  "Sardunya","Geranium","Menekşe","Violet","Gül","Rose","Kaktüs","Cactus","Sukulent","Succulent",
+  "Orkide","Orchid","Papatya","Daisy","Lavanta","Lavender","Biberiye","Rosemary","Aloe Vera",
+  "Monstera","Ficus","Filodendron","Philodendron","Yucca","Palmiye","Palm","Çilek","Strawberry",
+  "Üzüm","Grape","Limon","Lemon","Portakal","Orange","Elma","Apple","Kiraz","Cherry",
+  "Sümbül","Hyacinth","Lale","Tulip","Zambak","Lily","Begonya","Begonia","Petunya","Petunia",
 ];
+
 function isValidPlantName(s: string): boolean {
   const trimmed = s.trim().toLowerCase();
   if (trimmed.length < 2) return false;
-  // letters, spaces, dashes only
   if (!/^[a-zA-ZçğıöşüÇĞİÖŞÜ\s-]+$/.test(trimmed)) return false;
   return true;
+}
+
+// Returns true only if the entered text matches one of the known plants
+function isKnownPlantName(s: string): boolean {
+  const trimmed = s.trim().toLowerCase();
+  return plantSuggestions.some(p => p.toLowerCase() === trimmed);
 }
 
 const amountOptions = [
@@ -126,9 +144,12 @@ const WateringPage = () => {
   
   const [manualStep, setManualStep] = useState<ManualStep>("type");
   const [manualData, setManualData] = useState({ plantType: "", potSize: "", potType: "", frequency: "", amount: "" });
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Calendar is the only view now
+  // Calendar navigation state
   const today = new Date();
+  const [viewMonth, setViewMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
@@ -136,11 +157,11 @@ const WateringPage = () => {
     enabled: !!user,
   });
 
-  // Fetch watering events for current month +/- range
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+  // Fetch watering events for the visible month
+  const monthStart = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
+  const monthEnd = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0, 23, 59, 59);
   const { data: events = [] } = useQuery({
-    queryKey: ["watering_events", user?.id, today.getFullYear(), today.getMonth()],
+    queryKey: ["watering_events", user?.id, viewMonth.getFullYear(), viewMonth.getMonth()],
     queryFn: () => fetchUserWateringEvents(user!.id, monthStart, monthEnd),
     enabled: !!user,
   });
@@ -348,21 +369,24 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
 
   const isTr = i18n.language === "tr";
 
-  // Calendar view helpers
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  const firstDayOfWeek = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+  // Calendar view helpers (use viewMonth, not today)
+  const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+  const firstDayOfWeek = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1).getDay();
+  const isCurrentMonth = viewMonth.getFullYear() === today.getFullYear() && viewMonth.getMonth() === today.getMonth();
 
-  // Group events by day
+  // Group events by day for the visible month
   const eventsByDay = new Map<number, typeof events>();
   events.forEach(ev => {
     const d = new Date(ev.scheduled_at);
-    if (d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()) {
+    if (d.getMonth() === viewMonth.getMonth() && d.getFullYear() === viewMonth.getFullYear()) {
       const day = d.getDate();
       const arr = eventsByDay.get(day) || [];
       arr.push(ev);
       eventsByDay.set(day, arr);
     }
   });
+
+  const selectedDayEvents = selectedDay ? eventsByDay.get(selectedDay) || [] : [];
 
   return (
     <div className="pb-24 max-w-lg mx-auto">
@@ -484,36 +508,62 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
               className="mt-2 overflow-hidden">
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                {/* Step indicator */}
+                {/* Step indicator — new order: type → pot → potType → amount → frequency */}
                 <div className="flex items-center gap-1 mb-2">
-                  {["type", "pot", "potType", "frequency", "amount"].map((s, i) => (
+                  {(["type", "pot", "potType", "amount", "frequency"] as const).map((s, i) => (
                     <div key={s} className={`flex-1 h-1 rounded-full ${
-                      ["type", "pot", "potType", "frequency", "amount"].indexOf(manualStep) >= i ? "bg-primary" : "bg-secondary"
+                      (["type", "pot", "potType", "amount", "frequency"] as const).indexOf(manualStep as any) >= i ? "bg-primary" : "bg-secondary"
                     }`} />
                   ))}
                 </div>
 
-                {manualStep === "type" && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-foreground">{isTr ? "Bitki Türü" : "Plant Type"}</p>
-                    <input value={manualData.plantType} onChange={e => setManualData({ ...manualData, plantType: e.target.value })}
-                      placeholder={isTr ? "Ör: Domates, Fesleğen..." : "e.g. Tomato, Basil..."}
-                      className="w-full bg-secondary rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
-                    <p className="text-[10px] text-muted-foreground">
-                      💡 {isTr ? "Bitki türünü bilmiyorsanız AI Asistan'da 'Bitki Tanıma' kullanın" : "Don't know the type? Use 'Plant Recognition' in AI Assistant"}
-                    </p>
-                    <button onClick={() => {
-                      if (!isValidPlantName(manualData.plantType)) {
-                        toast({ title: "❌", description: isTr ? "Lütfen geçerli bir bitki adı girin" : "Please enter a valid plant name", variant: "destructive" });
-                        return;
-                      }
-                      setManualStep("pot");
-                    }} disabled={!manualData.plantType}
-                      className="w-full bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50">
-                      {isTr ? "Devam" : "Continue"}
-                    </button>
-                  </div>
-                )}
+                {manualStep === "type" && (() => {
+                  const q = manualData.plantType.trim().toLowerCase();
+                  const matches = q.length >= 1
+                    ? plantSuggestions.filter(p => p.toLowerCase().includes(q)).slice(0, 6)
+                    : [];
+                  return (
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-foreground">{isTr ? "Bitki Türü" : "Plant Type"}</p>
+                      <div className="relative">
+                        <input
+                          value={manualData.plantType}
+                          onChange={e => { setManualData({ ...manualData, plantType: e.target.value }); setShowSuggestions(true); }}
+                          onFocus={() => setShowSuggestions(true)}
+                          placeholder={isTr ? "Ör: Domates, Fesleğen..." : "e.g. Tomato, Basil..."}
+                          className="w-full bg-secondary rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+                        {showSuggestions && matches.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                            {matches.map(m => (
+                              <button key={m} onClick={() => { setManualData({ ...manualData, plantType: m }); setShowSuggestions(false); }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 text-foreground">
+                                🌿 {m}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        💡 {isTr ? "Listeden seçin veya tam ad yazın. Bilinmeyen adlar kabul edilmez." : "Pick from the list or type a full name. Unknown names are rejected."}
+                      </p>
+                      <button onClick={() => {
+                        if (!isValidPlantName(manualData.plantType)) {
+                          toast({ title: "❌", description: isTr ? "Lütfen geçerli bir bitki adı girin" : "Please enter a valid plant name", variant: "destructive" });
+                          return;
+                        }
+                        if (!isKnownPlantName(manualData.plantType)) {
+                          toast({ title: "❌", description: isTr ? "Bu bitki listemizde yok. Lütfen önerilerden birini seçin." : "This plant isn't in our list. Please pick one of the suggestions.", variant: "destructive" });
+                          return;
+                        }
+                        setShowSuggestions(false);
+                        setManualStep("pot");
+                      }} disabled={!manualData.plantType}
+                        className="w-full bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50">
+                        {isTr ? "Devam" : "Continue"}
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 {manualStep === "pot" && (
                   <div className="space-y-2">
@@ -521,10 +571,10 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                     <div className="grid grid-cols-2 gap-2">
                       {potSizes.map(ps => (
                         <button key={ps.key} onClick={() => { setManualData({ ...manualData, potSize: isTr ? ps.tr : ps.en }); setManualStep("potType"); }}
-                          className="bg-secondary rounded-xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
-                          <span className="text-2xl">{ps.emoji}</span>
-                          <span className="text-xs font-semibold text-foreground">{isTr ? ps.tr : ps.en}</span>
-                          <span className="text-[9px] text-muted-foreground">{isTr ? ps.hint.tr : ps.hint.en}</span>
+                          className="bg-secondary rounded-2xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                          <img src={ps.img} alt="" loading="lazy" className="w-16 h-16 object-contain" />
+                          <span className="text-xs font-bold text-foreground leading-tight">{isTr ? ps.tr : ps.en}</span>
+                          <span className="text-[10px] text-muted-foreground leading-tight">{isTr ? ps.hint.tr : ps.hint.en}</span>
                         </button>
                       ))}
                     </div>
@@ -539,32 +589,15 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                     <p className="text-sm font-semibold text-foreground">{isTr ? "Saksı Tipi" : "Pot Type"}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {potTypes.map(pt => (
-                        <button key={pt.key} onClick={() => { setManualData({ ...manualData, potType: isTr ? pt.tr : pt.en }); setManualStep("frequency"); }}
-                          className="bg-secondary rounded-xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
-                          <span className="text-2xl">{pt.emoji}</span>
-                          <span className="text-xs font-semibold text-foreground">{isTr ? pt.tr : pt.en}</span>
-                          <span className="text-[9px] text-muted-foreground">{isTr ? pt.desc.tr : pt.desc.en}</span>
+                        <button key={pt.key} onClick={() => { setManualData({ ...manualData, potType: isTr ? pt.tr : pt.en }); setManualStep("amount"); }}
+                          className="bg-secondary rounded-2xl p-3 text-center hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                          <img src={pt.img} alt="" loading="lazy" className="w-16 h-16 object-contain" />
+                          <span className="text-xs font-bold text-foreground leading-tight">{isTr ? pt.tr : pt.en}</span>
+                          <span className="text-[10px] text-muted-foreground leading-tight">{isTr ? pt.desc.tr : pt.desc.en}</span>
                         </button>
                       ))}
                     </div>
                     <button onClick={() => setManualStep("pot")} className="text-xs text-primary font-medium">
-                      ← {isTr ? "Geri" : "Back"}
-                    </button>
-                  </div>
-                )}
-
-                {manualStep === "frequency" && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-foreground">{isTr ? "Mevcut Sulama Sıklığı" : "Current Watering Frequency"}</p>
-                    <div className="space-y-1.5">
-                      {frequencyOptions.map(fo => (
-                        <button key={fo.key} onClick={() => { setManualData({ ...manualData, frequency: isTr ? fo.tr : fo.en }); setManualStep("amount"); }}
-                          className="w-full bg-secondary rounded-xl p-3 text-sm text-foreground text-left hover:bg-primary/10 transition-colors">
-                          {isTr ? fo.tr : fo.en}
-                        </button>
-                      ))}
-                    </div>
-                    <button onClick={() => setManualStep("potType")} className="text-xs text-primary font-medium">
                       ← {isTr ? "Geri" : "Back"}
                     </button>
                   </div>
@@ -575,10 +608,8 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                     <p className="text-sm font-semibold text-foreground">{isTr ? "Sulama Miktarı" : "Watering Amount"}</p>
                     <div className="space-y-1.5">
                       {amountOptions.map(ao => (
-                        <button key={ao.key} onClick={() => { setManualData({ ...manualData, amount: isTr ? ao.tr : ao.en }); }}
-                          className={`w-full rounded-xl p-3 flex items-center gap-3 transition-colors ${
-                            manualData.amount === (isTr ? ao.tr : ao.en) ? "bg-primary/10 border-2 border-primary" : "bg-secondary hover:bg-primary/5"
-                          }`}>
+                        <button key={ao.key} onClick={() => { setManualData({ ...manualData, amount: isTr ? ao.tr : ao.en }); setManualStep("frequency"); }}
+                          className="w-full bg-secondary rounded-xl p-3 flex items-center gap-3 hover:bg-primary/10 transition-colors">
                           <span className="text-xl">{ao.emoji}</span>
                           <div className="flex-1 text-left">
                             <span className="text-sm font-semibold text-foreground">{isTr ? ao.tr : ao.en}</span>
@@ -587,13 +618,32 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
                         </button>
                       ))}
                     </div>
-                    {manualData.amount && (
+                    <button onClick={() => setManualStep("potType")} className="text-xs text-primary font-medium">
+                      ← {isTr ? "Geri" : "Back"}
+                    </button>
+                  </div>
+                )}
+
+                {manualStep === "frequency" && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-foreground">{isTr ? "Mevcut Sulama Sıklığı" : "Current Watering Frequency"}</p>
+                    <div className="space-y-1.5">
+                      {frequencyOptions.map(fo => (
+                        <button key={fo.key} onClick={() => { setManualData({ ...manualData, frequency: isTr ? fo.tr : fo.en }); }}
+                          className={`w-full rounded-xl p-3 text-sm text-foreground text-left transition-colors ${
+                            manualData.frequency === (isTr ? fo.tr : fo.en) ? "bg-primary/10 border-2 border-primary" : "bg-secondary hover:bg-primary/5"
+                          }`}>
+                          {isTr ? fo.tr : fo.en}
+                        </button>
+                      ))}
+                    </div>
+                    {manualData.frequency && (
                       <button onClick={handleManualAnalysis}
                         className="w-full bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-semibold mt-2">
                         {isTr ? "Analiz Et" : "Analyze"}
                       </button>
                     )}
-                    <button onClick={() => setManualStep("frequency")} className="text-xs text-primary font-medium">
+                    <button onClick={() => setManualStep("amount")} className="text-xs text-primary font-medium">
                       ← {isTr ? "Geri" : "Back"}
                     </button>
                   </div>
@@ -629,56 +679,111 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
         </motion.div>
       )}
 
-      {/* Calendar View */}
-      {true && (
-        <div className="px-4 mt-4">
-          <div className="bg-card rounded-2xl border border-border p-3">
-            <h3 className="text-sm font-bold text-foreground mb-2">
-              {today.toLocaleDateString(isTr ? "tr-TR" : "en-US", { month: "long", year: "numeric" })}
+      {/* Calendar View — with month nav + clickable days */}
+      <div className="px-4 mt-4">
+        <div className="bg-card rounded-2xl border border-border p-3">
+          <div className="flex items-center justify-between mb-2">
+            <button onClick={() => { setSelectedDay(null); setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1)); }}
+              className="p-1.5 rounded-lg hover:bg-secondary" aria-label="prev month">
+              <ChevronLeft className="w-4 h-4 text-foreground" />
+            </button>
+            <h3 className="text-sm font-bold text-foreground">
+              {viewMonth.toLocaleDateString(isTr ? "tr-TR" : "en-US", { month: "long", year: "numeric" })}
             </h3>
-            <div className="grid grid-cols-7 gap-1 text-center">
-              {(isTr ? ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]).map(d => (
-                <span key={d} className="text-[10px] font-medium text-muted-foreground">{d}</span>
-              ))}
-              {Array.from({ length: (firstDayOfWeek + 6) % 7 }).map((_, i) => (
-                <div key={`empty-${i}`} />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1;
-                const isToday = day === today.getDate();
-                const isPast = day < today.getDate();
-                const dayEvents = eventsByDay.get(day) || [];
-                const completedCount = dayEvents.filter(e => e.status === "completed").length;
-                const scheduledCount = dayEvents.filter(e => e.status === "scheduled").length;
-                return (
-                  <div key={day}
-                    title={dayEvents.map(e => {
-                      const p = plants.find(pl => pl.id === e.plant_id);
-                      return `${p?.name || ""} (${e.status})`;
-                    }).join(", ")}
-                    className={`relative w-full aspect-square flex items-center justify-center rounded-lg text-xs ${
-                      isToday ? "bg-primary text-primary-foreground font-bold" : "text-foreground"
-                    }`}>
-                    {day}
-                    <div className="absolute bottom-0.5 flex gap-0.5">
-                      {completedCount > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />}
-                      {scheduledCount > 0 && (
-                        <div className={`w-1.5 h-1.5 rounded-full ${isPast ? "bg-destructive/50" : isToday ? "bg-blue-500" : "bg-blue-300"}`} />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex flex-wrap items-center gap-3 mt-3 text-[10px] text-muted-foreground">
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/60" /> {isTr ? "Tamamlandı" : "Completed"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün" : "Today"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300" /> {isTr ? "Planlanan" : "Planned"}</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive/50" /> {isTr ? "Kaçırıldı" : "Missed"}</div>
-            </div>
+            <button onClick={() => { setSelectedDay(null); setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1)); }}
+              className="p-1.5 rounded-lg hover:bg-secondary" aria-label="next month">
+              <ChevronRight className="w-4 h-4 text-foreground" />
+            </button>
           </div>
+          {!isCurrentMonth && (
+            <button onClick={() => { setViewMonth(new Date(today.getFullYear(), today.getMonth(), 1)); setSelectedDay(null); }}
+              className="text-[11px] text-primary font-medium mb-2">
+              ↺ {isTr ? "Bu aya dön" : "Back to current month"}
+            </button>
+          )}
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {(isTr ? ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]).map(d => (
+              <span key={d} className="text-[10px] font-medium text-muted-foreground">{d}</span>
+            ))}
+            {Array.from({ length: (firstDayOfWeek + 6) % 7 }).map((_, i) => (
+              <div key={`empty-${i}`} />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const isToday = isCurrentMonth && day === today.getDate();
+              const isPast = isCurrentMonth ? day < today.getDate() : viewMonth < new Date(today.getFullYear(), today.getMonth(), 1);
+              const dayEvents = eventsByDay.get(day) || [];
+              const completedCount = dayEvents.filter(e => e.status === "completed").length;
+              const scheduledCount = dayEvents.filter(e => e.status === "scheduled").length;
+              const isSelected = selectedDay === day;
+              return (
+                <button key={day} onClick={() => setSelectedDay(isSelected ? null : day)}
+                  className={`relative w-full aspect-square flex items-center justify-center rounded-lg text-xs transition-colors ${
+                    isSelected ? "bg-primary text-primary-foreground font-bold ring-2 ring-primary"
+                      : isToday ? "bg-primary/15 text-primary font-bold"
+                      : "text-foreground hover:bg-secondary"
+                  }`}>
+                  {day}
+                  <div className="absolute bottom-0.5 flex gap-0.5">
+                    {completedCount > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />}
+                    {scheduledCount > 0 && (
+                      <div className={`w-1.5 h-1.5 rounded-full ${isPast ? "bg-destructive/50" : isToday ? "bg-blue-500" : "bg-blue-300"}`} />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary/60" /> {isTr ? "Tamamlandı" : "Completed"}</div>
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {isTr ? "Bugün" : "Today"}</div>
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-300" /> {isTr ? "Planlanan" : "Planned"}</div>
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive/50" /> {isTr ? "Kaçırıldı" : "Missed"}</div>
+          </div>
+
+          {/* Selected day details */}
+          {selectedDay && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold text-foreground">
+                  {new Date(viewMonth.getFullYear(), viewMonth.getMonth(), selectedDay).toLocaleDateString(isTr ? "tr-TR" : "en-US", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+                <button onClick={() => setSelectedDay(null)} className="p-1 rounded hover:bg-secondary">
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </div>
+              {selectedDayEvents.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{isTr ? "Bu gün sulama yok" : "No watering on this day"}</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {selectedDayEvents.map(ev => {
+                    const p = plants.find(pl => pl.id === ev.plant_id);
+                    return (
+                      <li key={ev.id} className="flex items-center gap-2 text-xs">
+                        {p?.photo_url ? (
+                          <img src={p.photo_url} alt="" className="w-7 h-7 rounded-md object-cover" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-md bg-blue-50 flex items-center justify-center">
+                            <Droplets className="w-3.5 h-3.5 text-blue-400" />
+                          </div>
+                        )}
+                        <span className="flex-1 font-medium text-foreground">{p?.name || (isTr ? "Bilinmeyen bitki" : "Unknown plant")}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                          ev.status === "completed" ? "bg-primary/15 text-primary" : "bg-blue-100 text-blue-700"
+                        }`}>
+                          {ev.status === "completed"
+                            ? (isTr ? "Sulandı" : "Watered")
+                            : (isTr ? "Planlı" : "Scheduled")}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* List View */}
       {wateringPlants.length === 0 && wateredPlants.length === 0 ? (
