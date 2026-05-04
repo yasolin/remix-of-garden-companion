@@ -144,9 +144,12 @@ const WateringPage = () => {
   
   const [manualStep, setManualStep] = useState<ManualStep>("type");
   const [manualData, setManualData] = useState({ plantType: "", potSize: "", potType: "", frequency: "", amount: "" });
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Calendar is the only view now
+  // Calendar navigation state
   const today = new Date();
+  const [viewMonth, setViewMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
@@ -154,11 +157,11 @@ const WateringPage = () => {
     enabled: !!user,
   });
 
-  // Fetch watering events for current month +/- range
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+  // Fetch watering events for the visible month
+  const monthStart = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
+  const monthEnd = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0, 23, 59, 59);
   const { data: events = [] } = useQuery({
-    queryKey: ["watering_events", user?.id, today.getFullYear(), today.getMonth()],
+    queryKey: ["watering_events", user?.id, viewMonth.getFullYear(), viewMonth.getMonth()],
     queryFn: () => fetchUserWateringEvents(user!.id, monthStart, monthEnd),
     enabled: !!user,
   });
