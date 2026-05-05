@@ -134,9 +134,17 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     if (!user) return;
+    // Persist to profiles table
     const { error } = await supabase.from("profiles" as any).update({ display_name: displayName } as any).eq("user_id", user.id);
-    if (error) toast({ title: "❌", description: error.message, variant: "destructive" });
-    else { toast({ title: "✅", description: t("profile.saveProfile") }); refetchProfile(); setView("main"); }
+    if (error) { toast({ title: "❌", description: error.message, variant: "destructive" }); return; }
+    // Also persist to auth user_metadata so it survives sessions and shows in greeting
+    await supabase.auth.updateUser({ data: { display_name: displayName } });
+    toast({ title: "✅", description: t("profile.saveProfile") });
+    refetchProfile();
+    // Refresh anything showing the display name (community posts/comments etc.)
+    queryClient.invalidateQueries({ queryKey: ["community-posts"] });
+    queryClient.invalidateQueries({ queryKey: ["community-comments"] });
+    setView("main");
   };
 
   const handleFreezeAccount = async () => {
