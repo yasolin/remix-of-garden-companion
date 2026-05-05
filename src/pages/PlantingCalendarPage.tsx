@@ -91,6 +91,7 @@ const PlantingCalendarPage = () => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [selectedPlant, setSelectedPlant] = useState<CalendarPlant | null>(null);
   const lang = (i18n.language === "en" ? "en" : "tr") as "tr" | "en";
 
@@ -173,33 +174,78 @@ const PlantingCalendarPage = () => {
 
           {/* Day cells */}
           <div className="grid grid-cols-7 gap-0.5">
-            {calendarDays.map((cell, i) => (
-              <div key={i}
-                onClick={() => { if (cell.plants.length > 0) setSelectedPlant(cell.plants[0]); }}
-                className={`min-h-[52px] rounded-lg p-0.5 text-center border transition-colors ${
-                  cell.day === null ? "border-transparent"
-                    : cell.day === today && selectedMonth === currentMonth
-                      ? "border-primary bg-primary/5"
-                      : cell.plants.length > 0
-                        ? "border-primary/20 bg-primary/5 cursor-pointer hover:bg-primary/10"
-                        : "border-border/50"
-                }`}>
-                {cell.day !== null && (
-                  <>
-                    <span className={`text-[10px] font-semibold ${
-                      cell.day === today && selectedMonth === currentMonth ? "text-primary" : "text-foreground"
-                    }`}>{cell.day}</span>
-                    <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
-                      {cell.plants.slice(0, 2).map((p, pi) => (
-                        <span key={pi} className="text-[10px] leading-none">{p.emoji}</span>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
+            {calendarDays.map((cell, i) => {
+              const isToday = cell.day === today && selectedMonth === currentMonth;
+              const isSelected = cell.day !== null && cell.day === selectedDay;
+              return (
+                <div key={i}
+                  onClick={() => { if (cell.day !== null) { setSelectedDay(cell.day); setSelectedPlant(null); } }}
+                  className={`min-h-[52px] rounded-lg p-0.5 text-center border transition-colors ${
+                    cell.day === null ? "border-transparent"
+                      : isSelected
+                        ? "border-primary bg-primary/15 cursor-pointer ring-1 ring-primary"
+                        : isToday
+                          ? "border-primary bg-primary/5 cursor-pointer"
+                          : cell.plants.length > 0
+                            ? "border-primary/20 bg-primary/5 cursor-pointer hover:bg-primary/10"
+                            : "border-border/50 cursor-pointer hover:bg-secondary/50"
+                  }`}>
+                  {cell.day !== null && (
+                    <>
+                      <span className={`text-[10px] font-semibold ${
+                        isToday ? "text-primary" : "text-foreground"
+                      }`}>{cell.day}</span>
+                      <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
+                        {cell.plants.slice(0, 2).map((p, pi) => (
+                          <span key={pi} className="text-[10px] leading-none">{p.emoji}</span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </motion.div>
+
+        {/* Selected day — plants for that day with tips */}
+        <AnimatePresence>
+          {selectedDay !== null && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="mt-3 bg-card rounded-2xl border border-primary/20 p-4 shadow-card">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-bold text-sm text-foreground">
+                  {selectedDay} {fullMonthNames[lang][selectedMonth]} — {lang === "en" ? "Plant today" : "Bugün ekilebilir"}
+                </h4>
+                <button onClick={() => setSelectedDay(null)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+              </div>
+              {(() => {
+                const dayPlants = plants.filter(p => p.plantDays.includes(selectedDay));
+                if (dayPlants.length === 0) {
+                  return <p className="text-xs text-muted-foreground">{lang === "en" ? "No recommended plants for this day." : "Bu gün için önerilen bitki yok."}</p>;
+                }
+                return (
+                  <div className="space-y-2">
+                    {dayPlants.map(p => (
+                      <div key={p.name[lang]} className="flex items-start gap-2 bg-primary/5 rounded-lg p-2.5">
+                        <span className="text-xl">{p.emoji}</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-foreground">{p.name[lang]}</p>
+                          {p.note && (
+                            <p className="text-[11px] text-muted-foreground mt-0.5">💡 {p.note[lang]}</p>
+                          )}
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {t("calendar.idealDays")}: {p.plantDays.join(", ")}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Selected plant detail */}
         <AnimatePresence>
