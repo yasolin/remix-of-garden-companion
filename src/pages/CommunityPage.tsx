@@ -1,4 +1,4 @@
-import { ArrowLeft, Heart, MessageCircle, Share2, Plus, Send, Image, X, Trash2 } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Share2, Plus, Send, Image, X, Trash2, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -25,7 +25,7 @@ const categories = [
 
 const CommunityPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showNewPost, setShowNewPost] = useState(false);
@@ -38,6 +38,8 @@ const CommunityPage = () => {
   const [expandedComments, setExpandedComments] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translating, setTranslating] = useState<string | null>(null);
   const imageRef = useRef<HTMLInputElement>(null);
 
   const { data: posts = [], isLoading } = useQuery({
@@ -125,6 +127,71 @@ const CommunityPage = () => {
     if (!confirm(t("community.confirmDelete"))) return;
     await deletePost(postId);
     queryClient.invalidateQueries({ queryKey: ["community-posts"] });
+  };
+
+  const handleShare = async (post: CommunityPost) => {
+    const text = `${post.profile?.display_name || ""}: ${post.content}`;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: t("community.title"), text, url });
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        toast({ title: "✅", description: i18n.language === "tr" ? "Bağlantı kopyalandı" : "Link copied" });
+      }
+    } catch {/* user cancelled */}
+  };
+
+  const handleTranslate = async (post: CommunityPost) => {
+    if (translations[post.id]) {
+      // Toggle off
+      setTranslations(prev => {
+        const next = { ...prev };
+        delete next[post.id];
+        return next;
+      });
+      return;
+    }
+    setTranslating(post.id);
+    try {
+      const target = i18n.language === "tr" ? "Turkish" : "English";
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/plant-ai`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: `Translate the following text to ${target}. Only return the translation, no extra commentary:\n\n${post.content}` }],
+          mode: "translate", lang: i18n.language,
+        }),
+      });
+      if (!resp.ok || !resp.body) throw new Error("translate failed");
+      const rdr = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let result = "";
+      let buf = "";
+      while (true) {
+        const { done, value } = await rdr.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) !== -1) {
+          let line = buf.slice(0, nl);
+          buf = buf.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
+          const js = line.slice(6).trim();
+          if (js === "[DONE]") continue;
+          try {
+            const p = JSON.parse(js);
+            const c = p.choices?.[0]?.delta?.content;
+            if (c) result += c;
+          } catch {}
+        }
+      }
+      setTranslations(prev => ({ ...prev, [post.id]: result.trim() || post.content }));
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    }
+    setTranslating(null);
   };
 
   const timeAgo = (dateStr: string) => {
@@ -244,7 +311,16 @@ const CommunityPage = () => {
                   )}
                 </div>
 
-                <p className="text-sm text-foreground mb-3">{post.content}</p>
+                <p className="text-sm text-foreground mb-1">{post.content}</p>
+                {translations[post.id] && (
+                  <div className="bg-primary/5 border-l-2 border-primary/40 rounded-md px-2 py-1.5 mb-3">
+                    <p className="text-[10px] uppercase font-bold text-primary/70 mb-0.5">
+                      {i18n.language === "tr" ? "Çeviri" : "Translation"}
+                    </p>
+                    <p className="text-sm text-foreground">{translations[post.id]}</p>
+                  </div>
+                )}
+                {!translations[post.id] && <div className="mb-3" />}
 
                 {post.image_url && (
                   <img src={post.image_url} alt="" className="w-full h-48 object-cover rounded-xl mb-3" />
@@ -261,7 +337,15 @@ const CommunityPage = () => {
                     <MessageCircle className="w-4 h-4" />
                     <span className="text-xs">{post.comments_count}</span>
                   </button>
-                  <button className="flex items-center gap-1.5 text-sm text-muted-foreground ml-auto">
+                  <button onClick={() => handleTranslate(post)} disabled={translating === post.id}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50">
+                    {translating === post.id ? (
+                      <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Languages className={`w-4 h-4 ${translations[post.id] ? "text-primary" : ""}`} />
+                    )}
+                  </button>
+                  <button onClick={() => handleShare(post)} className="flex items-center gap-1.5 text-sm text-muted-foreground ml-auto hover:text-primary transition-colors">
                     <Share2 className="w-4 h-4" />
                   </button>
                 </div>

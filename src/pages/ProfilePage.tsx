@@ -134,9 +134,17 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     if (!user) return;
+    // Persist to profiles table
     const { error } = await supabase.from("profiles" as any).update({ display_name: displayName } as any).eq("user_id", user.id);
-    if (error) toast({ title: "❌", description: error.message, variant: "destructive" });
-    else { toast({ title: "✅", description: t("profile.saveProfile") }); refetchProfile(); setView("main"); }
+    if (error) { toast({ title: "❌", description: error.message, variant: "destructive" }); return; }
+    // Also persist to auth user_metadata so it survives sessions and shows in greeting
+    await supabase.auth.updateUser({ data: { display_name: displayName } });
+    toast({ title: "✅", description: t("profile.saveProfile") });
+    refetchProfile();
+    // Refresh anything showing the display name (community posts/comments etc.)
+    queryClient.invalidateQueries({ queryKey: ["community-posts"] });
+    queryClient.invalidateQueries({ queryKey: ["community-comments"] });
+    setView("main");
   };
 
   const handleFreezeAccount = async () => {
@@ -180,11 +188,17 @@ const ProfilePage = () => {
   const handleLogout = async () => { await signOut(); };
 
   const achievements = [
-    { icon: Leaf, label: t("profile.firstPlanting"), color: "bg-primary/15 text-primary", unlocked: plants.length > 0 },
-    { icon: Droplets, label: t("profile.loyalWaterer"), color: "bg-blue-500/15 text-blue-500", unlocked: plants.some(p => !p.needs_watering) },
-    { icon: Target, label: t("profile.firstHarvest"), color: "bg-accent/15 text-accent", unlocked: plants.some(p => (p.days_to_harvest ?? 30) <= 0) },
-    { icon: Crown, label: t("profile.plantFriend"), color: "bg-purple-500/15 text-purple-500", unlocked: plants.length >= 5 },
+    { icon: Leaf, label: t("profile.firstPlanting"), color: "bg-primary/15 text-primary", unlocked: plants.length > 0,
+      desc: i18n.language === "tr" ? "İlk bitkini ekleyince kazanılır." : "Earned when you add your first plant." },
+    { icon: Droplets, label: t("profile.loyalWaterer"), color: "bg-blue-500/15 text-blue-500", unlocked: plants.some(p => !p.needs_watering),
+      desc: i18n.language === "tr" ? "En az bir bitkini düzenli sulayınca kazanılır." : "Earned when at least one plant is watered on time." },
+    { icon: Target, label: t("profile.firstHarvest"), color: "bg-accent/15 text-accent", unlocked: plants.some(p => (p.days_to_harvest ?? 30) <= 0),
+      desc: i18n.language === "tr" ? "İlk hasada hazır bitkin olunca kazanılır." : "Earned when your first plant is ready to harvest." },
+    { icon: Crown, label: t("profile.plantFriend"), color: "bg-purple-500/15 text-purple-500", unlocked: plants.length >= 5,
+      desc: i18n.language === "tr" ? "5 veya daha fazla bitki ekleyince kazanılır." : "Earned when you have 5 or more plants." },
   ];
+
+  const [activeAchievement, setActiveAchievement] = useState<typeof achievements[number] | null>(null);
 
   // Edit Profile sub-view
   if (view === "editProfile") {
@@ -491,7 +505,8 @@ const ProfilePage = () => {
         </div>
         <div className="grid grid-cols-4 gap-2">
           {achievements.map((badge) => (
-            <div key={badge.label} className="flex flex-col items-center gap-1.5">
+            <button key={badge.label} onClick={() => setActiveAchievement(badge)}
+              className="flex flex-col items-center gap-1.5 focus:outline-none">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
                 badge.unlocked ? badge.color : "bg-muted/50 text-muted-foreground/30"
               }`}>
@@ -500,10 +515,41 @@ const ProfilePage = () => {
               <span className={`text-[9px] font-semibold text-center leading-tight ${
                 badge.unlocked ? "text-foreground" : "text-muted-foreground/50"
               }`}>{badge.label}</span>
-            </div>
+            </button>
           ))}
         </div>
       </motion.div>
+
+      {/* Achievement detail dialog */}
+      {activeAchievement && (
+        <div onClick={() => setActiveAchievement(null)}
+          className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            onClick={e => e.stopPropagation()}
+            className="bg-card rounded-2xl border border-border p-5 max-w-xs w-full shadow-lg">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                activeAchievement.unlocked ? activeAchievement.color : "bg-muted/50 text-muted-foreground/40"
+              }`}>
+                <activeAchievement.icon className="w-8 h-8" />
+              </div>
+              <div>
+                <h4 className="font-bold text-foreground">{activeAchievement.label}</h4>
+                <p className="text-xs text-muted-foreground mt-1">{activeAchievement.desc}</p>
+                <p className={`text-[11px] font-semibold mt-2 ${activeAchievement.unlocked ? "text-primary" : "text-muted-foreground"}`}>
+                  {activeAchievement.unlocked
+                    ? (i18n.language === "tr" ? "✓ Kazanıldı" : "✓ Unlocked")
+                    : (i18n.language === "tr" ? "🔒 Henüz kazanılmadı" : "🔒 Not yet unlocked")}
+                </p>
+              </div>
+              <button onClick={() => setActiveAchievement(null)}
+                className="mt-2 bg-primary text-primary-foreground text-sm font-semibold px-5 py-2 rounded-full">
+                {i18n.language === "tr" ? "Tamam" : "Got it"}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* My Plants */}
       <div className="mx-4 mt-4">
