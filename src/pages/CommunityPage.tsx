@@ -337,7 +337,15 @@ const CommunityPage = () => {
                     <MessageCircle className="w-4 h-4" />
                     <span className="text-xs">{post.comments_count}</span>
                   </button>
-                  <button className="flex items-center gap-1.5 text-sm text-muted-foreground ml-auto">
+                  <button onClick={() => handleTranslate(post)} disabled={translating === post.id}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50">
+                    {translating === post.id ? (
+                      <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Languages className={`w-4 h-4 ${translations[post.id] ? "text-primary" : ""}`} />
+                    )}
+                  </button>
+                  <button onClick={() => handleShare(post)} className="flex items-center gap-1.5 text-sm text-muted-foreground ml-auto hover:text-primary transition-colors">
                     <Share2 className="w-4 h-4" />
                   </button>
                 </div>
