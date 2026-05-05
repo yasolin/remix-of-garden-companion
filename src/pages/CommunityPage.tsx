@@ -311,7 +311,16 @@ const CommunityPage = () => {
                   )}
                 </div>
 
-                <p className="text-sm text-foreground mb-3">{post.content}</p>
+                <p className="text-sm text-foreground mb-1">{post.content}</p>
+                {translations[post.id] && (
+                  <div className="bg-primary/5 border-l-2 border-primary/40 rounded-md px-2 py-1.5 mb-3">
+                    <p className="text-[10px] uppercase font-bold text-primary/70 mb-0.5">
+                      {i18n.language === "tr" ? "Çeviri" : "Translation"}
+                    </p>
+                    <p className="text-sm text-foreground">{translations[post.id]}</p>
+                  </div>
+                )}
+                {!translations[post.id] && <div className="mb-3" />}
 
                 {post.image_url && (
                   <img src={post.image_url} alt="" className="w-full h-48 object-cover rounded-xl mb-3" />
