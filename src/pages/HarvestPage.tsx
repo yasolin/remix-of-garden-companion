@@ -55,6 +55,32 @@ function estimateCurrentStage(plant: any): number {
   return Math.min(Math.floor(progress * numStages), numStages - 1);
 }
 
+const STAGE_LABELS_TR = ["Ekim", "Çimlenme", "Çiçeklenme", "Meyve", "Hasat"];
+const STAGE_LABELS_EN = ["Planting", "Germination", "Flowering", "Fruiting", "Harvest"];
+
+function nextStageInfo(plant: any, lang: string) {
+  const totalDays = plant.days_to_harvest ?? 60;
+  if (!plant.planted_date) return null;
+  const planted = new Date(plant.planted_date).getTime();
+  const day = 24 * 60 * 60 * 1000;
+  const hasFruit = hasFruitStage(plant.name);
+  const stageOffsets = hasFruit
+    ? [0, 7, Math.max(14, totalDays * 0.4), Math.max(21, totalDays * 0.7), totalDays]
+    : [0, 7, Math.max(14, totalDays * 0.5), totalDays];
+  const labels = lang === "en" ? STAGE_LABELS_EN : STAGE_LABELS_TR;
+  const stageNames = hasFruit ? labels : [labels[0], labels[1], labels[2], labels[4]];
+  const now = Date.now();
+  for (let i = 0; i < stageOffsets.length; i++) {
+    const stageDate = planted + stageOffsets[i] * day;
+    if (stageDate > now) {
+      const daysLeft = Math.ceil((stageDate - now) / day);
+      const harvestDate = new Date(planted + totalDays * day);
+      return { name: stageNames[i], daysLeft, harvestDate };
+    }
+  }
+  return null;
+}
+
 const DAILY_SCAN_KEY = "gardenPotLastScanDate";
 const DAILY_SCAN_COUNT_KEY = "gardenPotScanCount";
 
@@ -218,6 +244,7 @@ const HarvestPage = () => {
         {plants.map((plant, i) => {
           const daysToHarvest = plant.estimatedDays;
           const fruit = hasFruitStage(plant.name);
+          const nextStage = nextStageInfo(plant, i18n.language);
 
           return (
             <motion.div key={plant.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
@@ -239,6 +266,26 @@ const HarvestPage = () => {
                   }`}>{t("harvest.days", { count: daysToHarvest })}</span>
                 </div>
               </div>
+              {nextStage && (
+                <div className="mt-3 flex items-center justify-between bg-primary/5 border border-primary/15 rounded-lg px-3 py-2">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {i18n.language === "en" ? "Next stage" : "Sonraki aşama"}
+                    </p>
+                    <p className="text-xs font-semibold text-foreground">
+                      {nextStage.name} • {nextStage.daysLeft} {i18n.language === "en" ? "days" : "gün"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {i18n.language === "en" ? "Est. harvest" : "Tah. hasat"}
+                    </p>
+                    <p className="text-xs font-semibold text-primary">
+                      {nextStage.harvestDate.toLocaleDateString(i18n.language === "en" ? "en-US" : "tr-TR", { day: "2-digit", month: "short" })}
+                    </p>
+                  </div>
+                </div>
+              )}
               <GrowthTimeline currentStage={plant.autoStage} hasFruit={fruit} />
             </motion.div>
           );
