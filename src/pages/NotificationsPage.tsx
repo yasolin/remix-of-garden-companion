@@ -13,6 +13,10 @@ const typeIcons: Record<string, string> = {
   community_like: "❤️",
   community_comment: "💬",
   info: "📢",
+  stage_germination: "🌱",
+  stage_flowering: "🌸",
+  stage_fruiting: "🍅",
+  stage_harvest: "🌾",
 };
 
 const NotificationsPage = () => {
@@ -31,9 +35,25 @@ const NotificationsPage = () => {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const handleRead = async (notif: AppNotification) => {
-    if (notif.is_read) return;
-    await markAsRead(notif.id);
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    if (!notif.is_read) {
+      await markAsRead(notif.id);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["unread-count"] });
+    }
+    // Route based on notification type
+    const t = notif.type;
+    if (t === "watering") {
+      navigate("/watering");
+    } else if (t === "harvest" || t.startsWith("stage_")) {
+      // related_id may be `${plantId}:${stage}` for stage notifications
+      const plantId = notif.related_id?.split(":")[0];
+      if (plantId) navigate(`/plant/${plantId}`);
+      else navigate("/harvest");
+    } else if (t === "planting") {
+      navigate("/planting-calendar");
+    } else if (t === "community_like" || t === "community_comment") {
+      navigate("/community");
+    }
   };
 
   const handleMarkAllRead = async () => {

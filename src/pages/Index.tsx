@@ -5,9 +5,10 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWeather } from "@/hooks/useWeather";
 import { getUnreadCount } from "@/lib/notificationService";
+import { checkAndCreateStageNotifications } from "@/lib/stageNotifications";
 import logo from "@/assets/logo.png";
 
 interface TaskItem {
@@ -39,6 +40,13 @@ const Index = () => {
     enabled: !!user,
     refetchInterval: 15000,
   });
+
+  // Check for upcoming stage notifications when plants load
+  useEffect(() => {
+    if (user && plants.length > 0) {
+      checkAndCreateStageNotifications(user.id, plants).catch(() => {});
+    }
+  }, [user, plants]);
 
   const harvestSoon = plants.filter(p => (p.days_to_harvest ?? 30) <= 7).length;
   const needsWater = plants.filter(p => p.needs_watering).length;
