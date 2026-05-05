@@ -41,6 +41,13 @@ const Index = () => {
     refetchInterval: 15000,
   });
 
+  // Check for upcoming stage notifications when plants load
+  useEffect(() => {
+    if (user && plants.length > 0) {
+      checkAndCreateStageNotifications(user.id, plants).catch(() => {});
+    }
+  }, [user, plants]);
+
   const harvestSoon = plants.filter(p => (p.days_to_harvest ?? 30) <= 7).length;
   const needsWater = plants.filter(p => p.needs_watering).length;
   const waterNames = plants.filter(p => p.needs_watering).map(p => p.name).join(", ");
