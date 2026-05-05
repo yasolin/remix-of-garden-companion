@@ -5,9 +5,10 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWeather } from "@/hooks/useWeather";
 import { getUnreadCount } from "@/lib/notificationService";
+import { checkAndCreateStageNotifications } from "@/lib/stageNotifications";
 import logo from "@/assets/logo.png";
 
 interface TaskItem {
