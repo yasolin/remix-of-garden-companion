@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { cleanMarkdown } from "@/lib/textClean";
 
 const waterAmounts: Record<string, string> = {
   domates: "250 ml", tomato: "250 ml", biber: "200 ml", pepper: "200 ml",
@@ -320,7 +321,7 @@ const WateringPage = () => {
           } catch {}
         }
       }
-      setAiResult(result || t("watering.aiNoResult"));
+      setAiResult(cleanMarkdown(result) || t("watering.aiNoResult"));
       recordWaterScan();
     } catch (e: any) {
       toast({ title: "❌", description: e.message, variant: "destructive" });
