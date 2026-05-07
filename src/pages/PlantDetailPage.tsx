@@ -269,16 +269,29 @@ const PlantDetailPage = () => {
         </div>
       </div>
 
-      {/* Direction (if set) */}
-      {form.direction && (
-        <div className="px-4 mt-3">
-          <div className="bg-card rounded-xl p-3 border border-border flex items-center gap-2">
-            <Compass className="w-4 h-4 text-primary" />
-            <span className="text-xs font-semibold text-foreground">{t("detail.direction")}:</span>
-            <span className="text-xs text-muted-foreground">{form.direction}</span>
-          </div>
+      {/* Direction (yön) — separate from in-home placement */}
+      <div className="px-4 mt-3">
+        <div className="bg-card rounded-xl p-3 border border-border flex items-center gap-2">
+          <Compass className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold text-foreground">{t("detail.direction")}:</span>
+          {isEditing ? (
+            <select value={form.direction || ""}
+              onChange={(e) => setForm({ ...form, direction: e.target.value })}
+              className="flex-1 bg-secondary rounded-lg px-2 py-1 text-xs text-foreground outline-none">
+              <option value="">—</option>
+              {["Kuzey","Kuzeydoğu","Doğu","Güneydoğu","Güney","Güneybatı","Batı","Kuzeybatı"].map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-xs text-muted-foreground flex-1">{form.direction || "—"}</span>
+          )}
+          <button onClick={() => navigate("/location-analysis")}
+            className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-1 rounded-md">
+            {t("ai.locationAnalysis")}
+          </button>
         </div>
-      )}
+      </div>
 
       {isEditing && (
         <div className="px-4 mt-4">

@@ -8,6 +8,7 @@ import GrowthTimeline from "@/components/GrowthTimeline";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
+import { cleanMarkdown } from "@/lib/textClean";
 
 // Plant types that produce fruit/vegetable
 const fruitingPlants = new Set([
@@ -177,7 +178,7 @@ const HarvestPage = () => {
               } catch {}
             }
           }
-          setAiResult(result || t("harvest.aiNoResult"));
+          setAiResult(cleanMarkdown(result) || t("harvest.aiNoResult"));
           recordScan();
         } catch (e: any) {
           toast({ title: "❌", description: e.message, variant: "destructive" });

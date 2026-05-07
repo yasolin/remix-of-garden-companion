@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { cleanMarkdown } from "@/lib/textClean";
 
 const waterAmounts: Record<string, string> = {
   domates: "250 ml", tomato: "250 ml", biber: "200 ml", pepper: "200 ml",
@@ -94,30 +95,7 @@ const frequencyOptions = [
 ];
 
 // Comprehensive plant name suggestions used for autocomplete + validation
-const plantSuggestions = [
-  "Domates","Tomato","Biber","Pepper","Patlıcan","Eggplant","Salatalık","Cucumber",
-  "Kabak","Squash","Karpuz","Watermelon","Kavun","Melon","Fasulye","Bean","Bezelye","Pea",
-  "Nane","Mint","Fesleğen","Basil","Maydanoz","Parsley","Marul","Lettuce","Kekik","Thyme",
-  "Roka","Arugula","Ispanak","Spinach","Havuç","Carrot","Turp","Radish","Brokoli","Broccoli",
-  "Sardunya","Geranium","Menekşe","Violet","Gül","Rose","Kaktüs","Cactus","Sukulent","Succulent",
-  "Orkide","Orchid","Papatya","Daisy","Lavanta","Lavender","Biberiye","Rosemary","Aloe Vera",
-  "Monstera","Ficus","Filodendron","Philodendron","Yucca","Palmiye","Palm","Çilek","Strawberry",
-  "Üzüm","Grape","Limon","Lemon","Portakal","Orange","Elma","Apple","Kiraz","Cherry",
-  "Sümbül","Hyacinth","Lale","Tulip","Zambak","Lily","Begonya","Begonia","Petunya","Petunia",
-];
-
-function isValidPlantName(s: string): boolean {
-  const trimmed = s.trim().toLowerCase();
-  if (trimmed.length < 2) return false;
-  if (!/^[a-zA-ZçğıöşüÇĞİÖŞÜ\s-]+$/.test(trimmed)) return false;
-  return true;
-}
-
-// Returns true only if the entered text matches one of the known plants
-function isKnownPlantName(s: string): boolean {
-  const trimmed = s.trim().toLowerCase();
-  return plantSuggestions.some(p => p.toLowerCase() === trimmed);
-}
+import { plantCatalog as plantSuggestions, isValidPlantName, isKnownPlantName } from "@/data/plantCatalog";
 
 const amountOptions = [
   { key: "50ml", tr: "50 ml", en: "50 ml", emoji: "🥄", hint: { tr: "~3 yemek kaşığı", en: "~3 tablespoons" } },
@@ -163,6 +141,17 @@ const WateringPage = () => {
   const { data: events = [] } = useQuery({
     queryKey: ["watering_events", user?.id, viewMonth.getFullYear(), viewMonth.getMonth()],
     queryFn: () => fetchUserWateringEvents(user!.id, monthStart, monthEnd),
+    enabled: !!user,
+  });
+
+  // Fetch all events (past 60d → next 60d) for the per-plant schedule list
+  const allRange = useRef({
+    from: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+    to: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+  }).current;
+  const { data: allEvents = [] } = useQuery({
+    queryKey: ["watering_events_all", user?.id],
+    queryFn: () => fetchUserWateringEvents(user!.id, allRange.from, allRange.to),
     enabled: !!user,
   });
 
@@ -320,7 +309,7 @@ const WateringPage = () => {
           } catch {}
         }
       }
-      setAiResult(result || t("watering.aiNoResult"));
+      setAiResult(cleanMarkdown(result) || t("watering.aiNoResult"));
       recordWaterScan();
     } catch (e: any) {
       toast({ title: "❌", description: e.message, variant: "destructive" });
@@ -859,6 +848,82 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
             </div>
           )}
         </>
+      )}
+
+      {/* Per-plant watering schedule (past + future) */}
+      {plants.length > 0 && (
+        <div className="px-4 mt-6">
+          <h3 className="text-sm font-bold text-foreground mb-2">
+            {isTr ? "Bitkilerime Göre Sulama Programı" : "Per-Plant Watering Schedule"}
+          </h3>
+          <div className="space-y-2">
+            {plants.map(plant => {
+              const evs = allEvents
+                .filter(e => e.plant_id === plant.id)
+                .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+              const past = evs.filter(e => e.status === "completed").slice(-3);
+              const upcoming = evs.filter(e => e.status === "scheduled" && new Date(e.scheduled_at) >= new Date()).slice(0, 4);
+              const fmt = (d: string) => new Date(d).toLocaleDateString(isTr ? "tr-TR" : "en-US", { day: "numeric", month: "short" });
+              return (
+                <div key={plant.id} className="bg-card rounded-2xl p-3 border border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    {plant.photo_url ? (
+                      <img src={plant.photo_url} alt={plant.name} className="w-9 h-9 rounded-lg object-cover" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <Droplets className="w-4 h-4 text-blue-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{plant.name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {plant.watering_interval_days
+                          ? (isTr ? `Her ${plant.watering_interval_days} günde bir` : `Every ${plant.watering_interval_days} days`)
+                          : (plant.water_frequency || "")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
+                        {isTr ? "Geçmiş" : "Past"}
+                      </p>
+                      {past.length === 0 ? (
+                        <p className="text-[11px] text-muted-foreground">—</p>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {past.map(e => (
+                            <li key={e.id} className="text-[11px] text-foreground flex items-center gap-1">
+                              <Check className="w-3 h-3 text-primary" />
+                              {fmt(e.completed_at || e.scheduled_at)}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
+                        {isTr ? "Gelecek" : "Upcoming"}
+                      </p>
+                      {upcoming.length === 0 ? (
+                        <p className="text-[11px] text-muted-foreground">—</p>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {upcoming.map(e => (
+                            <li key={e.id} className="text-[11px] text-foreground flex items-center gap-1">
+                              <Droplets className="w-3 h-3 text-blue-500" />
+                              {fmt(e.scheduled_at)}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );
