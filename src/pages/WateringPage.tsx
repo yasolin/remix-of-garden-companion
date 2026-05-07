@@ -144,6 +144,17 @@ const WateringPage = () => {
     enabled: !!user,
   });
 
+  // Fetch all events (past 60d → next 60d) for the per-plant schedule list
+  const allRange = useRef({
+    from: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+    to: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+  }).current;
+  const { data: allEvents = [] } = useQuery({
+    queryKey: ["watering_events_all", user?.id],
+    queryFn: () => fetchUserWateringEvents(user!.id, allRange.from, allRange.to),
+    enabled: !!user,
+  });
+
   useEffect(() => {
     const fetchWeather = async () => {
       try {
