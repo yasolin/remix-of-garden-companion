@@ -849,6 +849,82 @@ Provide: recommended watering amount (ml), optimal schedule, seasonal adjustment
           )}
         </>
       )}
+
+      {/* Per-plant watering schedule (past + future) */}
+      {plants.length > 0 && (
+        <div className="px-4 mt-6">
+          <h3 className="text-sm font-bold text-foreground mb-2">
+            {isTr ? "Bitkilerime Göre Sulama Programı" : "Per-Plant Watering Schedule"}
+          </h3>
+          <div className="space-y-2">
+            {plants.map(plant => {
+              const evs = allEvents
+                .filter(e => e.plant_id === plant.id)
+                .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+              const past = evs.filter(e => e.status === "completed").slice(-3);
+              const upcoming = evs.filter(e => e.status === "scheduled" && new Date(e.scheduled_at) >= new Date()).slice(0, 4);
+              const fmt = (d: string) => new Date(d).toLocaleDateString(isTr ? "tr-TR" : "en-US", { day: "numeric", month: "short" });
+              return (
+                <div key={plant.id} className="bg-card rounded-2xl p-3 border border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    {plant.photo_url ? (
+                      <img src={plant.photo_url} alt={plant.name} className="w-9 h-9 rounded-lg object-cover" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <Droplets className="w-4 h-4 text-blue-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{plant.name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {plant.watering_interval_days
+                          ? (isTr ? `Her ${plant.watering_interval_days} günde bir` : `Every ${plant.watering_interval_days} days`)
+                          : (plant.water_frequency || "")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
+                        {isTr ? "Geçmiş" : "Past"}
+                      </p>
+                      {past.length === 0 ? (
+                        <p className="text-[11px] text-muted-foreground">—</p>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {past.map(e => (
+                            <li key={e.id} className="text-[11px] text-foreground flex items-center gap-1">
+                              <Check className="w-3 h-3 text-primary" />
+                              {fmt(e.completed_at || e.scheduled_at)}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
+                        {isTr ? "Gelecek" : "Upcoming"}
+                      </p>
+                      {upcoming.length === 0 ? (
+                        <p className="text-[11px] text-muted-foreground">—</p>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {upcoming.map(e => (
+                            <li key={e.id} className="text-[11px] text-foreground flex items-center gap-1">
+                              <Droplets className="w-3 h-3 text-blue-500" />
+                              {fmt(e.scheduled_at)}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
