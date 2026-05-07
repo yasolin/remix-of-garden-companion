@@ -95,30 +95,7 @@ const frequencyOptions = [
 ];
 
 // Comprehensive plant name suggestions used for autocomplete + validation
-const plantSuggestions = [
-  "Domates","Tomato","Biber","Pepper","Patlıcan","Eggplant","Salatalık","Cucumber",
-  "Kabak","Squash","Karpuz","Watermelon","Kavun","Melon","Fasulye","Bean","Bezelye","Pea",
-  "Nane","Mint","Fesleğen","Basil","Maydanoz","Parsley","Marul","Lettuce","Kekik","Thyme",
-  "Roka","Arugula","Ispanak","Spinach","Havuç","Carrot","Turp","Radish","Brokoli","Broccoli",
-  "Sardunya","Geranium","Menekşe","Violet","Gül","Rose","Kaktüs","Cactus","Sukulent","Succulent",
-  "Orkide","Orchid","Papatya","Daisy","Lavanta","Lavender","Biberiye","Rosemary","Aloe Vera",
-  "Monstera","Ficus","Filodendron","Philodendron","Yucca","Palmiye","Palm","Çilek","Strawberry",
-  "Üzüm","Grape","Limon","Lemon","Portakal","Orange","Elma","Apple","Kiraz","Cherry",
-  "Sümbül","Hyacinth","Lale","Tulip","Zambak","Lily","Begonya","Begonia","Petunya","Petunia",
-];
-
-function isValidPlantName(s: string): boolean {
-  const trimmed = s.trim().toLowerCase();
-  if (trimmed.length < 2) return false;
-  if (!/^[a-zA-ZçğıöşüÇĞİÖŞÜ\s-]+$/.test(trimmed)) return false;
-  return true;
-}
-
-// Returns true only if the entered text matches one of the known plants
-function isKnownPlantName(s: string): boolean {
-  const trimmed = s.trim().toLowerCase();
-  return plantSuggestions.some(p => p.toLowerCase() === trimmed);
-}
+import { plantCatalog as plantSuggestions, isValidPlantName, isKnownPlantName } from "@/data/plantCatalog";
 
 const amountOptions = [
   { key: "50ml", tr: "50 ml", en: "50 ml", emoji: "🥄", hint: { tr: "~3 yemek kaşığı", en: "~3 tablespoons" } },
