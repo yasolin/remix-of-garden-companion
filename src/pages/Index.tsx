@@ -39,8 +39,6 @@ const Index = () => {
     localStorage.setItem("gardenPotHomeView", next);
   };
 
-  if (viewMode === "main") return <HomeMainView onToggleView={toggleView} />;
-
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
     queryFn: () => fetchUserPlants(user!.id),
@@ -60,6 +58,8 @@ const Index = () => {
       checkAndCreateStageNotifications(user.id, plants).catch(() => {});
     }
   }, [user, plants]);
+
+  if (viewMode === "main") return <HomeMainView onToggleView={toggleView} />;
 
   const harvestSoon = plants.filter(p => (p.days_to_harvest ?? 30) <= 7).length;
   const needsWater = plants.filter(p => p.needs_watering).length;
