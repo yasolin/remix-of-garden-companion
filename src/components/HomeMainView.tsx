@@ -328,9 +328,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
                 <div className="p-2">
                   <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
                   <p className="text-[11px] text-primary">
-                    {(p.stage as string) === "harvest"
-                      ? t("mainView.harvestReady")
-                      : (p as any).health_status || t("plant.healthy") || "Sağlıklı"}
+                    {((p as any).health_status as string) || "Sağlıklı"}
                   </p>
                 </div>
               </button>
