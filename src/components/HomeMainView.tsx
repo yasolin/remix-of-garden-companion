@@ -231,8 +231,8 @@ const HomeMainView = ({ onToggleView }: Props) => {
           {needsWater.slice(0, 2).map((p) => (
             <div key={`w-${p.id}`} className="flex items-center gap-3 p-3">
               <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-lg shrink-0">
-                {p.image_url ? (
-                  <img src={p.image_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                {p.photo_url ? (
+                  <img src={p.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
                 ) : (
                   "🪴"
                 )}
@@ -252,8 +252,8 @@ const HomeMainView = ({ onToggleView }: Props) => {
           {harvestReady.slice(0, 2).map((p) => (
             <div key={`h-${p.id}`} className="flex items-center gap-3 p-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-lg shrink-0">
-                {p.image_url ? (
-                  <img src={p.image_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                {p.photo_url ? (
+                  <img src={p.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
                 ) : (
                   "🌿"
                 )}
