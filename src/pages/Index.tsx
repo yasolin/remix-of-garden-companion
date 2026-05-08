@@ -39,8 +39,6 @@ const Index = () => {
     localStorage.setItem("gardenPotHomeView", next);
   };
 
-  if (viewMode === "main") return <HomeMainView onToggleView={toggleView} />;
-
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
     queryFn: () => fetchUserPlants(user!.id),
