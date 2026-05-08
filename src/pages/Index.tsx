@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 import { useWeather } from "@/hooks/useWeather";
 import { getUnreadCount } from "@/lib/notificationService";
 import { checkAndCreateStageNotifications } from "@/lib/stageNotifications";
+import { LayoutGrid } from "lucide-react";
+import HomeMainView from "@/components/HomeMainView";
 import logo from "@/assets/logo.png";
 
 interface TaskItem {
@@ -26,7 +28,18 @@ const Index = () => {
   const queryClient = useQueryClient();
   const [showHistory, setShowHistory] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<TaskItem[]>([]);
+  const [viewMode, setViewMode] = useState<"simple" | "main">(() => {
+    return (localStorage.getItem("gardenPotHomeView") as any) || "main";
+  });
   const { weather } = useWeather();
+
+  const toggleView = () => {
+    const next = viewMode === "main" ? "simple" : "main";
+    setViewMode(next);
+    localStorage.setItem("gardenPotHomeView", next);
+  };
+
+  if (viewMode === "main") return <HomeMainView onToggleView={toggleView} />;
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
@@ -167,6 +180,9 @@ const Index = () => {
         <div className="flex-1">
           <img src={logo} alt="GardenPot" className="h-32 object-contain -ml-1" />
         </div>
+        <button onClick={toggleView} className="p-2 rounded-full hover:bg-secondary mr-1" title="View">
+          <LayoutGrid className="w-5 h-5 text-muted-foreground" />
+        </button>
         <button onClick={() => navigate("/notifications")} className="relative p-2 rounded-full hover:bg-secondary">
           <Bell className="w-5 h-5 text-foreground" />
           {unreadCount > 0 && (
