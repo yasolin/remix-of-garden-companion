@@ -180,6 +180,9 @@ const Index = () => {
         <div className="flex-1">
           <img src={logo} alt="GardenPot" className="h-32 object-contain -ml-1" />
         </div>
+        <button onClick={toggleView} className="p-2 rounded-full hover:bg-secondary mr-1" title="View">
+          <LayoutGrid className="w-5 h-5 text-muted-foreground" />
+        </button>
         <button onClick={() => navigate("/notifications")} className="relative p-2 rounded-full hover:bg-secondary">
           <Bell className="w-5 h-5 text-foreground" />
           {unreadCount > 0 && (
