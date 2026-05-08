@@ -59,6 +59,8 @@ const Index = () => {
     }
   }, [user, plants]);
 
+  if (viewMode === "main") return <HomeMainView onToggleView={toggleView} />;
+
   const harvestSoon = plants.filter(p => (p.days_to_harvest ?? 30) <= 7).length;
   const needsWater = plants.filter(p => p.needs_watering).length;
   const waterNames = plants.filter(p => p.needs_watering).map(p => p.name).join(", ");
