@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 import { useWeather } from "@/hooks/useWeather";
 import { getUnreadCount } from "@/lib/notificationService";
 import { checkAndCreateStageNotifications } from "@/lib/stageNotifications";
+import { LayoutGrid } from "lucide-react";
+import HomeMainView from "@/components/HomeMainView";
 import logo from "@/assets/logo.png";
 
 interface TaskItem {
