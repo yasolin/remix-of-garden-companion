@@ -28,7 +28,18 @@ const Index = () => {
   const queryClient = useQueryClient();
   const [showHistory, setShowHistory] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<TaskItem[]>([]);
+  const [viewMode, setViewMode] = useState<"simple" | "main">(() => {
+    return (localStorage.getItem("gardenPotHomeView") as any) || "main";
+  });
   const { weather } = useWeather();
+
+  const toggleView = () => {
+    const next = viewMode === "main" ? "simple" : "main";
+    setViewMode(next);
+    localStorage.setItem("gardenPotHomeView", next);
+  };
+
+  if (viewMode === "main") return <HomeMainView onToggleView={toggleView} />;
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
