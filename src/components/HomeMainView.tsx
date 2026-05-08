@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Stethoscope } from "lucide-react";
 import { Bell, Droplets, Leaf, Calendar, Camera, Users, Wind, Thermometer, Sun, Sparkles, ChevronRight, Plus, LayoutGrid } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -205,108 +206,135 @@ const HomeMainView = ({ onToggleView }: Props) => {
         </div>
       </div>
 
-      {/* Today's tip */}
-      <div className="px-4 mt-4">
-        <div className="bg-card rounded-2xl border border-border p-3 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-primary">{t("mainView.todaysTip")}</p>
-            <p className="text-xs text-foreground/80 leading-snug">{tipText}</p>
-          </div>
-          <img src={heroWatering} alt="" className="w-14 h-14 object-contain shrink-0" />
-        </div>
-      </div>
-
-      {/* Today's tasks list */}
+      {/* Bitki Bakım Takvimi */}
       <div className="px-4 mt-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-foreground">{t("home.todaysTasks")}</h3>
-          <button onClick={() => navigate("/tasks")} className="text-xs font-medium text-primary">
-            {t("mainView.viewAll")}
+          <h3 className="text-sm font-semibold text-foreground">{t("mainView.careCalendar")}</h3>
+          <button onClick={() => navigate("/tasks")} className="text-xs font-medium text-primary flex items-center gap-0.5">
+            {t("mainView.viewAll")} <ChevronRight className="w-3 h-3" />
           </button>
         </div>
-        <div className="bg-card rounded-2xl border border-border divide-y divide-border">
-          {needsWater.slice(0, 2).map((p) => (
-            <div key={`w-${p.id}`} className="flex items-center gap-3 p-3">
-              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-lg shrink-0">
-                {p.photo_url ? (
-                  <img src={p.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                ) : (
-                  "🪴"
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
-                <p className="text-[11px] text-muted-foreground">{t("mainView.wateringTime")}</p>
-              </div>
-              <button
-                onClick={() => completeWater(p.id)}
-                className="px-3 py-1.5 rounded-full border border-blue-400/40 text-blue-500 text-xs font-medium hover:bg-blue-500/10"
-              >
-                {t("mainView.water")}
-              </button>
+        <div className="grid grid-cols-2 gap-2">
+          {/* Sulama */}
+          <button
+            onClick={() => navigate("/watering")}
+            className="bg-blue-50 dark:bg-blue-500/10 rounded-2xl p-3 text-left border border-blue-500/15 active:scale-95 transition-transform relative"
+          >
+            <div className="flex items-start justify-between">
+              <Droplets className="w-7 h-7 text-blue-500" strokeWidth={2} />
+              <span className="bg-blue-500 text-white text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center">
+                {needsWater.length}
+              </span>
             </div>
-          ))}
-          {harvestReady.slice(0, 2).map((p) => (
-            <div key={`h-${p.id}`} className="flex items-center gap-3 p-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-lg shrink-0">
-                {p.photo_url ? (
-                  <img src={p.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                ) : (
-                  "🌿"
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
-                <p className="text-[11px] text-muted-foreground">{t("mainView.harvestReady")}</p>
-              </div>
-              <button
-                onClick={() => navigate("/harvest")}
-                className="px-3 py-1.5 rounded-full border border-primary/40 text-primary text-xs font-medium hover:bg-primary/10"
-              >
-                {t("mainView.harvest")}
-              </button>
+            <p className="text-sm font-bold text-foreground mt-2">{t("home.wateringTime")}</p>
+            <p className="text-[11px] text-muted-foreground">{t("mainView.today")}</p>
+            <p className="text-[11px] text-foreground/80 mt-0.5">
+              {t("mainView.wateringSubtitle", { count: needsWater.length })}
+            </p>
+            <div className="mt-2 bg-blue-500/15 text-blue-600 dark:text-blue-400 text-[11px] font-medium rounded-full py-1 text-center">
+              {t("mainView.view")}
             </div>
-          ))}
-          {taskCount === 0 && (
-            <div className="p-4 text-center text-xs text-muted-foreground">{t("home.noTasks")}</div>
-          )}
-        </div>
-      </div>
+          </button>
 
-      {/* Discover */}
-      <div className="px-4 mt-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-foreground">{t("mainView.discover")}</h3>
-          <button onClick={() => navigate("/community")} className="text-xs font-medium text-primary">
-            {t("mainView.viewAll")}
+          {/* Hasat */}
+          <button
+            onClick={() => navigate("/harvest")}
+            className="bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl p-3 text-left border border-emerald-500/15 active:scale-95 transition-transform"
+          >
+            <div className="flex items-start justify-between">
+              <Leaf className="w-7 h-7 text-emerald-600" strokeWidth={2} />
+              <span className="bg-emerald-500 text-white text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center">
+                {harvestReady.length}
+              </span>
+            </div>
+            <p className="text-sm font-bold text-foreground mt-2">{t("home.harvestTime")}</p>
+            <p className="text-[11px] text-muted-foreground">{t("mainView.today")}</p>
+            <p className="text-[11px] text-foreground/80 mt-0.5">
+              {t("mainView.harvestSubtitle", { count: harvestReady.length })}
+            </p>
+            <div className="mt-2 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium rounded-full py-1 text-center">
+              {t("mainView.view")}
+            </div>
           </button>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
+
+          {/* Ekim Takvimi */}
           <button
             onClick={() => navigate("/planting-calendar")}
             className="bg-amber-50 dark:bg-amber-500/10 rounded-2xl p-3 text-left border border-amber-500/15 active:scale-95 transition-transform"
           >
-            <p className="text-xs font-bold text-foreground leading-tight">{t("mainView.discoverPlant")}</p>
-            <p className="text-[10px] text-muted-foreground mt-1 leading-snug">{t("mainView.discoverPlantDesc")}</p>
+            <div className="flex items-start justify-between">
+              <Calendar className="w-7 h-7 text-amber-600" strokeWidth={2} />
+              <span className="bg-amber-500 text-white text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center">
+                3
+              </span>
+            </div>
+            <p className="text-sm font-bold text-foreground mt-2">{t("home.plantingSuggestion")}</p>
+            <p className="text-[11px] text-muted-foreground">{t("mainView.thisWeek")}</p>
+            <p className="text-[11px] text-foreground/80 mt-0.5">
+              {t("mainView.plantingSubtitle", { count: 3 })}
+            </p>
+            <div className="mt-2 bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[11px] font-medium rounded-full py-1 text-center">
+              {t("mainView.view")}
+            </div>
           </button>
+
+          {/* Bitki Analiz */}
           <button
             onClick={() => navigate("/ai-assistant")}
-            className="bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl p-3 text-left border border-emerald-500/15 active:scale-95 transition-transform"
+            className="bg-purple-50 dark:bg-purple-500/10 rounded-2xl p-3 text-left border border-purple-500/15 active:scale-95 transition-transform"
           >
-            <p className="text-xs font-bold text-foreground leading-tight">{t("mainView.discoverAi")}</p>
-            <p className="text-[10px] text-muted-foreground mt-1 leading-snug">{t("mainView.discoverAiDesc")}</p>
-          </button>
-          <button
-            onClick={() => navigate("/community")}
-            className="bg-pink-50 dark:bg-pink-500/10 rounded-2xl p-3 text-left border border-pink-500/15 active:scale-95 transition-transform"
-          >
-            <p className="text-xs font-bold text-foreground leading-tight">{t("mainView.discoverCommunity")}</p>
-            <p className="text-[10px] text-muted-foreground mt-1 leading-snug">{t("mainView.discoverCommunityDesc")}</p>
+            <div className="flex items-start justify-between">
+              <Stethoscope className="w-7 h-7 text-purple-500" strokeWidth={2} />
+              <span className="bg-purple-500 text-white text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center">
+                {plants.length > 0 ? 1 : 0}
+              </span>
+            </div>
+            <p className="text-sm font-bold text-foreground mt-2 leading-tight">{t("mainView.diagnosisTitle")}</p>
+            <p className="text-[11px] text-foreground/80 mt-0.5">{t("mainView.diagnosisSubtitle")}</p>
+            <div className="mt-2 bg-purple-500/15 text-purple-600 dark:text-purple-400 text-[11px] font-medium rounded-full py-1 text-center">
+              {t("mainView.view")}
+            </div>
           </button>
         </div>
+      </div>
+
+      {/* Bitkilerim */}
+      <div className="px-4 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-foreground">{t("mainView.myPlants")}</h3>
+          <button onClick={() => navigate("/my-plants")} className="text-xs font-medium text-primary flex items-center gap-0.5">
+            {t("mainView.viewAll")} <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+        {plants.length === 0 ? (
+          <div className="bg-card rounded-2xl border border-border p-6 text-center text-xs text-muted-foreground">
+            {t("mainView.noPlants")}
+          </div>
+        ) : (
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 snap-x">
+            {plants.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => navigate(`/plants/${p.id}`)}
+                className="shrink-0 w-32 bg-card rounded-2xl border border-border overflow-hidden text-left snap-start active:scale-95 transition-transform"
+              >
+                <div className="w-full h-24 bg-muted flex items-center justify-center">
+                  {p.photo_url ? (
+                    <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-3xl">🪴</span>
+                  )}
+                </div>
+                <div className="p-2">
+                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                  <p className="text-[11px] text-primary">
+                    {((p as any).health_status as string) || "Sağlıklı"}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
