@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Stethoscope } from "lucide-react";
 import { Bell, Droplets, Leaf, Calendar, Camera, Users, Wind, Thermometer, Sun, Sparkles, ChevronRight, Plus, LayoutGrid } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
