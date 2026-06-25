@@ -29,21 +29,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       setLoading(false);
 
-      // Update profile with extra signup data after first login
+      // Sync auth metadata to profiles row on sign-in
       if (_event === "SIGNED_IN" && session?.user) {
-        const meta = session.user.user_metadata;
-        if (meta?.surname || meta?.age || meta?.gender || meta?.occupation || meta?.phone) {
-          try {
-            await supabase.from("profiles").update({
-              surname: meta.surname || null,
-              age: meta.age || null,
-              gender: meta.gender || null,
-              occupation: meta.occupation || null,
-              phone: meta.phone || null,
-              kvkk_accepted: true,
-            }).eq("user_id", session.user.id);
-          } catch {}
-        }
+        const meta = session.user.user_metadata || {};
+        try {
+          const { data: existing } = await supabase
+            .from("profiles")
+            .select("display_name, avatar_url")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          const updates: any = {};
+          if (!existing?.display_name && meta.display_name) updates.display_name = meta.display_name;
+          if (!existing?.avatar_url && meta.avatar_url) updates.avatar_url = meta.avatar_url;
+          if (meta.surname) updates.surname = meta.surname;
+          if (meta.age) updates.age = meta.age;
+          if (meta.gender) updates.gender = meta.gender;
+          if (meta.occupation) updates.occupation = meta.occupation;
+          if (meta.phone) updates.phone = meta.phone;
+          if (meta.surname || meta.age || meta.gender || meta.occupation || meta.phone) {
+            updates.kvkk_accepted = true;
+          }
+          if (Object.keys(updates).length > 0) {
+            await supabase.from("profiles").update(updates).eq("user_id", session.user.id);
+          }
+        } catch {}
       }
     });
 
