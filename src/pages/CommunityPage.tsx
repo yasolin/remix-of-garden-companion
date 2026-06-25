@@ -297,7 +297,9 @@ const CommunityPage = () => {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-foreground">
-                      {post.profile?.display_name || t("community.anonymous")}
+                      {post.profile?.display_name
+                        || (user?.id === post.user_id ? (user.user_metadata?.display_name || user.email?.split("@")[0]) : null)
+                        || t("community.anonymous")}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
                       {timeAgo(post.created_at)}
