@@ -315,7 +315,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
             {plants.map((p) => (
               <button
                 key={p.id}
-                onClick={() => navigate(`/plants/${p.id}`)}
+                onClick={() => navigate(`/plant/${p.id}`)}
                 className="shrink-0 w-32 bg-card rounded-2xl border border-border overflow-hidden text-left snap-start active:scale-95 transition-transform"
               >
                 <div className="w-full h-24 bg-muted flex items-center justify-center">
@@ -327,9 +327,9 @@ const HomeMainView = ({ onToggleView }: Props) => {
                 </div>
                 <div className="p-2">
                   <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                  <p className="text-[11px] text-primary">
-                    {((p as any).health_status as string) || "Sağlıklı"}
-                  </p>
+                  {p.placement && (
+                    <p className="text-[11px] text-muted-foreground truncate">{p.placement}</p>
+                  )}
                 </div>
               </button>
             ))}
