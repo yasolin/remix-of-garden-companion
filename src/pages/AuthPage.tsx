@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 
-type AuthMode = "login" | "signup";
+type AuthMode = "login" | "signup" | "forgot";
 
 const KVKK_TEXT_TR = `Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında, Garden Pot uygulamasına kayıt olarak aşağıdaki koşulları kabul etmiş olursunuz:
 
@@ -40,10 +40,32 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [kvkkAccepted, setKvkkAccepted] = useState(false);
   const [showKvkk, setShowKvkk] = useState(false);
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({ title: "⚠️", description: i18n.language === "tr" ? "E-posta adresinizi girin" : "Please enter your email", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setResetSent(true);
+      toast({ title: "✅", description: i18n.language === "tr" ? "Sıfırlama bağlantısı e-postanıza gönderildi" : "Reset link sent to your email" });
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
+    if (mode === "forgot") return handleForgotPassword();
     if (!email || !password) return;
     if (mode === "signup" && !kvkkAccepted) {
       toast({ title: "⚠️", description: i18n.language === "tr" ? "KVKK onayı gereklidir" : "Privacy consent is required", variant: "destructive" });
@@ -61,12 +83,9 @@ const AuthPage = () => {
         });
         if (error) throw error;
 
-        // Update profile with extra fields after signup
-        // The trigger will create the profile, we update it after
         setEmailSent(true);
         toast({ title: "✅", description: t("auth.verifyEmail") });
 
-        // Send notification to app owner
         try {
           await supabase.functions.invoke("notify-new-user", {
             body: { email, displayName, surname, gender, age, phone },
@@ -197,15 +216,44 @@ const AuthPage = () => {
               className="w-full bg-secondary rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
 
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input value={password} onChange={(e) => setPassword(e.target.value)}
-              type={showPassword ? "text" : "password"} placeholder={t("auth.passwordPlaceholder")}
-              className="w-full bg-secondary rounded-xl pl-10 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
-            <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
-              {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
-            </button>
-          </div>
+          {mode !== "forgot" && (
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input value={password} onChange={(e) => setPassword(e.target.value)}
+                type={showPassword ? "text" : "password"} placeholder={t("auth.passwordPlaceholder")}
+                className="w-full bg-secondary rounded-xl pl-10 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
+              <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
+                {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+              </button>
+            </div>
+          )}
+
+          {mode === "login" && (
+            <div className="flex justify-end">
+              <button type="button" onClick={() => setMode("forgot")} className="text-xs font-semibold text-primary hover:underline">
+                {isTr ? "Şifremi unuttum" : "Forgot password?"}
+              </button>
+            </div>
+          )}
+
+          {mode === "forgot" && (
+            <div className="bg-secondary/50 rounded-xl p-3">
+              <p className="text-xs text-muted-foreground">
+                {isTr
+                  ? "E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim."
+                  : "Enter your email and we'll send you a password reset link."}
+              </p>
+              {resetSent && (
+                <p className="text-xs text-primary font-semibold mt-2">
+                  {isTr ? "✅ Bağlantı gönderildi. E-postanızı kontrol edin." : "✅ Link sent. Please check your email."}
+                </p>
+              )}
+              <button type="button" onClick={() => { setMode("login"); setResetSent(false); }}
+                className="mt-2 text-xs font-semibold text-primary">
+                ← {isTr ? "Girişe dön" : "Back to login"}
+              </button>
+            </div>
+          )}
 
           {mode === "signup" && (
             <div className="space-y-2">
@@ -232,7 +280,10 @@ const AuthPage = () => {
 
           <motion.button whileTap={{ scale: 0.97 }} onClick={handleSubmit} disabled={loading}
             className="w-full gradient-harvest text-primary-foreground font-bold py-3 rounded-xl disabled:opacity-50">
-            {loading ? "..." : mode === "login" ? t("auth.loginBtn") : t("auth.signupBtn")}
+            {loading ? "..." :
+              mode === "login" ? t("auth.loginBtn") :
+              mode === "signup" ? t("auth.signupBtn") :
+              (isTr ? "Sıfırlama Bağlantısı Gönder" : "Send Reset Link")}
           </motion.button>
         </motion.div>
       </div>
