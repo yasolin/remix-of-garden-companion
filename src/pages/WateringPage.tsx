@@ -155,6 +155,46 @@ const WateringPage = () => {
     enabled: !!user,
   });
 
+  // Backfill: ensure every plant has at least 1 future scheduled watering event.
+  // For old plants added before the watering plan feature, generate one now.
+  useEffect(() => {
+    if (!user || plants.length === 0) return;
+    const now = Date.now();
+    const plantsWithFuture = new Set(
+      allEvents
+        .filter(e => e.status === "scheduled" && new Date(e.scheduled_at).getTime() > now)
+        .map(e => e.plant_id)
+    );
+    const missing = plants.filter(p => !plantsWithFuture.has(p.id));
+    if (missing.length === 0) return;
+
+    (async () => {
+      for (const p of missing) {
+        const intervalDays =
+          (p as any).watering_interval_days ?? frequencyToDays(p.water_frequency || "");
+        if (!intervalDays || intervalDays <= 0) continue;
+        const startDate = (p as any).last_watered_at
+          ? new Date((p as any).last_watered_at)
+          : new Date();
+        try {
+          await generateWateringPlan({
+            userId: user.id,
+            plantId: p.id,
+            intervalDays,
+            amountMl: (p as any).watering_amount_ml ?? undefined,
+            startDate,
+            occurrences: 12,
+          });
+        } catch (e) {
+          console.error("backfill plan failed for", p.id, e);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["watering_events"] });
+      queryClient.invalidateQueries({ queryKey: ["watering_events_all"] });
+    })();
+    // run when plants list or events change
+  }, [user, plants, allEvents, queryClient]);
+
   useEffect(() => {
     const fetchWeather = async () => {
       try {

@@ -51,15 +51,23 @@ const ProfilePage = () => {
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data } = await supabase.from("profiles" as any).select("*").eq("user_id", user!.id).maybeSingle();
-      const p = data as any;
-      if (p) {
-        setDisplayName(p.display_name || "");
-        setAvatarUrl(p.avatar_url || null);
-      }
-      return p;
+      return data as any;
     },
     enabled: !!user,
   });
+
+  // Sync local state from profile data whenever it changes (incl. cache hydration on remount).
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.display_name || "");
+      setAvatarUrl(profile.avatar_url || null);
+    } else if (user) {
+      // Fallback to auth metadata if profile not loaded yet
+      const meta = user.user_metadata as any;
+      if (meta?.display_name) setDisplayName(meta.display_name);
+      if (meta?.avatar_url) setAvatarUrl(meta.avatar_url);
+    }
+  }, [profile, user]);
 
   useEffect(() => {
     const sizes = { small: "14px", medium: "16px", large: "18px" };
@@ -125,7 +133,11 @@ const ProfilePage = () => {
       const { data } = supabase.storage.from("avatars").getPublicUrl(path);
       const url = data.publicUrl;
       await supabase.from("profiles" as any).update({ avatar_url: url } as any).eq("user_id", user.id);
+      // Persist to auth metadata as well so it survives sessions / re-mounts
+      await supabase.auth.updateUser({ data: { avatar_url: url } });
       setAvatarUrl(url);
+      queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["community-posts"] });
       toast({ title: "✅", description: t("profile.photoUpdated") });
     } catch (e: any) {
       toast({ title: "❌", description: e.message, variant: "destructive" });

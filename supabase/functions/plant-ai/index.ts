@@ -32,11 +32,18 @@ serve(async (req) => {
       { role: "system", content: systemPrompt },
     ];
 
-    if (imageBase64 && (mode === "disease" || mode === "identify" || mode === "location" || mode === "analyze_plant")) {
+    if (imageBase64) {
+      // Always attach image when provided, regardless of mode (chat included).
+      // Keep prior messages for context and append a vision message at the end.
+      const prior = Array.isArray(messages) ? messages.slice(0, -1) : [];
+      const lastText =
+        (Array.isArray(messages) && messages[messages.length - 1]?.content) ||
+        "Analyze this plant image.";
+      aiMessages.push(...prior);
       aiMessages.push({
         role: "user",
         content: [
-          { type: "text", text: messages?.[messages.length - 1]?.content || "Analyze this plant image." },
+          { type: "text", text: lastText },
           { type: "image_url", image_url: { url: imageBase64 } },
         ],
       });

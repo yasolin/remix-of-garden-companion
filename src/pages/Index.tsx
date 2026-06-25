@@ -23,7 +23,7 @@ interface TaskItem {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showHistory, setShowHistory] = useState(false);
@@ -52,12 +52,12 @@ const Index = () => {
     refetchInterval: 15000,
   });
 
-  // Check for upcoming stage notifications when plants load
+  // Check for upcoming stage + watering notifications when plants load
   useEffect(() => {
     if (user && plants.length > 0) {
-      checkAndCreateStageNotifications(user.id, plants).catch(() => {});
+      checkAndCreateStageNotifications(user.id, plants, i18n.language).catch(() => {});
     }
-  }, [user, plants]);
+  }, [user, plants, i18n.language]);
 
   if (viewMode === "main") return <HomeMainView onToggleView={toggleView} />;
 
