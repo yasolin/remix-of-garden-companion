@@ -175,6 +175,27 @@ const HomeMainView = ({ onToggleView }: Props) => {
           {weather.city && (
             <p className="text-[11px] text-muted-foreground text-center mt-1">📍 {weather.city}</p>
           )}
+          {/* Environmental alerts */}
+          {weather.alerts && weather.alerts.length > 0 && (
+            <div className="mt-2 space-y-1.5">
+              {weather.alerts.slice(0, 3).map((a) => {
+                const isTr = (typeof navigator !== "undefined" && navigator.language?.startsWith("tr")) || (localStorage.getItem("gardenPotLang") === "tr");
+                const tone =
+                  a.level === "danger" ? "bg-destructive/10 border-destructive/30 text-destructive"
+                  : a.level === "warning" ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
+                  : "bg-primary/10 border-primary/20 text-primary";
+                return (
+                  <div key={a.key} className={`rounded-xl border px-3 py-2 flex items-start gap-2 ${tone}`}>
+                    <span className="text-lg leading-none">{a.icon}</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-bold leading-tight">{isTr ? a.titleTr : a.titleEn}</p>
+                      <p className="text-[11px] opacity-90 leading-snug">{isTr ? a.bodyTr : a.bodyEn}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
