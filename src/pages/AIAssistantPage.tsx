@@ -69,21 +69,55 @@ const AIAssistantPage = () => {
 
   // Text-to-speech
   const speakText = useCallback((text: string) => {
-    if (isSpeaking) {
+    try {
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+        toast({ title: "❌", description: t("ai.speechNotSupported"), variant: "destructive" });
+        return;
+      }
+      // Toggle stop
+      if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+        return;
+      }
       window.speechSynthesis.cancel();
+      const plainText = text.replace(/[#*_`~\[\]()>]/g, "").replace(/\n+/g, ". ").trim();
+      if (!plainText) return;
+
+      const targetLang = i18n.language === "tr" ? "tr-TR" : "en-US";
+      const speakNow = () => {
+        const voices = window.speechSynthesis.getVoices();
+        const voice =
+          voices.find(v => v.lang === targetLang) ||
+          voices.find(v => v.lang.startsWith(targetLang.split("-")[0])) ||
+          voices[0];
+        const utterance = new SpeechSynthesisUtterance(plainText);
+        if (voice) utterance.voice = voice;
+        utterance.lang = voice?.lang || targetLang;
+        utterance.rate = 0.95;
+        utterance.pitch = 1;
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        setIsSpeaking(true);
+        window.speechSynthesis.speak(utterance);
+      };
+
+      if (window.speechSynthesis.getVoices().length === 0) {
+        // Voices not loaded yet — wait for them
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.onvoiceschanged = null;
+          speakNow();
+        };
+        // Trigger voice load on some browsers
+        setTimeout(speakNow, 250);
+      } else {
+        speakNow();
+      }
+    } catch (err) {
+      console.error("TTS error", err);
       setIsSpeaking(false);
-      return;
     }
-    // Strip markdown
-    const plainText = text.replace(/[#*_`~\[\]()>]/g, "").replace(/\n+/g, ". ");
-    const utterance = new SpeechSynthesisUtterance(plainText);
-    utterance.lang = i18n.language === "tr" ? "tr-TR" : "en-US";
-    utterance.rate = 0.9;
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    setIsSpeaking(true);
-    window.speechSynthesis.speak(utterance);
-  }, [isSpeaking, i18n.language]);
+  }, [isSpeaking, i18n.language, t]);
 
   const handleFeatureClick = (mode: string) => {
     if (mode === "location") {
