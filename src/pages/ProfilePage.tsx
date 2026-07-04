@@ -685,6 +685,18 @@ const ProfilePage = () => {
 
       {/* Bottom actions */}
       <div className="px-4 mt-5 space-y-1.5">
+        <button onClick={() => navigate("/locations")}
+          className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-secondary transition-colors">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <MapPin className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 text-left">
+            <span className="text-sm font-semibold text-foreground">{t("locations.title")}</span>
+            <p className="text-[11px] text-muted-foreground">{i18n.language === "tr" ? "Ev, balkon, bahçe konumlarını yönet" : "Manage home, balcony, garden spots"}</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </button>
+
         <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setView("premium")}
           className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-secondary transition-colors">
           <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
