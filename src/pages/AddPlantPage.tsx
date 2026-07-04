@@ -102,7 +102,6 @@ const AddPlantPage = () => {
       toast({ title: "⚠️", description: "Please sign in to save plants", variant: "destructive" });
       return;
     }
-    // Validate plant name
     if (!form.name.trim() || form.name.trim().length < 2) {
       toast({ title: "❌", description: t("add.invalidName"), variant: "destructive" });
       return;
@@ -111,6 +110,21 @@ const AddPlantPage = () => {
       let photoUrl = "";
       if (photoFile) {
         photoUrl = await uploadPlantPhoto(userId, photoFile);
+      }
+
+      // If user typed a brand-new location, create it now
+      let locationId: string | null = form.locationId || null;
+      let createdNewLocation = false;
+      if (!locationId && newLocationName.trim()) {
+        try {
+          const loc = await createLocation({
+            user_id: userId,
+            name: newLocationName.trim(),
+            category: "indoor",
+          });
+          locationId = loc.id;
+          createdNewLocation = true;
+        } catch (e) { console.error("location create failed", e); }
       }
 
       const intervalDays = frequencyToDays(form.waterFrequency);
@@ -126,7 +140,7 @@ const AddPlantPage = () => {
         water_frequency: form.waterFrequency,
         sunlight: form.sunlight,
         wind_sensitivity: form.windSensitivity,
-        current_stage: stages.indexOf(form.currentStage as any),
+        current_stage: stageIndex(form.currentStage),
         temperature: form.temperature,
         humidity: form.humidity,
         soil_type: form.soilType,
@@ -137,9 +151,9 @@ const AddPlantPage = () => {
         needs_watering: !lastWateredAt,
         watering_interval_days: intervalDays,
         last_watered_at: lastWateredAt,
+        ...(locationId ? { location_id: locationId } : {}),
       } as any);
 
-      // Generate forward-looking plan
       try {
         await generateWateringPlan({
           userId,
@@ -154,7 +168,14 @@ const AddPlantPage = () => {
 
       queryClient.invalidateQueries({ queryKey: ["plants"] });
       queryClient.invalidateQueries({ queryKey: ["watering_events"] });
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast({ title: "✅", description: t("add.savePlant") });
+
+      if (createdNewLocation) {
+        setTimeout(() => {
+          toast({ title: "💡", description: t("locations.analyzeReminder") });
+        }, 600);
+      }
       navigate("/profile");
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
