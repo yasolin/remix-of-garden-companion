@@ -17,6 +17,7 @@ import WateringPage from "./pages/WateringPage";
 import PlantingCalendarPage from "./pages/PlantingCalendarPage";
 import LocationAnalysisPage from "./pages/LocationAnalysisPage";
 import CommunityPage from "./pages/CommunityPage";
+import LocationsPage from "./pages/LocationsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import TasksPage from "./pages/TasksPage";
 import NotFound from "./pages/NotFound";
