@@ -217,9 +217,9 @@ const AIAssistantPage = () => {
   return (
     <div className="max-w-lg mx-auto flex flex-col" style={{ height: "calc(100vh - 70px)" }}>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
-        onChange={(e) => e.target.files?.[0] && handlePhotoTaken(e.target.files[0])} />
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoTaken(f); e.target.value = ""; }} />
       <input ref={galleryRef} type="file" accept="image/*" className="hidden"
-        onChange={(e) => e.target.files?.[0] && handlePhotoTaken(e.target.files[0])} />
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoTaken(f); e.target.value = ""; }} />
 
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <button onClick={() => navigate("/")} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
