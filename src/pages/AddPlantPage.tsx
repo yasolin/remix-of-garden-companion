@@ -5,9 +5,10 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { stages, insertPlant, uploadPlantPhoto } from "@/lib/plantService";
+import { stages, stageIndex, insertPlant, uploadPlantPhoto } from "@/lib/plantService";
 import { generateWateringPlan, frequencyToDays } from "@/lib/wateringService";
 import { analyzePlantPhoto } from "@/lib/plantAI";
+import { fetchUserLocations, createLocation } from "@/lib/locationService";
 import { toast } from "@/hooks/use-toast";
 
 type AddMode = "select" | "manual" | "ai";
