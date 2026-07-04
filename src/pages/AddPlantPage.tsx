@@ -30,19 +30,26 @@ const AddPlantPage = () => {
 
   const [form, setForm] = useState({
     name: "", scientificName: "", placement: "", waterFrequency: "",
-    sunlight: "", windSensitivity: "", currentStage: "planting" as string,
+    sunlight: "", windSensitivity: "", currentStage: "planted" as string,
     temperature: "", humidity: "", soilType: "", notes: "", fertilizer: "",
     plantedDate: new Date().toISOString().split("T")[0],
-    lastWateredDate: "", // empty = never
+    lastWateredDate: "",
     neverWatered: false,
+    locationId: "" as string,
   });
 
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [newLocationName, setNewLocationName] = useState("");
 
-  const stageLabels: Record<string, string> = {
-    planting: t("stages.planting"), germination: t("stages.germination"),
-    flowering: t("stages.flowering"), fruiting: t("stages.fruiting"), harvest: t("stages.harvest"),
-  };
+  const [locations, setLocations] = useState<any[]>([]);
+  useEffect(() => {
+    if (userId) fetchUserLocations(userId).then(setLocations).catch(() => {});
+  }, [userId]);
+
+  const stageLabels: Record<string, string> = Object.fromEntries(
+    stages.map(s => [s, t(`stages.${s}`)])
+  );
 
   const handlePhotoSelected = (file: File) => {
     setPhotoFile(file);
