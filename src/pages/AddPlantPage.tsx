@@ -287,6 +287,36 @@ const AddPlantPage = () => {
           </div>
         ))}
 
+        {/* Location picker: saved locations + new location */}
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
+          <label className="text-sm font-semibold text-foreground flex items-center gap-1.5">📍 {t("add.placement")}</label>
+          {locations.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {locations.map((l: any) => (
+                <button key={l.id} type="button"
+                  onClick={() => { setForm({ ...form, locationId: l.id, placement: l.name }); setNewLocationName(""); setShowLocationPicker(false); }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                    form.locationId === l.id ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground"
+                  }`}>{l.name}</button>
+              ))}
+            </div>
+          )}
+          <button type="button" onClick={() => setShowLocationPicker(v => !v)}
+            className="text-xs font-semibold text-primary underline">
+            {showLocationPicker ? "×" : "+"} {t("locations.addNew")}
+          </button>
+          {showLocationPicker && (
+            <input value={newLocationName}
+              onChange={(e) => { setNewLocationName(e.target.value); setForm({ ...form, locationId: "", placement: e.target.value }); }}
+              placeholder={t("locations.namePlaceholder")}
+              className="w-full bg-secondary rounded-xl px-3 py-2 text-sm outline-none" />
+          )}
+          {/* Fallback free-text placement (kept in sync with location name) */}
+          <input value={form.placement} onChange={(e) => setForm({ ...form, placement: e.target.value })}
+            placeholder={t("add.placementPlaceholder")}
+            className="w-full bg-secondary rounded-xl px-3 py-2 text-sm outline-none opacity-80" />
+        </div>
+
         <div>
           <label className="text-sm font-semibold text-foreground">{t("add.plantedDate")}</label>
           <input type="date" value={form.plantedDate} onChange={(e) => setForm({ ...form, plantedDate: e.target.value })}
