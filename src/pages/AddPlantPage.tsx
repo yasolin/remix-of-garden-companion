@@ -185,7 +185,7 @@ const AddPlantPage = () => {
   const fields = [
     { label: t("add.plantName"), key: "name", placeholder: t("add.plantNamePlaceholder") },
     { label: t("add.scientificName"), key: "scientificName", placeholder: t("add.scientificNamePlaceholder") },
-    { label: t("add.placement"), key: "placement", placeholder: t("add.placementPlaceholder") },
+    // placement is rendered separately with the location picker
     { label: t("add.waterFrequency"), key: "waterFrequency", placeholder: t("add.waterFrequencyPlaceholder") },
     { label: t("add.sunlight"), key: "sunlight", placeholder: t("add.sunlightPlaceholder") },
     { label: t("add.windSensitivity"), key: "windSensitivity", placeholder: t("add.windSensitivityPlaceholder") },
