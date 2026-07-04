@@ -5,9 +5,10 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { stages, insertPlant, uploadPlantPhoto } from "@/lib/plantService";
+import { stages, stageIndex, insertPlant, uploadPlantPhoto } from "@/lib/plantService";
 import { generateWateringPlan, frequencyToDays } from "@/lib/wateringService";
 import { analyzePlantPhoto } from "@/lib/plantAI";
+import { fetchUserLocations, createLocation } from "@/lib/locationService";
 import { toast } from "@/hooks/use-toast";
 
 type AddMode = "select" | "manual" | "ai";
@@ -29,19 +30,26 @@ const AddPlantPage = () => {
 
   const [form, setForm] = useState({
     name: "", scientificName: "", placement: "", waterFrequency: "",
-    sunlight: "", windSensitivity: "", currentStage: "planting" as string,
+    sunlight: "", windSensitivity: "", currentStage: "planted" as string,
     temperature: "", humidity: "", soilType: "", notes: "", fertilizer: "",
     plantedDate: new Date().toISOString().split("T")[0],
-    lastWateredDate: "", // empty = never
+    lastWateredDate: "",
     neverWatered: false,
+    locationId: "" as string,
   });
 
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [newLocationName, setNewLocationName] = useState("");
 
-  const stageLabels: Record<string, string> = {
-    planting: t("stages.planting"), germination: t("stages.germination"),
-    flowering: t("stages.flowering"), fruiting: t("stages.fruiting"), harvest: t("stages.harvest"),
-  };
+  const [locations, setLocations] = useState<any[]>([]);
+  useEffect(() => {
+    if (userId) fetchUserLocations(userId).then(setLocations).catch(() => {});
+  }, [userId]);
+
+  const stageLabels: Record<string, string> = Object.fromEntries(
+    stages.map(s => [s, t(`stages.${s}`)])
+  );
 
   const handlePhotoSelected = (file: File) => {
     setPhotoFile(file);
@@ -68,7 +76,7 @@ const AddPlantPage = () => {
             waterFrequency: result.waterFrequency || "",
             sunlight: result.sunlight || "",
             windSensitivity: result.windSensitivity || "",
-            currentStage: result.currentStage || "planting",
+            currentStage: result.currentStage || "planted",
             temperature: result.temperature || "",
             humidity: result.humidity || "",
             soilType: result.soilType || "",
@@ -94,7 +102,6 @@ const AddPlantPage = () => {
       toast({ title: "⚠️", description: "Please sign in to save plants", variant: "destructive" });
       return;
     }
-    // Validate plant name
     if (!form.name.trim() || form.name.trim().length < 2) {
       toast({ title: "❌", description: t("add.invalidName"), variant: "destructive" });
       return;
@@ -103,6 +110,21 @@ const AddPlantPage = () => {
       let photoUrl = "";
       if (photoFile) {
         photoUrl = await uploadPlantPhoto(userId, photoFile);
+      }
+
+      // If user typed a brand-new location, create it now
+      let locationId: string | null = form.locationId || null;
+      let createdNewLocation = false;
+      if (!locationId && newLocationName.trim()) {
+        try {
+          const loc = await createLocation({
+            user_id: userId,
+            name: newLocationName.trim(),
+            category: "indoor",
+          });
+          locationId = loc.id;
+          createdNewLocation = true;
+        } catch (e) { console.error("location create failed", e); }
       }
 
       const intervalDays = frequencyToDays(form.waterFrequency);
@@ -118,7 +140,7 @@ const AddPlantPage = () => {
         water_frequency: form.waterFrequency,
         sunlight: form.sunlight,
         wind_sensitivity: form.windSensitivity,
-        current_stage: stages.indexOf(form.currentStage as any),
+        current_stage: stageIndex(form.currentStage),
         temperature: form.temperature,
         humidity: form.humidity,
         soil_type: form.soilType,
@@ -129,9 +151,9 @@ const AddPlantPage = () => {
         needs_watering: !lastWateredAt,
         watering_interval_days: intervalDays,
         last_watered_at: lastWateredAt,
+        ...(locationId ? { location_id: locationId } : {}),
       } as any);
 
-      // Generate forward-looking plan
       try {
         await generateWateringPlan({
           userId,
@@ -146,7 +168,14 @@ const AddPlantPage = () => {
 
       queryClient.invalidateQueries({ queryKey: ["plants"] });
       queryClient.invalidateQueries({ queryKey: ["watering_events"] });
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast({ title: "✅", description: t("add.savePlant") });
+
+      if (createdNewLocation) {
+        setTimeout(() => {
+          toast({ title: "💡", description: t("locations.analyzeReminder") });
+        }, 600);
+      }
       navigate("/profile");
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
@@ -156,7 +185,7 @@ const AddPlantPage = () => {
   const fields = [
     { label: t("add.plantName"), key: "name", placeholder: t("add.plantNamePlaceholder") },
     { label: t("add.scientificName"), key: "scientificName", placeholder: t("add.scientificNamePlaceholder") },
-    { label: t("add.placement"), key: "placement", placeholder: t("add.placementPlaceholder") },
+    // placement is rendered separately with the location picker
     { label: t("add.waterFrequency"), key: "waterFrequency", placeholder: t("add.waterFrequencyPlaceholder") },
     { label: t("add.sunlight"), key: "sunlight", placeholder: t("add.sunlightPlaceholder") },
     { label: t("add.windSensitivity"), key: "windSensitivity", placeholder: t("add.windSensitivityPlaceholder") },
@@ -257,6 +286,36 @@ const AddPlantPage = () => {
               className="w-full mt-1 bg-secondary rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
         ))}
+
+        {/* Location picker: saved locations + new location */}
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
+          <label className="text-sm font-semibold text-foreground flex items-center gap-1.5">📍 {t("add.placement")}</label>
+          {locations.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {locations.map((l: any) => (
+                <button key={l.id} type="button"
+                  onClick={() => { setForm({ ...form, locationId: l.id, placement: l.name }); setNewLocationName(""); setShowLocationPicker(false); }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                    form.locationId === l.id ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground"
+                  }`}>{l.name}</button>
+              ))}
+            </div>
+          )}
+          <button type="button" onClick={() => setShowLocationPicker(v => !v)}
+            className="text-xs font-semibold text-primary underline">
+            {showLocationPicker ? "×" : "+"} {t("locations.addNew")}
+          </button>
+          {showLocationPicker && (
+            <input value={newLocationName}
+              onChange={(e) => { setNewLocationName(e.target.value); setForm({ ...form, locationId: "", placement: e.target.value }); }}
+              placeholder={t("locations.namePlaceholder")}
+              className="w-full bg-secondary rounded-xl px-3 py-2 text-sm outline-none" />
+          )}
+          {/* Fallback free-text placement (kept in sync with location name) */}
+          <input value={form.placement} onChange={(e) => setForm({ ...form, placement: e.target.value })}
+            placeholder={t("add.placementPlaceholder")}
+            className="w-full bg-secondary rounded-xl px-3 py-2 text-sm outline-none opacity-80" />
+        </div>
 
         <div>
           <label className="text-sm font-semibold text-foreground">{t("add.plantedDate")}</label>

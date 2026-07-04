@@ -58,18 +58,23 @@ const CommunityPage = () => {
     if (user) getUserLikes(user.id).then(setLikedPosts);
   }, [user]);
 
+  const expandedRef = useRef<string | null>(null);
+  useEffect(() => { expandedRef.current = expandedComments; }, [expandedComments]);
+
   useEffect(() => {
+    // Subscribe once — reference expandedComments via ref so we don't re-subscribe on every toggle
     const channel = supabase
       .channel("community-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "community_posts" }, () => {
         queryClient.invalidateQueries({ queryKey: ["community-posts"] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "community_comments" }, () => {
-        if (expandedComments) queryClient.invalidateQueries({ queryKey: ["community-comments", expandedComments] });
+        const id = expandedRef.current;
+        if (id) queryClient.invalidateQueries({ queryKey: ["community-comments", id] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [queryClient, expandedComments]);
+  }, [queryClient]);
 
   const handleImageSelect = (file: File) => {
     setNewImage(file);

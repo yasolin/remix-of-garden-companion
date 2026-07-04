@@ -134,36 +134,46 @@ const AIAssistantPage = () => {
   };
 
   const handlePhotoTaken = async (file: File) => {
+    // Guard: only accept image files
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "❌", description: "Lütfen bir resim dosyası seçin", variant: "destructive" });
+      return;
+    }
     const reader = new FileReader();
+    reader.onerror = () => {
+      toast({ title: "❌", description: "Fotoğraf okunamadı", variant: "destructive" });
+    };
     reader.onloadend = async () => {
       const base64 = reader.result as string;
-      const userMsg: AiMessage = { role: "user", content: t("ai.photoAnalysis") };
-      setMessages(prev => [...prev, userMsg]);
+      if (!base64 || !base64.startsWith("data:image")) {
+        toast({ title: "❌", description: "Geçersiz resim", variant: "destructive" });
+        return;
+      }
+      const userMsg: AiMessage = { role: "user", content: `📷 ${t("ai.photoAnalysis")}` };
+      // Add a placeholder assistant message immediately so streaming can update in place
+      setMessages(prev => [...prev, userMsg, { role: "assistant", content: "" }]);
       setIsLoading(true);
 
-      let assistantSoFar = "";
-      const upsertAssistant = (chunk: string) => {
-        assistantSoFar += chunk;
-        setMessages(prev => {
-          const last = prev[prev.length - 1];
-          if (last?.role === "assistant" && prev.length > 1 && prev[prev.length - 2]?.content === t("ai.photoAnalysis")) {
-            return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
-          }
-          return [...prev, { role: "assistant", content: assistantSoFar }];
-        });
-      };
+      const currentMode = pendingMode;
+      setPendingMode("chat"); // reset
 
+      let assistantSoFar = "";
       try {
         await streamPlantAI({
           messages: [{ role: "user", content: "Analyze this plant image." }],
-          mode: pendingMode,
+          mode: currentMode,
           imageBase64: base64,
           lang: i18n.language,
-          onDelta: upsertAssistant,
+          onDelta: (chunk) => {
+            assistantSoFar += chunk;
+            setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m)));
+          },
           onDone: () => setIsLoading(false),
         });
       } catch (e: any) {
-        toast({ title: "Error", description: e.message, variant: "destructive" });
+        console.error("photo analysis failed", e);
+        toast({ title: "AI Error", description: e.message || "Analiz başarısız", variant: "destructive" });
+        setMessages(prev => prev.map((m, i) => (i === prev.length - 1 && !m.content ? { ...m, content: "❌ " + (e.message || "Analiz başarısız oldu") } : m)));
         setIsLoading(false);
       }
     };
@@ -207,9 +217,9 @@ const AIAssistantPage = () => {
   return (
     <div className="max-w-lg mx-auto flex flex-col" style={{ height: "calc(100vh - 70px)" }}>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
-        onChange={(e) => e.target.files?.[0] && handlePhotoTaken(e.target.files[0])} />
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoTaken(f); e.target.value = ""; }} />
       <input ref={galleryRef} type="file" accept="image/*" className="hidden"
-        onChange={(e) => e.target.files?.[0] && handlePhotoTaken(e.target.files[0])} />
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoTaken(f); e.target.value = ""; }} />
 
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <button onClick={() => navigate("/")} className="p-2 -ml-2 rounded-lg hover:bg-secondary">

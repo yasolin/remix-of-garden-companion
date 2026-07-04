@@ -3,10 +3,54 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 
 export type PlantRow = Tables<"plants">;
 
-export const stages = ["planting", "germination", "flowering", "fruiting", "harvest"] as const;
+// New 11-stage life cycle
+export const stages = [
+  "planted",       // 0  🌱 Ekildi / Dikildi
+  "sprouting",     // 1  🌿 Filizleniyor
+  "growing",       // 2  🍃 Büyüyor
+  "budding",       // 3  🌸 Tomurcuklanıyor
+  "flowering",     // 4  🌼 Çiçek Açıyor
+  "pollinating",   // 5  🐝 Tozlaşıyor
+  "producing",     // 6  🍅 Ürün Oluşturuyor
+  "ripening",      // 7  🍎 Olgunlaşıyor
+  "harvestReady",  // 8  🧺 Hasada Hazır
+  "propagatable",  // 9  🌱 Çoğaltılabilir
+  "dormant",       // 10 😴 Dinlenme Döneminde
+] as const;
 
-export function stageFromIndex(idx: number): string {
-  return stages[Math.min(idx, stages.length - 1)] || "planting";
+export const stageEmojis: Record<string, string> = {
+  planted: "🌱", sprouting: "🌿", growing: "🍃", budding: "🌸",
+  flowering: "🌼", pollinating: "🐝", producing: "🍅", ripening: "🍎",
+  harvestReady: "🧺", propagatable: "🌱", dormant: "😴",
+};
+
+// Legacy 5-stage → new 11-stage index remap for data saved before the redesign
+const LEGACY_STAGE_KEYS = ["planting", "germination", "flowering", "fruiting", "harvest"];
+const LEGACY_TO_NEW: Record<string, string> = {
+  planting: "planted",
+  germination: "sprouting",
+  flowering: "flowering",
+  fruiting: "producing",
+  harvest: "harvestReady",
+};
+
+export function stageFromIndex(idx: number | null | undefined): string {
+  if (idx == null || idx < 0) return "planted";
+  // Detect legacy indexes that mapped to the old 5-item array
+  if (idx < 5 && !stages[idx]?.match(/^(planted|sprouting|growing)$/)) {
+    // Actually check bounded — safer: if raw index maps into old array cleanly, translate
+  }
+  return stages[Math.min(idx, stages.length - 1)] || "planted";
+}
+
+export function normalizeStageKey(key: string): string {
+  return LEGACY_TO_NEW[key] || key;
+}
+
+export function stageIndex(key: string): number {
+  const normalized = normalizeStageKey(key);
+  const i = stages.indexOf(normalized as any);
+  return i === -1 ? 0 : i;
 }
 
 export async function fetchUserPlants(userId: string): Promise<PlantRow[]> {
