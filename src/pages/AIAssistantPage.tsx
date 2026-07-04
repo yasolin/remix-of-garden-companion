@@ -134,36 +134,46 @@ const AIAssistantPage = () => {
   };
 
   const handlePhotoTaken = async (file: File) => {
+    // Guard: only accept image files
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "❌", description: "Lütfen bir resim dosyası seçin", variant: "destructive" });
+      return;
+    }
     const reader = new FileReader();
+    reader.onerror = () => {
+      toast({ title: "❌", description: "Fotoğraf okunamadı", variant: "destructive" });
+    };
     reader.onloadend = async () => {
       const base64 = reader.result as string;
-      const userMsg: AiMessage = { role: "user", content: t("ai.photoAnalysis") };
-      setMessages(prev => [...prev, userMsg]);
+      if (!base64 || !base64.startsWith("data:image")) {
+        toast({ title: "❌", description: "Geçersiz resim", variant: "destructive" });
+        return;
+      }
+      const userMsg: AiMessage = { role: "user", content: `📷 ${t("ai.photoAnalysis")}` };
+      // Add a placeholder assistant message immediately so streaming can update in place
+      setMessages(prev => [...prev, userMsg, { role: "assistant", content: "" }]);
       setIsLoading(true);
 
-      let assistantSoFar = "";
-      const upsertAssistant = (chunk: string) => {
-        assistantSoFar += chunk;
-        setMessages(prev => {
-          const last = prev[prev.length - 1];
-          if (last?.role === "assistant" && prev.length > 1 && prev[prev.length - 2]?.content === t("ai.photoAnalysis")) {
-            return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
-          }
-          return [...prev, { role: "assistant", content: assistantSoFar }];
-        });
-      };
+      const currentMode = pendingMode;
+      setPendingMode("chat"); // reset
 
+      let assistantSoFar = "";
       try {
         await streamPlantAI({
           messages: [{ role: "user", content: "Analyze this plant image." }],
-          mode: pendingMode,
+          mode: currentMode,
           imageBase64: base64,
           lang: i18n.language,
-          onDelta: upsertAssistant,
+          onDelta: (chunk) => {
+            assistantSoFar += chunk;
+            setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m)));
+          },
           onDone: () => setIsLoading(false),
         });
       } catch (e: any) {
-        toast({ title: "Error", description: e.message, variant: "destructive" });
+        console.error("photo analysis failed", e);
+        toast({ title: "AI Error", description: e.message || "Analiz başarısız", variant: "destructive" });
+        setMessages(prev => prev.map((m, i) => (i === prev.length - 1 && !m.content ? { ...m, content: "❌ " + (e.message || "Analiz başarısız oldu") } : m)));
         setIsLoading(false);
       }
     };
