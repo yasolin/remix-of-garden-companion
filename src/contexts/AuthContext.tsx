@@ -66,7 +66,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("signOut error", e);
+    }
+    // Force local state reset in case listener is slow / offline
+    setUser(null);
+    setSession(null);
+    // Full reload guarantees redirect to auth page and clears cached queries
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
   };
 
   return (
