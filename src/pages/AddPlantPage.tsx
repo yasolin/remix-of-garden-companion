@@ -76,7 +76,7 @@ const AddPlantPage = () => {
             waterFrequency: result.waterFrequency || "",
             sunlight: result.sunlight || "",
             windSensitivity: result.windSensitivity || "",
-            currentStage: result.currentStage || "planting",
+            currentStage: result.currentStage || "planted",
             temperature: result.temperature || "",
             humidity: result.humidity || "",
             soilType: result.soilType || "",
