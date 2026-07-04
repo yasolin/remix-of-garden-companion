@@ -114,6 +114,48 @@ export type Database = {
         }
         Relationships: []
       }
+      locations: {
+        Row: {
+          ai_analyzed: boolean
+          category: string | null
+          created_at: string
+          direction: string | null
+          humidity: string | null
+          id: string
+          name: string
+          notes: string | null
+          sun_exposure: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_analyzed?: boolean
+          category?: string | null
+          created_at?: string
+          direction?: string | null
+          humidity?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          sun_exposure?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_analyzed?: boolean
+          category?: string | null
+          created_at?: string
+          direction?: string | null
+          humidity?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          sun_exposure?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -157,6 +199,7 @@ export type Database = {
           humidity: string | null
           id: string
           last_watered_at: string | null
+          location_id: string | null
           name: string
           needs_watering: boolean | null
           next_watering_at: string | null
@@ -187,6 +230,7 @@ export type Database = {
           humidity?: string | null
           id?: string
           last_watered_at?: string | null
+          location_id?: string | null
           name: string
           needs_watering?: boolean | null
           next_watering_at?: string | null
@@ -217,6 +261,7 @@ export type Database = {
           humidity?: string | null
           id?: string
           last_watered_at?: string | null
+          location_id?: string | null
           name?: string
           needs_watering?: boolean | null
           next_watering_at?: string | null
@@ -238,7 +283,15 @@ export type Database = {
           watering_interval_days?: number | null
           wind_sensitivity?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "plants_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
