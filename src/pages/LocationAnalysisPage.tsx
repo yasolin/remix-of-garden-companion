@@ -172,23 +172,37 @@ const LocationAnalysisPage = () => {
 
   return (
     <div className="pb-24 max-w-lg mx-auto">
-      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">{t("location.title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("location.subtitle")}</p>
+      {/* Hero header with gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-primary-foreground px-4 pt-4 pb-8 rounded-b-3xl">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-lg hover:bg-white/10">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold">{t("location.title")}</h1>
+            <p className="text-xs opacity-90">{t("location.subtitle")}</p>
+          </div>
+        </div>
+
+        {/* Detected city + sun times summary */}
+        <div className="mt-4 flex items-center gap-3">
+          <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur px-3 py-1.5 rounded-full text-xs font-semibold">
+            <MapPin className="w-3.5 h-3.5" />
+            {detectedCity || t("location.detectingCity") || "…"}
+          </div>
+          <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur px-3 py-1.5 rounded-full text-xs font-semibold">
+            <Sun className="w-3.5 h-3.5" /> {sunrise} · {sunset}
+          </div>
         </div>
       </div>
 
-      {/* Plant selector */}
-      <div className="px-4 mt-4">
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <label className="text-sm font-bold text-foreground mb-2 block">{t("location.selectPlant")}</label>
+      {/* Plant selector - overlapping card */}
+      <div className="px-4 -mt-4 relative z-10">
+        <div className="bg-card rounded-2xl p-4 border border-border shadow-lg">
+          <label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wide">{t("location.selectPlant")}</label>
           <div className="relative">
             <select value={selectedPlantId} onChange={e => setSelectedPlantId(e.target.value)}
-              className="w-full bg-secondary rounded-lg px-3 py-2.5 text-sm text-foreground outline-none appearance-none pr-8">
+              className="w-full bg-secondary rounded-xl px-3 py-3 text-sm font-semibold text-foreground outline-none appearance-none pr-8">
               <option value="">{t("location.choosePlant")}</option>
               {plants.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -202,30 +216,32 @@ const LocationAnalysisPage = () => {
       {/* Compass */}
       <div className="px-4 mt-6 flex flex-col items-center">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          className="w-48 h-48 rounded-full border-4 border-primary/20 bg-card shadow-card flex items-center justify-center relative">
+          className="w-56 h-56 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 border-[6px] border-primary/20 shadow-xl flex items-center justify-center relative">
+          {/* Inner ring */}
+          <div className="absolute inset-4 rounded-full border-2 border-dashed border-primary/30" />
           {/* Cardinal direction labels */}
-          <span className="absolute top-2 text-xs font-bold text-primary">N</span>
-          <span className="absolute bottom-2 text-xs font-bold text-muted-foreground">S</span>
-          <span className="absolute right-2 text-xs font-bold text-muted-foreground">E</span>
-          <span className="absolute left-2 text-xs font-bold text-muted-foreground">W</span>
+          <span className="absolute top-3 text-sm font-black text-primary">N</span>
+          <span className="absolute bottom-3 text-sm font-black text-muted-foreground">S</span>
+          <span className="absolute right-3 text-sm font-black text-muted-foreground">E</span>
+          <span className="absolute left-3 text-sm font-black text-muted-foreground">W</span>
 
           {heading !== null && !useManual ? (
             <div className="text-center">
               <motion.div animate={{ rotate: needleRotation }} transition={{ type: "spring", damping: 20 }}>
-                <Compass className="w-16 h-16 text-primary mx-auto" />
+                <Compass className="w-20 h-20 text-primary mx-auto drop-shadow" />
               </motion.div>
-              <p className="text-2xl font-bold text-foreground mt-1">{heading}°</p>
-              <p className="text-sm font-semibold text-primary">{dirLabel}</p>
+              <p className="text-3xl font-black text-foreground mt-1">{heading}°</p>
+              <p className="text-sm font-bold text-primary">{dirLabel}</p>
             </div>
           ) : useManual ? (
             <div className="text-center">
-              <Compass className="w-16 h-16 text-primary mx-auto" />
+              <Compass className="w-20 h-20 text-primary mx-auto" />
               <p className="text-lg font-bold text-foreground mt-1">{dirLabels[lang][manualDir]}</p>
               <p className="text-xs text-muted-foreground">{t("location.manualMode")}</p>
             </div>
           ) : (
             <div className="text-center px-4">
-              <Compass className="w-14 h-14 text-muted-foreground mx-auto animate-pulse" />
+              <Compass className="w-16 h-16 text-muted-foreground mx-auto animate-pulse" />
               <p className="text-xs text-muted-foreground mt-2">
                 {compassError ? t("location.noCompass") : t("location.detecting")}
               </p>
