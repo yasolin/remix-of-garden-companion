@@ -175,29 +175,51 @@ const HomeMainView = ({ onToggleView }: Props) => {
           {weather.city && (
             <p className="text-[11px] text-muted-foreground text-center mt-1">📍 {weather.city}</p>
           )}
-          {/* Environmental alerts */}
-          {weather.alerts && weather.alerts.length > 0 && (
-            <div className="mt-2 space-y-1.5">
-              {weather.alerts.slice(0, 3).map((a) => {
-                const isTr = (typeof navigator !== "undefined" && navigator.language?.startsWith("tr")) || (localStorage.getItem("gardenPotLang") === "tr");
-                const tone =
-                  a.level === "danger" ? "bg-destructive/10 border-destructive/30 text-destructive"
-                  : a.level === "warning" ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
-                  : "bg-primary/10 border-primary/20 text-primary";
-                return (
-                  <div key={a.key} className={`rounded-xl border px-3 py-2 flex items-start gap-2 ${tone}`}>
-                    <span className="text-lg leading-none">{a.icon}</span>
-                    <div className="flex-1">
-                      <p className="text-xs font-bold leading-tight">{isTr ? a.titleTr : a.titleEn}</p>
-                      <p className="text-[11px] opacity-90 leading-snug">{isTr ? a.bodyTr : a.bodyEn}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       )}
+
+      {/* Smart alert cards — below the weather strip */}
+      {weather?.alerts && weather.alerts.length > 0 && (
+        <div className="px-4 mt-3">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-primary" />
+              {t("mainView.smartAlerts")}
+            </h3>
+            <span className="text-[11px] text-muted-foreground">
+              {t("mainView.smartAlertsCount", { count: weather.alerts.length })}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {weather.alerts.map((a) => {
+              const isTr =
+                (typeof navigator !== "undefined" && navigator.language?.startsWith("tr")) ||
+                (localStorage.getItem("gardenPotLang") === "tr");
+              const tone =
+                a.level === "danger"
+                  ? "bg-destructive/10 border-destructive/30 text-destructive"
+                  : a.level === "warning"
+                  ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
+                  : "bg-primary/10 border-primary/20 text-primary";
+              return (
+                <motion.div
+                  key={a.key}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`rounded-2xl border px-3 py-2.5 flex items-start gap-2.5 ${tone}`}
+                >
+                  <span className="text-xl leading-none">{a.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-[13px] font-bold leading-tight">{isTr ? a.titleTr : a.titleEn}</p>
+                    <p className="text-[11px] opacity-90 leading-snug mt-0.5">{isTr ? a.bodyTr : a.bodyEn}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
 
       {/* Quick actions */}
       <div className="px-4 mt-4">
