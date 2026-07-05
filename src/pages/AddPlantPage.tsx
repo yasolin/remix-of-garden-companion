@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { stages, stageIndex, insertPlant, uploadPlantPhoto } from "@/lib/plantService";
+import { ALL_CATEGORIES, getLifecycle, stageLabel, categoryLabel } from "@/lib/plantLifecycles";
+
 import { generateWateringPlan, frequencyToDays } from "@/lib/wateringService";
 import { analyzePlantPhoto } from "@/lib/plantAI";
 import { fetchUserLocations, createLocation } from "@/lib/locationService";
@@ -36,7 +38,9 @@ const AddPlantPage = () => {
     lastWateredDate: "",
     neverWatered: false,
     locationId: "" as string,
+    category: "" as string,
   });
+
 
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
