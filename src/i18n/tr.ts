@@ -404,6 +404,9 @@ export default {
     },
     mainView: {
       toggle: "Görünümü değiştir",
+      smartAlerts: "Akıllı Uyarılar",
+      smartAlertsCount: "{{count}} uyarı",
+
       hello: "Merhaba {{name}}",
       subtitle: "Bitkilerin seninle harika gidiyor!",
       todayForPlants: "Bugün bitkilerin için",
