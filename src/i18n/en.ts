@@ -403,6 +403,9 @@ export default {
     },
     mainView: {
       toggle: "Toggle view",
+      smartAlerts: "Smart Alerts",
+      smartAlertsCount: "{{count}} alerts",
+
       hello: "Hello {{name}}",
       subtitle: "Your plants are doing great!",
       todayForPlants: "Today for your plants",
