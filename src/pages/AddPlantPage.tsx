@@ -144,7 +144,12 @@ const AddPlantPage = () => {
         water_frequency: form.waterFrequency,
         sunlight: form.sunlight,
         wind_sensitivity: form.windSensitivity,
-        current_stage: stageIndex(form.currentStage),
+        current_stage: (() => {
+          const lc = getLifecycle(form.category);
+          const idx = lc.stages.findIndex((s) => s.key === form.currentStage);
+          return idx === -1 ? stageIndex(form.currentStage) : idx;
+        })(),
+
         category: form.category || null,
         temperature: form.temperature,
 
