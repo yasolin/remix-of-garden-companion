@@ -145,7 +145,9 @@ const AddPlantPage = () => {
         sunlight: form.sunlight,
         wind_sensitivity: form.windSensitivity,
         current_stage: stageIndex(form.currentStage),
+        category: form.category || null,
         temperature: form.temperature,
+
         humidity: form.humidity,
         soil_type: form.soilType,
         fertilizer: form.fertilizer,
