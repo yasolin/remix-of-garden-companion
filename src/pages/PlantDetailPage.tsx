@@ -144,7 +144,7 @@ const PlantDetailPage = () => {
       {/* Growth Timeline Card */}
       <div className="px-4">
         <div className="bg-card rounded-2xl p-4 border border-border">
-          <GrowthTimeline currentStage={currentStage} />
+          <GrowthTimeline currentStage={currentStage} category={plant.category} />
         </div>
       </div>
 
