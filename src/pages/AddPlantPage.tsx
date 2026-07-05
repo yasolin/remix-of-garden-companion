@@ -344,17 +344,51 @@ const AddPlantPage = () => {
           </label>
         </div>
 
+        {/* Plant category picker — drives the growth lifecycle roadmap */}
         <div>
-          <label className="text-sm font-semibold text-foreground">{t("add.growthStage")}</label>
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {stages.map((stage) => (
-              <button key={stage} onClick={() => setForm({ ...form, currentStage: stage })}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                  form.currentStage === stage ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                }`}>{stageLabels[stage]}</button>
+          <label className="text-sm font-semibold text-foreground">
+            {i18n.language.startsWith("tr") ? "Bitki türü / yol haritası" : "Plant type / roadmap"}
+          </label>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {i18n.language.startsWith("tr")
+              ? "Her bitki türünün kendi yaşam döngüsü vardır. Aşamalar bu seçime göre değişir."
+              : "Each plant type has its own life cycle. Stages update based on this choice."}
+          </p>
+          <div className="flex gap-1.5 mt-2 flex-wrap">
+            {ALL_CATEGORIES.map((c) => (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => {
+                  const first = c.stages[0]?.key || "planted";
+                  setForm({ ...form, category: c.key, currentStage: first });
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1 ${
+                  form.category === c.key ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                }`}
+              >
+                <span>{c.emoji}</span>
+                <span>{categoryLabel(c, i18n.language)}</span>
+              </button>
             ))}
           </div>
         </div>
+
+        <div>
+          <label className="text-sm font-semibold text-foreground">{t("add.growthStage")}</label>
+          <div className="flex gap-2 mt-2 flex-wrap">
+            {getLifecycle(form.category).stages.map((stage) => (
+              <button key={stage.key} type="button" onClick={() => setForm({ ...form, currentStage: stage.key })}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1 ${
+                  form.currentStage === stage.key ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                }`}>
+                <span>{stage.emoji}</span>
+                <span>{stageLabel(stage, i18n.language)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
 
         <div>
           <label className="text-sm font-semibold text-foreground">{t("add.notesLabel")}</label>
