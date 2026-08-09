@@ -177,6 +177,13 @@ export default {
       harvest: "Hasada Hazır",
     },
     locations: {
+      howToAdd: "Konumu nasıl eklemek istersin?",
+      addManual: "Manuel ekle",
+      addManualDesc: "Adı, kategoriyi ve yönü kendin gir",
+      addWithAi: "Konum analiziyle ekle",
+      addWithAiDesc: "AI yönü, ışığı ve nemi senin için belirlesin",
+      directionLabel: "Yön",
+      detectDirection: "Yönü AI ile tespit et",
       title: "Konumlarım",
       empty: "Henüz kayıtlı konumun yok",
       addFirst: "İlk konumunu ekle",
