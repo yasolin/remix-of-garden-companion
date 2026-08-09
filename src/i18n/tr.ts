@@ -402,7 +402,17 @@ export default {
       undone: "Görev geri alındı",
       viewAll: "Tüm görevleri gör ({{count}})",
     },
+    stageAlerts: {
+      title: "Bitki Aşama Takibi",
+      currentStage: "Şu an: {{stage}}",
+      notStarted: "Döngü henüz başlamadı",
+      countdown: "{{stage}} aşamasına {{count}} gün kaldı",
+      stageToday: "{{stage}} aşaması bugün! 🎉",
+      cycleComplete: "{{name}} döngüsünü tamamladı",
+      inDays: "{{count}} gün",
+    },
     mainView: {
+
       toggle: "Görünümü değiştir",
       smartAlerts: "Akıllı Uyarılar",
       smartAlertsCount: "{{count}} uyarı",
