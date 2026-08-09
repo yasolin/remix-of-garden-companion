@@ -230,3 +230,46 @@ export function categoryLabel(def: LifecycleDef, lang: string): string {
 }
 
 export const ALL_CATEGORIES = Object.values(CATEGORY_LIFECYCLES);
+
+// ---------- Automatic category detection from the plant name ----------
+// Plants saved before the category picker existed have no `category`, which made
+// every plant show the same generic roadmap. We infer a sensible lifecycle from
+// the plant name so each species gets its own stages.
+const NAME_HINTS: Array<[string, string[]]> = [
+  ["fruitingVegetable", ["domates", "tomato", "biber", "pepper", "salatalık", "cucumber", "patlıcan", "eggplant", "kabak", "zucchini", "squash", "çilek", "strawberry", "karpuz", "watermelon", "kavun", "melon", "bamya", "okra"]],
+  ["leafyVegetable", ["marul", "lettuce", "ıspanak", "spinach", "roka", "arugula", "lahana", "cabbage", "pazı", "chard", "maydanoz", "parsley", "dereotu", "dill", "tere", "cress", "semizotu"]],
+  ["rootVegetable", ["havuç", "carrot", "turp", "radish", "pancar", "beet", "şalgam", "turnip", "kereviz", "celeriac"]],
+  ["tuber", ["patates", "potato", "yer elması", "tatlı patates", "sweet potato", "yam"]],
+  ["bulb", ["soğan", "onion", "sarımsak", "garlic", "pırasa", "leek", "lale", "tulip", "nergis", "daffodil", "zambak", "lily"]],
+  ["legume", ["fasulye", "bean", "bezelye", "pea", "nohut", "chickpea", "mercimek", "lentil", "börülce", "bakla", "fava"]],
+  ["grain", ["buğday", "wheat", "arpa", "barley", "mısır", "corn", "maize", "yulaf", "oat", "çavdar", "rye", "pirinç", "rice"]],
+  ["deciduousFruitTree", ["elma", "apple", "armut", "pear", "kiraz", "cherry", "vişne", "şeftali", "peach", "erik", "plum", "kayısı", "apricot", "incir", "fig", "nar", "pomegranate", "ceviz", "walnut", "badem", "almond", "dut", "mulberry"]],
+  ["citrus", ["limon", "lemon", "portakal", "orange", "mandalina", "mandarin", "tangerine", "greyfurt", "grapefruit", "bergamot", "lime", "misket limonu"]],
+  ["grapevine", ["üzüm", "grape", "asma", "vine"]],
+  ["annualFlower", ["menekşe", "pansy", "petunya", "petunia", "kadife çiçeği", "marigold", "aslanağzı", "ayçiçeği", "sunflower", "zinnia"]],
+  ["perennialFlower", ["gül", "rose", "ortanca", "hydrangea", "lavanta", "lavender", "papatya", "daisy", "karanfil", "carnation", "şakayık", "peony", "orkide", "orchid"]],
+  ["succulent", ["sukulent", "succulent", "aloe", "sedum", "echeveria", "haworthia", "yeşim", "jade", "kalanchoe", "agave"]],
+  ["cactus", ["kaktüs", "cactus", "opuntia", "mammillaria", "san pedro"]],
+  ["foliageHousePlant", ["monstera", "difenbahya", "dieffenbachia", "pothos", "sarmaşık", "ivy", "sansevieria", "paşa kılıcı", "benjamin", "ficus", "kauçuk", "rubber", "philodendron", "zz", "barış çiçeği", "spathiphyllum", "calathea", "aglaonema", "begonya", "begonia"]],
+  ["fern", ["eğrelti", "fern", "nephrolepis", "adiantum"]],
+  ["palm", ["palmiye", "palm", "areka", "areca", "yucca", "hurma"]],
+  ["conifer", ["çam", "pine", "ladin", "spruce", "sedir", "cedar", "ardıç", "juniper", "servi", "cypress", "köknar", "fir"]],
+  ["herb", ["fesleğen", "basil", "nane", "mint", "kekik", "thyme", "biberiye", "rosemary", "adaçayı", "sage", "melisa", "reyhan", "oregano", "lemon balm"]],
+  ["mushroom", ["mantar", "mushroom", "istiridye", "oyster", "shiitake"]],
+];
+
+export function inferCategoryFromName(name?: string | null): string | null {
+  if (!name) return null;
+  const n = name.toLocaleLowerCase("tr");
+  for (const [category, hints] of NAME_HINTS) {
+    if (hints.some((h) => n.includes(h))) return category;
+  }
+  return null;
+}
+
+/** Lifecycle for a plant record: explicit category first, then name inference. */
+export function getLifecycleForPlant(plant: { category?: string | null; name?: string | null }): LifecycleDef {
+  if (plant.category && CATEGORY_LIFECYCLES[plant.category]) return CATEGORY_LIFECYCLES[plant.category];
+  const inferred = inferCategoryFromName(plant.name);
+  return getLifecycle(inferred);
+}
