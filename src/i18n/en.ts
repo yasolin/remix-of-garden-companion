@@ -401,7 +401,17 @@ export default {
       undone: "Task undone",
       viewAll: "View all tasks ({{count}})",
     },
+    stageAlerts: {
+      title: "Plant Stage Tracker",
+      currentStage: "Now: {{stage}}",
+      notStarted: "Cycle hasn't started yet",
+      countdown: "{{count}} days until {{stage}}",
+      stageToday: "{{stage}} stage is today! 🎉",
+      cycleComplete: "{{name}} completed its cycle",
+      inDays: "in {{count}}d",
+    },
     mainView: {
+
       toggle: "Toggle view",
       smartAlerts: "Smart Alerts",
       smartAlertsCount: "{{count}} alerts",
