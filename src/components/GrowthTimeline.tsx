@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { getLifecycle, stageLabel } from "@/lib/plantLifecycles";
+import { getLifecycleForPlant, stageLabel } from "@/lib/plantLifecycles";
+import { stageIcon } from "@/lib/stageIcons";
 import { normalizeStageKey } from "@/lib/plantService";
 
 const palette = [
@@ -20,13 +21,15 @@ interface GrowthTimelineProps {
   currentStage: number | string;
   /** Plant category key from plantLifecycles (e.g. "succulent", "citrus"). */
   category?: string | null;
+  /** Plant name — used to infer the lifecycle when no category is stored. */
+  plantName?: string | null;
   /** @deprecated kept for backward compatibility; category now drives this. */
   hasFruit?: boolean;
 }
 
-const GrowthTimeline = ({ currentStage, category }: GrowthTimelineProps) => {
+const GrowthTimeline = ({ currentStage, category, plantName }: GrowthTimelineProps) => {
   const { i18n } = useTranslation();
-  const lifecycle = getLifecycle(category);
+  const lifecycle = getLifecycleForPlant({ category, name: plantName });
   const stages = lifecycle.stages;
 
   let currentIdx = 0;
@@ -44,6 +47,7 @@ const GrowthTimeline = ({ currentStage, category }: GrowthTimelineProps) => {
         const isCompleted = idx < currentIdx;
         const isCurrent = idx === currentIdx;
         const colors = palette[idx % palette.length];
+        const Icon = stageIcon(stage.key);
         return (
           <div key={`${stage.key}-${idx}`} className="flex items-center shrink-0" style={{ minWidth: 52 }}>
             <div className="flex flex-col items-center">
@@ -52,7 +56,7 @@ const GrowthTimeline = ({ currentStage, category }: GrowthTimelineProps) => {
                   isCompleted ? colors.completed : isCurrent ? `${colors.active} ring-2` : "bg-muted/60 opacity-40"
                 }`}
               >
-                <span>{stage.emoji}</span>
+                <Icon className="w-4 h-4" strokeWidth={2.2} />
               </div>
               <span
                 className={`text-[8px] mt-1 font-medium text-center leading-tight max-w-[58px] ${
