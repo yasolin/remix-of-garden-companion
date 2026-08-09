@@ -225,7 +225,6 @@ const HarvestPage = () => {
       <div className="px-4 mt-4 space-y-3">
         {plants.map((plant, i) => {
           const daysToHarvest = plant.estimatedDays;
-          const fruit = hasFruitStage(plant.name);
           const nextStage = nextStageInfo(plant, i18n.language);
 
           return (
