@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { CalendarClock, ChevronRight } from "lucide-react";
 import type { PlantRow } from "@/lib/plantService";
 import { getPlantStageInfo, labelOf, formatStageDate } from "@/lib/stageCountdown";
+import { stageIcon } from "@/lib/stageIcons";
 
 interface Props {
   plants: PlantRow[];
@@ -52,7 +53,7 @@ const StageCountdownAlerts = ({ plants }: Props) => {
       : "from-primary/10 to-card border-primary/20";
 
   return (
-    <div className="px-4 mt-3">
+    <div className="px-4 mt-5">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
           <CalendarClock className="w-4 h-4 text-primary" />
@@ -92,9 +93,15 @@ const StageCountdownAlerts = ({ plants }: Props) => {
         className={`rounded-2xl border bg-gradient-to-br p-3 ${tone}`}
       >
         <div className="flex items-center gap-3">
-          <span className="text-3xl leading-none">
-            {(next ?? info.current)?.stage.emoji ?? "🌱"}
-          </span>
+          {(() => {
+            const key = (next ?? info.current)?.stage.key ?? "planted";
+            const Icon = stageIcon(key);
+            return (
+              <div className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center shrink-0">
+                <Icon className="w-5 h-5 text-primary" strokeWidth={2.2} />
+              </div>
+            );
+          })()}
           <div className="flex-1 min-w-0">
             <p className="text-[11px] text-muted-foreground">
               {info.current
@@ -134,12 +141,14 @@ const StageCountdownAlerts = ({ plants }: Props) => {
         {/* Upcoming stages */}
         {info.upcoming.length > 1 && (
           <div className="flex gap-2 mt-3">
-            {info.upcoming.slice(1).map((s) => (
+            {info.upcoming.slice(1).map((s) => {
+              const Icon = stageIcon(s.stage.key);
+              return (
               <div
                 key={s.stage.key}
                 className="flex-1 bg-card/70 rounded-xl px-2 py-1.5 border border-border/60 text-center"
               >
-                <p className="text-base leading-none">{s.stage.emoji}</p>
+                <Icon className="w-4 h-4 mx-auto text-muted-foreground" strokeWidth={2.2} />
                 <p className="text-[10px] font-medium text-foreground mt-0.5 truncate">
                   {labelOf(s, lang)}
                 </p>
@@ -147,7 +156,8 @@ const StageCountdownAlerts = ({ plants }: Props) => {
                   {t("stageAlerts.inDays", { count: s.daysLeft })}
                 </p>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </motion.div>

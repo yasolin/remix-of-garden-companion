@@ -1,4 +1,4 @@
-import { getLifecycle, stageLabel, type LifecycleStage } from "./plantLifecycles";
+import { getLifecycleForPlant, stageLabel, type LifecycleStage } from "./plantLifecycles";
 import type { PlantRow } from "./plantService";
 
 export interface StageProgress {
@@ -26,7 +26,7 @@ export interface PlantStageInfo {
  */
 export function getPlantStageInfo(plant: PlantRow, lang: string): PlantStageInfo | null {
   if (!plant.planted_date) return null;
-  const stages = getLifecycle((plant as any).category).stages;
+  const stages = getLifecycleForPlant({ category: (plant as any).category, name: plant.name }).stages;
   if (!stages.length) return null;
 
   const planted = new Date(plant.planted_date).getTime();

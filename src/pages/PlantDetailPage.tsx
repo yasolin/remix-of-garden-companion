@@ -8,12 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchPlantById, updatePlant, uploadPlantPhoto, stages, stageFromIndex } from "@/lib/plantService";
 import { myPlants as mockPlants } from "@/data/mockData";
 import GrowthTimeline from "@/components/GrowthTimeline";
+import { getPlantStageInfo } from "@/lib/stageCountdown";
 import { toast } from "@/hooks/use-toast";
 
 const PlantDetailPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -103,7 +104,10 @@ const PlantDetailPage = () => {
 
   const photo = plant.photo_url || (plant as any).photo;
   const daysToHarvest = plant.days_to_harvest ?? 30;
-  const currentStage = plant.current_stage ?? 0;
+  // Keep in sync with the harvest page: derive from the plant lifecycle when a
+  // planted date exists, otherwise fall back to the manually stored stage.
+  const stageInfo = getPlantStageInfo(plant as any, i18n.language);
+  const currentStage = stageInfo ? (stageInfo.current ? stageInfo.current.index : 0) : (plant.current_stage ?? 0);
   const scientificName = plant.scientific_name || "";
   const updatedDate = plant.updated_at ? new Date(plant.updated_at).toLocaleDateString() : "";
 
@@ -144,7 +148,7 @@ const PlantDetailPage = () => {
       {/* Growth Timeline Card */}
       <div className="px-4">
         <div className="bg-card rounded-2xl p-4 border border-border">
-          <GrowthTimeline currentStage={currentStage} category={plant.category} />
+          <GrowthTimeline currentStage={currentStage} category={plant.category} plantName={plant.name} />
         </div>
       </div>
 

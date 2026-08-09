@@ -10,6 +10,7 @@ import { fetchUserPlants } from "@/lib/plantService";
 import { toast } from "@/hooks/use-toast";
 
 const CATEGORIES = ["indoor", "balcony", "garden", "window", "greenhouse", "other"] as const;
+const DIRECTIONS = ["Kuzey", "Güney", "Doğu", "Batı", "Kuzeydoğu", "Kuzeybatı", "Güneydoğu", "Güneybatı"] as const;
 
 const LocationsPage = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const LocationsPage = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [chooserOpen, setChooserOpen] = useState(false);
   const [form, setForm] = useState({ name: "", category: "indoor", direction: "", notes: "" });
 
   const { data: locations = [] } = useQuery({
@@ -71,10 +73,49 @@ const LocationsPage = () => {
           </button>
           <h1 className="text-xl font-bold text-foreground">{t("locations.title")}</h1>
         </div>
-        <button onClick={() => setAddOpen(true)} className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+        <button onClick={() => setChooserOpen(true)} className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
           <Plus className="w-5 h-5 text-primary-foreground" />
         </button>
       </div>
+
+      {/* How do you want to add the location? */}
+      <AnimatePresence>
+        {chooserOpen && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            className="px-4 overflow-hidden">
+            <div className="bg-card rounded-2xl p-4 border border-border space-y-2 mt-2">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="font-bold text-foreground text-sm">{t("locations.howToAdd")}</h3>
+                <button onClick={() => setChooserOpen(false)} className="p-1 rounded hover:bg-secondary"><X className="w-4 h-4" /></button>
+              </div>
+              <button
+                onClick={() => { setChooserOpen(false); setAddOpen(true); }}
+                className="w-full flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-3 text-left active:scale-[0.99] transition-transform"
+              >
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Plus className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{t("locations.addManual")}</p>
+                  <p className="text-[11px] text-muted-foreground">{t("locations.addManualDesc")}</p>
+                </div>
+              </button>
+              <button
+                onClick={() => { setChooserOpen(false); navigate("/location-analysis"); }}
+                className="w-full flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-3 text-left active:scale-[0.99] transition-transform"
+              >
+                <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-violet-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{t("locations.addWithAi")}</p>
+                  <p className="text-[11px] text-muted-foreground">{t("locations.addWithAiDesc")}</p>
+                </div>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {addOpen && (
@@ -99,9 +140,23 @@ const LocationsPage = () => {
                   ))}
                 </div>
               </div>
-              <input value={form.direction} onChange={e => setForm({ ...form, direction: e.target.value })}
-                placeholder="Yön (Kuzey / Güney / Doğu / Batı)"
-                className="w-full bg-secondary rounded-xl px-4 py-2.5 text-sm outline-none" />
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-1.5">{t("locations.directionLabel")}</p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {DIRECTIONS.map(d => (
+                    <button key={d} onClick={() => setForm({ ...form, direction: form.direction === d ? "" : d })}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                        form.direction === d ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+                      }`}>{d}</button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => navigate("/location-analysis")}
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-violet-500"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> {t("locations.detectDirection")}
+                </button>
+              </div>
               <button onClick={handleSave} disabled={!form.name.trim()}
                 className="w-full bg-primary text-primary-foreground font-bold py-2.5 rounded-xl disabled:opacity-50">
                 {t("locations.save")}
@@ -116,7 +171,7 @@ const LocationsPage = () => {
           <div className="bg-card rounded-2xl p-6 border border-border text-center">
             <MapPin className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">{t("locations.empty")}</p>
-            <button onClick={() => setAddOpen(true)} className="mt-3 bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-medium">
+            <button onClick={() => setChooserOpen(true)} className="mt-3 bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-medium">
               {t("locations.addFirst")}
             </button>
           </div>

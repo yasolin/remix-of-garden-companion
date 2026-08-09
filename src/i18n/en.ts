@@ -176,6 +176,13 @@ export default {
       harvest: "Ready to Harvest",
     },
     locations: {
+      howToAdd: "How do you want to add this location?",
+      addManual: "Add manually",
+      addManualDesc: "Enter the name, category and direction yourself",
+      addWithAi: "Add with location analysis",
+      addWithAiDesc: "Let AI detect direction, light and humidity",
+      directionLabel: "Direction",
+      detectDirection: "Detect direction with AI",
       title: "My Locations",
       empty: "No saved locations yet",
       addFirst: "Add your first location",
@@ -412,6 +419,10 @@ export default {
     },
     mainView: {
 
+      allCaughtUp: "All caught up!",
+      allCaughtUpDesc: "No tasks waiting for you today.",
+      plantableNow: "{{count}} to sow",
+      noPlantsDesc: "Add your first plant and we'll build its care schedule.",
       toggle: "Toggle view",
       smartAlerts: "Smart Alerts",
       smartAlertsCount: "{{count}} alerts",

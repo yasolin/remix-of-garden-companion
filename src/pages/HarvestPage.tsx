@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
 import { cleanMarkdown } from "@/lib/textClean";
+import { getPlantStageInfo, labelOf, formatStageDate } from "@/lib/stageCountdown";
 
 // Plant types that produce fruit/vegetable
 const fruitingPlants = new Set([
@@ -46,40 +47,20 @@ function estimateHarvestDays(plant: any): number {
   return totalDays;
 }
 
-function estimateCurrentStage(plant: any): number {
-  const totalDays = plant.days_to_harvest ?? 60;
-  if (!plant.planted_date) return plant.current_stage ?? 0;
-  const daysSincePlanted = Math.floor((Date.now() - new Date(plant.planted_date).getTime()) / (1000 * 60 * 60 * 24));
-  const progress = daysSincePlanted / totalDays;
-  const hasFruit = hasFruitStage(plant.name);
-  const numStages = hasFruit ? 5 : 4;
-  return Math.min(Math.floor(progress * numStages), numStages - 1);
+// Single source of truth: the plant's own lifecycle roadmap (same logic the
+// plant detail / home stage tracker uses), so both screens always agree.
+function estimateCurrentStage(plant: any, lang: string): number {
+  const info = getPlantStageInfo(plant, lang);
+  if (!info) return plant.current_stage ?? 0;
+  return info.current ? info.current.index : 0;
 }
 
-const STAGE_LABELS_TR = ["Ekim", "Çimlenme", "Çiçeklenme", "Meyve", "Hasat"];
-const STAGE_LABELS_EN = ["Planting", "Germination", "Flowering", "Fruiting", "Harvest"];
-
 function nextStageInfo(plant: any, lang: string) {
+  const info = getPlantStageInfo(plant, lang);
+  if (!info?.next) return null;
   const totalDays = plant.days_to_harvest ?? 60;
-  if (!plant.planted_date) return null;
-  const planted = new Date(plant.planted_date).getTime();
-  const day = 24 * 60 * 60 * 1000;
-  const hasFruit = hasFruitStage(plant.name);
-  const stageOffsets = hasFruit
-    ? [0, 7, Math.max(14, totalDays * 0.4), Math.max(21, totalDays * 0.7), totalDays]
-    : [0, 7, Math.max(14, totalDays * 0.5), totalDays];
-  const labels = lang === "en" ? STAGE_LABELS_EN : STAGE_LABELS_TR;
-  const stageNames = hasFruit ? labels : [labels[0], labels[1], labels[2], labels[4]];
-  const now = Date.now();
-  for (let i = 0; i < stageOffsets.length; i++) {
-    const stageDate = planted + stageOffsets[i] * day;
-    if (stageDate > now) {
-      const daysLeft = Math.ceil((stageDate - now) / day);
-      const harvestDate = new Date(planted + totalDays * day);
-      return { name: stageNames[i], daysLeft, harvestDate };
-    }
-  }
-  return null;
+  const harvestDate = new Date(new Date(plant.planted_date).getTime() + totalDays * 86400000);
+  return { name: labelOf(info.next, lang), daysLeft: info.next.daysLeft, harvestDate };
 }
 
 const DAILY_SCAN_KEY = "gardenPotLastScanDate";
@@ -120,7 +101,7 @@ const HarvestPage = () => {
   });
 
   const plants = [...dbPlants]
-    .map(p => ({ ...p, estimatedDays: estimateHarvestDays(p), autoStage: estimateCurrentStage(p) }))
+    .map(p => ({ ...p, estimatedDays: estimateHarvestDays(p), autoStage: estimateCurrentStage(p, i18n.language) }))
     .sort((a, b) => a.estimatedDays - b.estimatedDays);
 
   const handleAiScan = async (file: File) => {
@@ -244,7 +225,6 @@ const HarvestPage = () => {
       <div className="px-4 mt-4 space-y-3">
         {plants.map((plant, i) => {
           const daysToHarvest = plant.estimatedDays;
-          const fruit = hasFruitStage(plant.name);
           const nextStage = nextStageInfo(plant, i18n.language);
 
           return (
@@ -287,7 +267,7 @@ const HarvestPage = () => {
                   </div>
                 </div>
               )}
-              <GrowthTimeline currentStage={plant.autoStage} hasFruit={fruit} />
+              <GrowthTimeline currentStage={plant.autoStage} category={(plant as any).category} plantName={plant.name} />
             </motion.div>
           );
         })}

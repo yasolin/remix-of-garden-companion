@@ -15,7 +15,7 @@ interface CalendarPlant {
   note?: Record<string, string>;
 }
 
-const monthlyPlants: Record<number, CalendarPlant[]> = {
+export const monthlyPlants: Record<number, CalendarPlant[]> = {
   // Ocak
   0: [
     { name: { tr: "Sarımsak", en: "Garlic" }, emoji: "🧄", category: "vegetable", plantDays: [1,3,5,8,10,15,20,25,28] },
@@ -382,3 +382,11 @@ const PlantingCalendarPage = () => {
 };
 
 export default PlantingCalendarPage;
+
+/** How many plants can be sown in the current week (used by the home screen). */
+export function plantableThisWeekCount(date: Date = new Date()): number {
+  const list = monthlyPlants[date.getMonth()] || [];
+  const today = date.getDate();
+  const end = today + 6;
+  return list.filter((p) => p.plantDays.some((d) => d >= today && d <= end)).length;
+}
