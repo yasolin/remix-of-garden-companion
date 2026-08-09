@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 const PlantDetailPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
