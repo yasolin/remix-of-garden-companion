@@ -14,6 +14,8 @@ import heroPot from "@/assets/hero-pot.png";
 import heroPlants from "@/assets/hero-plants.png";
 import heroWatering from "@/assets/hero-watering.png";
 import StageCountdownAlerts from "@/components/StageCountdownAlerts";
+import { plantableThisWeekCount } from "@/pages/PlantingCalendarPage";
+import { Sprout, CheckCircle2 } from "lucide-react";
 
 
 interface Props {
@@ -44,6 +46,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
   const needsWater = plants.filter((p) => p.needs_watering);
   const harvestReady = plants.filter((p) => (p.days_to_harvest ?? 30) <= 3);
   const taskCount = needsWater.length + harvestReady.length;
+  const plantableCount = plantableThisWeekCount();
 
   const tipText = (() => {
     const temp = weather?.temp ?? 22;
@@ -78,7 +81,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
       </div>
 
       {/* Greeting + plants illustration */}
-      <div className="px-4 mt-2 relative">
+      <div className="px-4 mt-3 relative">
         <div className="relative z-10 max-w-[60%]">
           <h1 className="text-2xl font-bold text-foreground leading-tight">
             {t("mainView.hello", { name: userName })} 🌱
@@ -93,7 +96,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
       </div>
 
       {/* Today's task hero card */}
-      <div className="px-4 mt-4">
+      <div className="px-4 mt-5">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,8 +109,14 @@ const HomeMainView = ({ onToggleView }: Props) => {
             <div className="flex-1 min-w-0">
               <p className="text-sm text-foreground">{t("mainView.todayForPlants")}</p>
               <p className="text-2xl font-bold text-primary leading-tight">
-                {t("mainView.tasksCount", { count: taskCount })}
+                {taskCount > 0 ? t("mainView.tasksCount", { count: taskCount }) : t("mainView.allCaughtUp")}
               </p>
+              {taskCount === 0 && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                  {t("mainView.allCaughtUpDesc")}
+                </p>
+              )}
 
               <div className="space-y-1.5 mt-3">
                 {needsWater.length > 0 && (
@@ -143,7 +152,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
 
       {/* Weather strip */}
       {weather && (
-        <div className="px-4 mt-3">
+        <div className="px-4 mt-5">
           <div className="bg-card rounded-2xl border border-border px-3 py-3 flex items-center justify-around">
             <div className="flex items-center gap-2">
               <span className="text-2xl">{weather.condition}</span>
@@ -182,7 +191,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
 
       {/* Smart alert cards — below the weather strip */}
       {weather?.alerts && weather.alerts.length > 0 && (
-        <div className="px-4 mt-3">
+        <div className="px-4 mt-5">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-primary" />
@@ -229,7 +238,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
 
 
       {/* Quick actions */}
-      <div className="px-4 mt-4">
+      <div className="px-4 mt-5">
         <h3 className="text-sm font-semibold text-foreground mb-2">{t("mainView.quickActions")}</h3>
         <div className="grid grid-cols-3 gap-2">
           <button
@@ -257,7 +266,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
       </div>
 
       {/* Bitki Bakım Takvimi */}
-      <div className="px-4 mt-4">
+      <div className="px-4 mt-5">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-foreground">{t("mainView.careCalendar")}</h3>
           <button onClick={() => navigate("/tasks")} className="text-xs font-medium text-primary flex items-center gap-0.5">
@@ -314,14 +323,15 @@ const HomeMainView = ({ onToggleView }: Props) => {
           >
             <div className="flex items-start justify-between">
               <Calendar className="w-7 h-7 text-amber-600" strokeWidth={2} />
-              <span className="bg-amber-500 text-white text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center">
-                3
+              <span className="bg-amber-500 text-amber-50 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                <Sprout className="w-3 h-3" />
+                {t("mainView.plantableNow", { count: plantableCount })}
               </span>
             </div>
             <p className="text-sm font-bold text-foreground mt-2">{t("home.plantingSuggestion")}</p>
             <p className="text-[11px] text-muted-foreground">{t("mainView.thisWeek")}</p>
             <p className="text-[11px] text-foreground/80 mt-0.5">
-              {t("mainView.plantingSubtitle", { count: 3 })}
+              {t("mainView.plantingSubtitle", { count: plantableCount })}
             </p>
             <div className="mt-2 bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[11px] font-medium rounded-full py-1 text-center">
               {t("mainView.view")}
@@ -335,9 +345,6 @@ const HomeMainView = ({ onToggleView }: Props) => {
           >
             <div className="flex items-start justify-between">
               <Stethoscope className="w-7 h-7 text-purple-500" strokeWidth={2} />
-              <span className="bg-purple-500 text-white text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center">
-                {plants.length > 0 ? 1 : 0}
-              </span>
             </div>
             <p className="text-sm font-bold text-foreground mt-2 leading-tight">{t("mainView.diagnosisTitle")}</p>
             <p className="text-[11px] text-foreground/80 mt-0.5">{t("mainView.diagnosisSubtitle")}</p>
@@ -349,7 +356,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
       </div>
 
       {/* Bitkilerim */}
-      <div className="px-4 mt-4">
+      <div className="px-4 mt-5">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-foreground">{t("mainView.myPlants")}</h3>
           <button onClick={() => navigate("/my-plants")} className="text-xs font-medium text-primary flex items-center gap-0.5">
@@ -357,8 +364,16 @@ const HomeMainView = ({ onToggleView }: Props) => {
           </button>
         </div>
         {plants.length === 0 ? (
-          <div className="bg-card rounded-2xl border border-border p-6 text-center text-xs text-muted-foreground">
-            {t("mainView.noPlants")}
+          <div className="bg-card rounded-2xl border border-dashed border-border p-6 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
+              <Sprout className="w-6 h-6 text-primary" strokeWidth={1.8} />
+            </div>
+            <p className="text-sm font-semibold text-foreground">{t("mainView.noPlants")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("mainView.noPlantsDesc")}</p>
+            <button onClick={() => navigate("/add-plant")}
+              className="mt-3 bg-primary text-primary-foreground px-4 py-2 rounded-full text-xs font-semibold">
+              {t("mainView.addPlant")}
+            </button>
           </div>
         ) : (
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 snap-x">
@@ -372,7 +387,7 @@ const HomeMainView = ({ onToggleView }: Props) => {
                   {p.photo_url ? (
                     <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-3xl">🪴</span>
+                    <Sprout className="w-8 h-8 text-muted-foreground/50" strokeWidth={1.8} />
                   )}
                 </div>
                 <div className="p-2">

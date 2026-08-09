@@ -419,6 +419,10 @@ export default {
     },
     mainView: {
 
+      allCaughtUp: "All caught up!",
+      allCaughtUpDesc: "No tasks waiting for you today.",
+      plantableNow: "{{count}} to sow",
+      noPlantsDesc: "Add your first plant and we'll build its care schedule.",
       toggle: "Toggle view",
       smartAlerts: "Smart Alerts",
       smartAlertsCount: "{{count}} alerts",

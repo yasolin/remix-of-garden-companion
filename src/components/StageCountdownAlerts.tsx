@@ -53,7 +53,7 @@ const StageCountdownAlerts = ({ plants }: Props) => {
       : "from-primary/10 to-card border-primary/20";
 
   return (
-    <div className="px-4 mt-3">
+    <div className="px-4 mt-5">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
           <CalendarClock className="w-4 h-4 text-primary" />

@@ -420,6 +420,10 @@ export default {
     },
     mainView: {
 
+      allCaughtUp: "Her şey tamam!",
+      allCaughtUpDesc: "Bugün bekleyen bir görevin yok.",
+      plantableNow: "{{count}} ekim",
+      noPlantsDesc: "İlk bitkini ekle, bakım takvimini senin için oluşturalım.",
       toggle: "Görünümü değiştir",
       smartAlerts: "Akıllı Uyarılar",
       smartAlertsCount: "{{count}} uyarı",
