@@ -220,6 +220,11 @@ const HomeMainView = ({ onToggleView }: Props) => {
         </div>
       )}
 
+      {/* Lifecycle stage countdown for the selected plant */}
+      <StageCountdownAlerts plants={plants} />
+
+
+
 
       {/* Quick actions */}
       <div className="px-4 mt-4">
