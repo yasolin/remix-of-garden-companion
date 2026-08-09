@@ -13,6 +13,8 @@ import logo from "@/assets/logo.png";
 import heroPot from "@/assets/hero-pot.png";
 import heroPlants from "@/assets/hero-plants.png";
 import heroWatering from "@/assets/hero-watering.png";
+import StageCountdownAlerts from "@/components/StageCountdownAlerts";
+
 
 interface Props {
   onToggleView: () => void;
