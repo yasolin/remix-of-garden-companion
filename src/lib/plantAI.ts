@@ -25,9 +25,13 @@ export async function streamPlantAI({ messages, mode = "chat", imageBase64, lang
   });
 
   if (!resp.ok || !resp.body) {
-    const err = await resp.json().catch(() => ({ error: "Unknown error" }));
+    const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+    if (resp.status === 401) throw new Error("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.");
+    if (resp.status === 429) throw new Error("Çok fazla istek. Lütfen biraz sonra tekrar deneyin.");
+    if (resp.status === 402) throw new Error("AI kredisi tükendi. Lütfen kredi ekleyin.");
     throw new Error(err.error || `HTTP ${resp.status}`);
   }
+
 
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
@@ -92,7 +96,11 @@ export async function analyzePlantPhoto(imageBase64: string, lang?: string): Pro
     }),
   });
 
-  if (!resp.ok || !resp.body) throw new Error("Failed to analyze plant");
+  if (!resp.ok || !resp.body) {
+    if (resp.status === 401) throw new Error("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.");
+    throw new Error("Failed to analyze plant");
+  }
+
 
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
