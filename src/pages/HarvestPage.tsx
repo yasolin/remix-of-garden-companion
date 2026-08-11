@@ -1,3 +1,4 @@
+import { getAccessToken } from "@/lib/aiAuth";
 import { ArrowLeft, Sparkles, Timer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -124,7 +125,7 @@ const HarvestPage = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              Authorization: `Bearer ${await getAccessToken()}`,
             },
             body: JSON.stringify({
               messages: [{ role: "user", content: `Analyze this plant image. Determine its current growth stage (germination, flowering, fruiting, or near harvest). Estimate how many days until flowering and harvest. Do NOT provide care tips. Give a concise time-based analysis only. ${langInstr}` }],

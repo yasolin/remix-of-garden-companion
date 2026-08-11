@@ -1,3 +1,4 @@
+import { getAccessToken } from "@/lib/aiAuth";
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/plant-ai`;
 
 export type AiMessage = { role: "user" | "assistant"; content: string };
@@ -17,7 +18,7 @@ export async function streamPlantAI({ messages, mode = "chat", imageBase64, lang
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      Authorization: `Bearer ${await getAccessToken()}`,
     },
     body: JSON.stringify({ messages, mode, imageBase64, lang: lang || "en" }),
     signal,
@@ -81,7 +82,7 @@ export async function analyzePlantPhoto(imageBase64: string, lang?: string): Pro
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      Authorization: `Bearer ${await getAccessToken()}`,
     },
     body: JSON.stringify({
       messages: [{ role: "user", content: "Analyze this plant and provide care information as JSON." }],

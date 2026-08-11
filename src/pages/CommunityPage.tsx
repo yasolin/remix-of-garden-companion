@@ -1,3 +1,4 @@
+import { getAccessToken } from "@/lib/aiAuth";
 import { ArrowLeft, Heart, MessageCircle, Share2, Plus, Send, Image, X, Trash2, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -162,7 +163,7 @@ const CommunityPage = () => {
       const target = i18n.language === "tr" ? "Turkish" : "English";
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/plant-ai`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getAccessToken()}` },
         body: JSON.stringify({
           messages: [{ role: "user", content: `Translate the following text to ${target}. Only return the translation, no extra commentary:\n\n${post.content}` }],
           mode: "translate", lang: i18n.language,
