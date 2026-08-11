@@ -86,10 +86,15 @@ const AuthPage = () => {
         setEmailSent(true);
         toast({ title: "✅", description: t("auth.verifyEmail") });
 
+        // Only notify when the signup produced an authenticated session
+        // (the edge function requires a verified user JWT).
         try {
-          await supabase.functions.invoke("notify-new-user", {
-            body: { email, displayName, surname, gender, age, phone },
-          });
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            await supabase.functions.invoke("notify-new-user", {
+              body: { displayName, surname, gender, age, phone },
+            });
+          }
         } catch {}
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });

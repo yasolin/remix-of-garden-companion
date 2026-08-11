@@ -1,3 +1,4 @@
+import { getAccessToken } from "@/lib/aiAuth";
 import { ArrowLeft, Droplets, Check, Undo2, Beaker, CloudRain, Sparkles, ChevronRight, ChevronLeft, Camera, Flower2, Calendar as CalendarIcon, List, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -314,7 +315,7 @@ const WateringPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${await getAccessToken()}`,
         },
         body: JSON.stringify({
           messages,
