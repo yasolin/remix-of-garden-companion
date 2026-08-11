@@ -13,6 +13,6 @@ export async function getAccessToken(): Promise<string> {
   }
 
   const token = session?.access_token;
-  if (!token) throw new Error("AUTH_REQUIRED");
+  if (!token) throw new Error("Oturum bulunamadı. Lütfen giriş yapın.");
   return token;
 }
