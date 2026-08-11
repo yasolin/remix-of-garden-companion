@@ -41,18 +41,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const updates: any = {};
           if (!existing?.display_name && meta.display_name) updates.display_name = meta.display_name;
           if (!existing?.avatar_url && meta.avatar_url) updates.avatar_url = meta.avatar_url;
-          if (meta.surname) updates.surname = meta.surname;
-          if (meta.age) updates.age = meta.age;
-          if (meta.gender) updates.gender = meta.gender;
-          if (meta.occupation) updates.occupation = meta.occupation;
-          if (meta.phone) updates.phone = meta.phone;
-          if (meta.surname || meta.age || meta.gender || meta.occupation || meta.phone) {
-            updates.kvkk_accepted = true;
-          }
+          const hasPii = !!(meta.surname || meta.age || meta.gender || meta.occupation || meta.phone);
+          if (hasPii) updates.kvkk_accepted = true;
           if (Object.keys(updates).length > 0) {
             await supabase.from("profiles").update(updates).eq("user_id", session.user.id);
           }
+          if (hasPii) {
+            await supabase.from("profiles_private" as any).upsert({
+              user_id: session.user.id,
+              surname: meta.surname ?? null,
+              age: meta.age ?? null,
+              gender: meta.gender ?? null,
+              occupation: meta.occupation ?? null,
+              phone: meta.phone ?? null,
+            } as any, { onConflict: "user_id" } as any);
+          }
         } catch {}
+
       }
     });
 
