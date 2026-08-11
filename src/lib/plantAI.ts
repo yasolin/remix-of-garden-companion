@@ -96,7 +96,11 @@ export async function analyzePlantPhoto(imageBase64: string, lang?: string): Pro
     }),
   });
 
-  if (!resp.ok || !resp.body) throw new Error("Failed to analyze plant");
+  if (!resp.ok || !resp.body) {
+    if (resp.status === 401) throw new Error("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.");
+    throw new Error("Failed to analyze plant");
+  }
+
 
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
