@@ -296,15 +296,47 @@ export type Database = {
       profiles: {
         Row: {
           account_status: string
-          age: number | null
           avatar_url: string | null
           created_at: string
           deletion_requested_at: string | null
           display_name: string | null
           frozen_at: string | null
-          gender: string | null
           id: string
           kvkk_accepted: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_status?: string
+          avatar_url?: string | null
+          created_at?: string
+          deletion_requested_at?: string | null
+          display_name?: string | null
+          frozen_at?: string | null
+          id?: string
+          kvkk_accepted?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_status?: string
+          avatar_url?: string | null
+          created_at?: string
+          deletion_requested_at?: string | null
+          display_name?: string | null
+          frozen_at?: string | null
+          id?: string
+          kvkk_accepted?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles_private: {
+        Row: {
+          age: number | null
+          created_at: string
+          gender: string | null
           occupation: string | null
           phone: string | null
           surname: string | null
@@ -312,16 +344,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          account_status?: string
           age?: number | null
-          avatar_url?: string | null
           created_at?: string
-          deletion_requested_at?: string | null
-          display_name?: string | null
-          frozen_at?: string | null
           gender?: string | null
-          id?: string
-          kvkk_accepted?: boolean | null
           occupation?: string | null
           phone?: string | null
           surname?: string | null
@@ -329,16 +354,9 @@ export type Database = {
           user_id: string
         }
         Update: {
-          account_status?: string
           age?: number | null
-          avatar_url?: string | null
           created_at?: string
-          deletion_requested_at?: string | null
-          display_name?: string | null
-          frozen_at?: string | null
           gender?: string | null
-          id?: string
-          kvkk_accepted?: boolean | null
           occupation?: string | null
           phone?: string | null
           surname?: string | null
@@ -396,24 +414,7 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          display_name: string | null
-          user_id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          display_name?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          display_name?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       [_ in never]: never
