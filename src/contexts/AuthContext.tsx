@@ -71,19 +71,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    // Clear local state immediately so UI never appears "stuck"
+    setUser(null);
+    setSession(null);
     try {
-      await supabase.auth.signOut();
+      // Local scope + timeout: never hang on a slow/offline network call
+      await Promise.race([
+        supabase.auth.signOut({ scope: "local" }),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
     } catch (e) {
       console.error("signOut error", e);
     }
-    // Force local state reset in case listener is slow / offline
-    setUser(null);
-    setSession(null);
-    // Full reload guarantees redirect to auth page and clears cached queries
+    try {
+      // Remove any lingering supabase auth tokens
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("sb-") && k.includes("auth-token"))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {}
     if (typeof window !== "undefined") {
-      window.location.href = "/";
+      window.location.replace("/");
     }
   };
+
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signOut }}>
