@@ -1,3 +1,4 @@
+import { fileToCompressedDataUrl } from "@/lib/imageUtils";
 import { ArrowLeft, Send, Scan, Leaf, MapPin, Image, Mic, MicOff, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -139,46 +140,49 @@ const AIAssistantPage = () => {
       toast({ title: "❌", description: "Lütfen bir resim dosyası seçin", variant: "destructive" });
       return;
     }
-    const reader = new FileReader();
-    reader.onerror = () => {
+
+    let base64: string;
+    try {
+      base64 = await fileToCompressedDataUrl(file);
+    } catch {
       toast({ title: "❌", description: "Fotoğraf okunamadı", variant: "destructive" });
-    };
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
-      if (!base64 || !base64.startsWith("data:image")) {
-        toast({ title: "❌", description: "Geçersiz resim", variant: "destructive" });
-        return;
-      }
-      const userMsg: AiMessage = { role: "user", content: `📷 ${t("ai.photoAnalysis")}` };
-      // Add a placeholder assistant message immediately so streaming can update in place
-      setMessages(prev => [...prev, userMsg, { role: "assistant", content: "" }]);
-      setIsLoading(true);
+      return;
+    }
+    if (!base64 || !base64.startsWith("data:image")) {
+      toast({ title: "❌", description: "Geçersiz resim", variant: "destructive" });
+      return;
+    }
 
-      const currentMode = pendingMode;
-      setPendingMode("chat"); // reset
+    const userMsg: AiMessage = { role: "user", content: `📷 ${t("ai.photoAnalysis")}` };
+    // Add a placeholder assistant message immediately so streaming can update in place
+    setMessages(prev => [...prev, userMsg, { role: "assistant", content: "" }]);
+    setIsLoading(true);
 
-      let assistantSoFar = "";
-      try {
-        await streamPlantAI({
-          messages: [{ role: "user", content: "Analyze this plant image." }],
-          mode: currentMode,
-          imageBase64: base64,
-          lang: i18n.language,
-          onDelta: (chunk) => {
-            assistantSoFar += chunk;
-            setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m)));
-          },
-          onDone: () => setIsLoading(false),
-        });
-      } catch (e: any) {
-        console.error("photo analysis failed", e);
-        toast({ title: "AI Error", description: e.message || "Analiz başarısız", variant: "destructive" });
-        setMessages(prev => prev.map((m, i) => (i === prev.length - 1 && !m.content ? { ...m, content: "❌ " + (e.message || "Analiz başarısız oldu") } : m)));
-        setIsLoading(false);
-      }
-    };
-    reader.readAsDataURL(file);
+    const currentMode = pendingMode;
+    setPendingMode("chat"); // reset
+
+    let assistantSoFar = "";
+    try {
+      await streamPlantAI({
+        messages: [{ role: "user", content: "Analyze this plant image." }],
+        mode: currentMode,
+        imageBase64: base64,
+        lang: i18n.language,
+        onDelta: (chunk) => {
+          assistantSoFar += chunk;
+          setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m)));
+        },
+        onDone: () => setIsLoading(false),
+      });
+    } catch (e: any) {
+      console.error("photo analysis failed", e);
+      const msg = e?.message === "Failed to fetch" ? "Bağlantı hatası, lütfen tekrar deneyin" : (e?.message || "Analiz başarısız");
+      toast({ title: "AI Error", description: msg, variant: "destructive" });
+      setMessages(prev => prev.map((m, i) => (i === prev.length - 1 && !m.content ? { ...m, content: "❌ " + msg } : m)));
+      setIsLoading(false);
+    }
   };
+
 
   const sendMessage = async () => {
     if (!message.trim() || isLoading) return;

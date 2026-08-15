@@ -45,3 +45,7 @@ export async function createNotification(userId: string, type: string, title: st
     user_id: userId, type, title, body: body || null, related_id: relatedId || null,
   } as any);
 }
+
+export async function markAsUnread(notifId: string) {
+  await supabase.from("notifications" as any).update({ is_read: false } as any).eq("id", notifId);
+}

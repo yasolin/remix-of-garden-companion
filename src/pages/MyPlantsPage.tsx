@@ -3,33 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserPlants } from "@/lib/plantService";
-import { myPlants as mockPlants } from "@/data/mockData";
-import { useEffect, useState } from "react";
+import { getLifecycleForPlant, categoryLabel } from "@/lib/plantLifecycles";
 
 const MyPlantsPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
-  const [userId, setUserId] = useState<string | null>(null);
+  const { t, i18n } = useTranslation();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id || null));
-  }, []);
-
-  const { data: dbPlants } = useQuery({
-    queryKey: ["plants", userId],
-    queryFn: () => fetchUserPlants(userId!),
-    enabled: !!userId,
+  const { data: plants = [] } = useQuery({
+    queryKey: ["plants", user?.id],
+    queryFn: () => fetchUserPlants(user!.id),
+    enabled: !!user,
   });
-
-  const plants = userId && dbPlants && dbPlants.length > 0 ? dbPlants : mockPlants.map(p => ({
-    id: p.id, name: p.name, scientific_name: p.scientificName, photo_url: p.photo,
-    placement: p.placement, days_to_harvest: p.daysToHarvest, needs_watering: p.needsWatering,
-    current_stage: 0, user_id: "", created_at: "", updated_at: "",
-  })) as any[];
-
-  const wateringPlants = plants.filter((p: any) => p.needs_watering ?? p.needsWatering);
 
   return (
     <div className="pb-24 max-w-lg mx-auto">
@@ -48,17 +35,6 @@ const MyPlantsPage = () => {
         </button>
       </div>
 
-      {wateringPlants.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mt-3 bg-accent/10 border border-accent/20 rounded-2xl p-4 flex items-center gap-3">
-          <Droplets className="w-8 h-8 text-primary" />
-          <div>
-            <h3 className="font-bold text-foreground">{t("plants.todayReminder")}</h3>
-            <p className="text-sm text-muted-foreground">{t("plants.needsWater", { names: wateringPlants.map((p: any) => p.name).join(", ") })}</p>
-          </div>
-        </motion.div>
-      )}
-
       {plants.length === 0 ? (
         <div className="flex flex-col items-center justify-center mt-20 gap-4">
           <Leaf className="w-16 h-16 text-muted-foreground/30" />
@@ -69,15 +45,16 @@ const MyPlantsPage = () => {
         </div>
       ) : (
         <div className="px-4 mt-4 grid grid-cols-2 gap-3">
-          {plants.map((plant: any, i: number) => {
-            const photo = plant.photo_url || plant.photo;
-            const daysToHarvest = plant.days_to_harvest ?? plant.daysToHarvest ?? 30;
+          {plants.map((plant, i) => {
+            const lifecycle = getLifecycleForPlant(plant as any);
+            const className = categoryLabel(lifecycle, i18n.language);
+            const daysToHarvest = plant.days_to_harvest ?? 30;
             return (
               <motion.div key={plant.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.08 }} onClick={() => navigate(`/plant/${plant.id}`)}
                 className="bg-card rounded-2xl overflow-hidden shadow-card border border-border cursor-pointer relative">
-                {photo ? (
-                  <img src={photo} alt={plant.name} className="w-full h-28 object-cover" />
+                {plant.photo_url ? (
+                  <img src={plant.photo_url} alt={plant.name} className="w-full h-28 object-cover" />
                 ) : (
                   <div className="w-full h-28 bg-secondary flex items-center justify-center">
                     <Leaf className="w-10 h-10 text-muted-foreground/30" />
@@ -85,13 +62,18 @@ const MyPlantsPage = () => {
                 )}
                 <div className="p-3">
                   <h3 className="font-bold text-sm text-foreground">{plant.name}</h3>
-                  <p className="text-[10px] text-muted-foreground">{plant.scientific_name ?? plant.scientificName}</p>
+                  <p className="text-[10px] text-muted-foreground italic">{plant.scientific_name}</p>
+                  <span className="inline-flex items-center gap-1 mt-1.5 bg-primary/10 text-primary text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                    {lifecycle.emoji} {className}
+                  </span>
                   <div className="flex gap-2 mt-2">
                     <Sun className="w-3.5 h-3.5 text-accent" />
                     <Droplets className="w-3.5 h-3.5 text-primary" />
                     <Wind className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1.5">📍 {plant.placement}</p>
+                  {plant.placement && (
+                    <p className="text-[10px] text-muted-foreground mt-1.5">📍 {plant.placement}</p>
+                  )}
                 </div>
                 {daysToHarvest <= 7 && (
                   <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
