@@ -1,3 +1,4 @@
+import { fileToCompressedDataUrl } from "@/lib/imageUtils";
 import { ArrowLeft, Send, Scan, Leaf, MapPin, Image, Mic, MicOff, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
