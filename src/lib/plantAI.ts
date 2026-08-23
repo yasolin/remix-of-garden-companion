@@ -3,6 +3,14 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/plant-ai`;
 
 export type AiMessage = { role: "user" | "assistant"; content: string };
 
+export type PlantAnalysis = Record<string, string> & {
+  name: string;
+  scientificName?: string;
+  diagnosis?: string;
+  severity?: string;
+  treatment?: string;
+};
+
 interface StreamChatOptions {
   messages: AiMessage[];
   mode?: string;
@@ -14,6 +22,8 @@ interface StreamChatOptions {
 }
 
 export async function streamPlantAI({ messages, mode = "chat", imageBase64, lang, onDelta, onDone, signal }: StreamChatOptions) {
+  const controller = signal ? null : new AbortController();
+  const timeout = controller ? window.setTimeout(() => controller.abort(), 60_000) : null;
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers: {
@@ -21,7 +31,7 @@ export async function streamPlantAI({ messages, mode = "chat", imageBase64, lang
       Authorization: `Bearer ${await getAccessToken()}`,
     },
     body: JSON.stringify({ messages, mode, imageBase64, lang: lang || "en" }),
-    signal,
+    signal: signal || controller?.signal,
   });
 
   if (!resp.ok || !resp.body) {
@@ -29,7 +39,8 @@ export async function streamPlantAI({ messages, mode = "chat", imageBase64, lang
     if (resp.status === 401) throw new Error("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.");
     if (resp.status === 429) throw new Error("Çok fazla istek. Lütfen biraz sonra tekrar deneyin.");
     if (resp.status === 402) throw new Error("AI kredisi tükendi. Lütfen kredi ekleyin.");
-    throw new Error(err.error || `HTTP ${resp.status}`);
+    if (resp.status === 403) throw new Error(err.error || "AI erişimi çalışma alanı ayarları nedeniyle kapalı.");
+    throw new Error(err.error || err.message || `HTTP ${resp.status}`);
   }
 
 
@@ -79,9 +90,12 @@ export async function streamPlantAI({ messages, mode = "chat", imageBase64, lang
     }
   }
   onDone();
+  if (timeout) window.clearTimeout(timeout);
 }
 
-export async function analyzePlantPhoto(imageBase64: string, lang?: string): Promise<Record<string, string>> {
+export async function analyzePlantPhoto(imageBase64: string, lang?: string, mode: "analyze_plant" | "analyze_disease" = "analyze_plant"): Promise<PlantAnalysis> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 60_000);
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers: {
@@ -90,15 +104,19 @@ export async function analyzePlantPhoto(imageBase64: string, lang?: string): Pro
     },
     body: JSON.stringify({
       messages: [{ role: "user", content: "Analyze this plant and provide care information as JSON." }],
-      mode: "analyze_plant",
+      mode,
       imageBase64,
       lang: lang || "en",
     }),
+    signal: controller.signal,
   });
 
   if (!resp.ok || !resp.body) {
+    const body = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
     if (resp.status === 401) throw new Error("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.");
-    throw new Error("Failed to analyze plant");
+    if (resp.status === 429) throw new Error("Çok fazla istek. Lütfen biraz sonra tekrar deneyin.");
+    if (resp.status === 402) throw new Error(body.error || "AI kredisi tükendi.");
+    throw new Error(body.error || "Bitki analiz edilemedi");
   }
 
 
@@ -130,7 +148,8 @@ export async function analyzePlantPhoto(imageBase64: string, lang?: string): Pro
 
   const jsonMatch = result.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
+    window.clearTimeout(timeout);
+    return JSON.parse(jsonMatch[0]) as PlantAnalysis;
   }
   throw new Error("Could not parse AI response");
 }

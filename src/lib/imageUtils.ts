@@ -3,8 +3,8 @@
  *  with "Failed to fetch", so we always shrink before sending. */
 export async function fileToCompressedDataUrl(
   file: File,
-  maxSize = 1024,
-  quality = 0.8
+  maxSize = 768,
+  quality = 0.72
 ): Promise<string> {
   const dataUrl: string = await new Promise((resolve, reject) => {
     const reader = new FileReader();
