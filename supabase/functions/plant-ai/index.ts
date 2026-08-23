@@ -47,6 +47,7 @@ serve(async (req) => {
       identify: `You are a plant identification expert. Analyze the image and identify the plant species. Provide the common name, scientific name, care requirements (sunlight, watering, soil type, temperature), and interesting facts. ${langInstruction}`,
       location: `You are a plant placement expert. Analyze the location/environment shown in the image and recommend which plants would thrive there. Consider light conditions, space, temperature, and humidity. ${langInstruction}`,
       analyze_plant: `You are a plant care expert. Analyze the plant image and return a JSON object with these fields: name (common name), scientificName, placement (recommended), waterFrequency, sunlight, windSensitivity, temperature, humidity, soilType, fertilizer, notes. Respond ONLY with the JSON object, no other text. IMPORTANT: ALL field values MUST be in the same language as the user. ${langInstruction}`,
+      analyze_disease: `Analyze the plant image for disease or pests. Return ONLY valid JSON with these string fields: name (the plant common name), scientificName, diagnosis, severity, treatment, notes. If no disease is visible, diagnosis must clearly say no disease detected. ${langInstruction}`,
     };
 
     const systemPrompt = systemPrompts[mode] || systemPrompts.chat;
@@ -81,27 +82,22 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-3.7-flash",
         messages: aiMessages,
         stream: true,
       }),
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required. Please add credits." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      let message = `AI request failed (${response.status})`;
+      try {
+        const parsed = JSON.parse(t);
+        message = parsed?.message || parsed?.error?.message || parsed?.error || message;
+      } catch { /* keep fallback */ }
+      return new Response(JSON.stringify({ error: message }), {
+        status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 

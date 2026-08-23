@@ -43,6 +43,34 @@ const AuthPage = () => {
   const [resetSent, setResetSent] = useState(false);
   const [kvkkAccepted, setKvkkAccepted] = useState(false);
   const [showKvkk, setShowKvkk] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  const handleResendConfirmation = async () => {
+    if (!email || resending || resendCooldown > 0) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setResending(false);
+    if (error) {
+      toast({ title: "E-posta gönderilemedi", description: error.message, variant: "destructive" });
+      return;
+    }
+    setResendCooldown(60);
+    const timer = window.setInterval(() => {
+      setResendCooldown((value) => {
+        if (value <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    toast({ title: isTr ? "Doğrulama e-postası yeniden gönderildi" : "Verification email resent" });
+  };
 
   const handleForgotPassword = async () => {
     if (!email) {
@@ -117,6 +145,10 @@ const AuthPage = () => {
           </div>
           <h2 className="text-xl font-bold text-foreground">{t("auth.checkEmail")}</h2>
           <p className="text-sm text-muted-foreground max-w-xs">{t("auth.checkEmailDesc")}</p>
+          <button onClick={handleResendConfirmation} disabled={resending || resendCooldown > 0}
+            className="text-sm font-semibold text-primary disabled:opacity-50">
+            {resending ? "..." : resendCooldown > 0 ? `${resendCooldown} sn` : (i18n.language === "tr" ? "E-postayı tekrar gönder" : "Resend email")}
+          </button>
           <button onClick={() => { setEmailSent(false); setMode("login"); }}
             className="mt-4 text-sm font-semibold text-primary">{t("auth.backToLogin")}</button>
         </motion.div>
