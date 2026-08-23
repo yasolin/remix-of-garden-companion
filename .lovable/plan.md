@@ -1,26 +1,16 @@
+# AI, e-posta ve hesap yönetimi düzeltmeleri
 
-## Aşama 1 - Kayıt Formu & KVKK
-- Üye ol formuna **ad, soyad, yaş, cinsiyet, meslek, telefon** alanları eklenmesi
-- KVKK onay ekranı (checkbox ile) kayıt sırasında gösterilmesi
-- Profil tablosuna yeni alanlar eklenmesi (surname, age, gender, occupation, phone)
+## Yapılacaklar
+- Kayıt sonrası doğrulama ekranına e-postayı yeniden gönderme seçeneği eklemek; gönderim sonucunu ve bekleme durumunu görünür yapmak.
+- Giriş ekranındaki “Şifremi unuttum” akışını tamamlamak ve herkese açık `/reset-password` sayfasında yeni şifre belirlemeyi sağlamak.
+- AI asistanın yazılı soru, kamera ve galeri akışlarını aynı güvenilir istek/hata yönetimine bağlamak; fotoğrafları daha küçük boyutta göndermek ve analizin takılı kalmasını önlemek.
+- Fotoğraf analizini yapılandırılmış sonuçla çalıştırmak; bitkiyi kullanıcının Bitkilerim kayıtlarıyla ad/bilimsel ad üzerinden eşleştirmek.
+- Eşleşmeyen analiz sonucunda “Bitkilerime ekle” seçeneği sunmak. Hastalık analizi mevcut bir bitkiyle eşleşirse sonucu o bitkinin notlarına kaydetme seçeneği sunmak.
+- Hesap dondurmayı veritabanı durum kontrolü, hata doğrulaması ve güvenli çıkışla işler hale getirmek.
+- Hesap silmede neden ve mevcut şifre isteyen bir onay penceresi göstermek; şifreyi sunucu tarafında doğruladıktan sonra hesabı ve bağlı verileri kalıcı silmek.
 
-## Aşama 2 - Yeni Kullanıcı Bildirim E-postası
-- Yeni kayıt olan kullanıcıların bilgilerini gardenpot2024@gmail.com adresine otomatik gönderen edge function
-
-## Aşama 3 - Ana Sayfa Logo Büyütme
-- Garden Pot logosu 1.5x büyütülmesi
-
-## Aşama 4 - Bitki Bilgileri Dil Düzeltmesi
-- Türkçe dil seçiliyken bitki bilgilerinin Türkçe gösterilmesi
-
-## Aşama 5 - Hayvan Toksik Uyarı Rozeti
-- Hayvanlara toksik bitkilerde uyarı rozeti eklenmesi
-- Plants tablosuna `toxic_to_pets` alanı eklenmesi
-
-## Aşama 6 - AI Sulama Analizi Geliştirmesi
-- Kayıtlı bitkilerden seçerek veya yeni bitki için analiz
-- Yeni bitki: fotoğraf çekme veya manuel giriş akışı (bitki türü → saksı boyutu → sulama sıklığı → sulama miktarı)
-- Mevcut sulama döngüsü sisteme eklenebilir olması
-
-## Aşama 7 - Sulama Takvim Görünümü
-- Takvim veya liste görünümünde sulama geçmişi ve gelecek sulama zamanları
+## Teknik ayrıntılar
+- AI istemcisi gateway hata mesajlarını koruyacak; yalnızca sınırlı ve gecikmeli olarak tekrar denenebilir hatalar ele alınacak.
+- Hesap silme işlemi, kullanıcı JWT’sini doğrulayan yeni bir backend fonksiyonunda ve yönetici yetkisi yalnızca sunucuda tutularak yapılacak.
+- Mevcut `plants.notes` alanı hastalık kaydı için kullanılacak; yeni hassas veri tablosu açılmayacak.
+- Değişiklikler seçili oturumla canlı AI çağrısı, mobil ekran akışları ve derleme kontrolleriyle doğrulanacak.
