@@ -13,6 +13,7 @@ import AddPlantPage from "./pages/AddPlantPage";
 import AIAssistantPage from "./pages/AIAssistantPage";
 import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import WateringPage from "./pages/WateringPage";
 import PlantingCalendarPage from "./pages/PlantingCalendarPage";
 import LocationAnalysisPage from "./pages/LocationAnalysisPage";
@@ -69,7 +70,10 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <ProtectedRoutes />
+          <Routes>
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/*" element={<ProtectedRoutes />} />
+          </Routes>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

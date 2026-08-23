@@ -46,6 +46,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (Object.keys(updates).length > 0) {
             await supabase.from("profiles").update(updates).eq("user_id", session.user.id);
           }
+           const { data: account } = await supabase
+             .from("profiles")
+             .select("account_status")
+             .eq("user_id", session.user.id)
+             .maybeSingle();
+           if (account?.account_status === "frozen") {
+             await supabase.from("profiles").update({
+               account_status: "active",
+               frozen_at: null,
+             }).eq("user_id", session.user.id);
+           }
           if (hasPii) {
             await supabase.from("profiles_private" as any).upsert({
               user_id: session.user.id,
