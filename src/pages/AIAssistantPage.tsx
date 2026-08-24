@@ -1,12 +1,15 @@
 import { fileToCompressedDataUrl } from "@/lib/imageUtils";
-import { ArrowLeft, Send, Scan, Leaf, MapPin, Image, Mic, MicOff, Volume2 } from "lucide-react";
+import { ArrowLeft, Send, Scan, Leaf, MapPin, Image, Mic, MicOff, Volume2, Plus, NotebookPen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
-import { streamPlantAI, type AiMessage } from "@/lib/plantAI";
+import { streamPlantAI, analyzePlantPhoto, type AiMessage, type PlantAnalysis } from "@/lib/plantAI";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchUserPlants, updatePlant, type PlantRow } from "@/lib/plantService";
+
 
 const AIAssistantPage = () => {
   const navigate = useNavigate();
