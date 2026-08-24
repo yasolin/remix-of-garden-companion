@@ -160,9 +160,52 @@ const AIAssistantPage = () => {
     // Add a placeholder assistant message immediately so streaming can update in place
     setMessages(prev => [...prev, userMsg, { role: "assistant", content: "" }]);
     setIsLoading(true);
+    setSuggestion(null);
 
     const currentMode = pendingMode;
     setPendingMode("chat"); // reset
+
+    // Structured flow for identify / disease so we can match with the user's plants
+    if (currentMode === "identify" || currentMode === "disease") {
+      try {
+        const analysis = await analyzePlantPhoto(
+          base64,
+          i18n.language,
+          currentMode === "disease" ? "analyze_disease" : "analyze_plant",
+        );
+        const tr = i18n.language === "tr";
+        const lines: string[] = [`**${analysis.name || (tr ? "Bitki" : "Plant")}**`];
+        if (analysis.scientificName) lines.push(`_${analysis.scientificName}_`);
+        for (const [key, label] of Object.entries(
+          currentMode === "disease"
+            ? { diagnosis: tr ? "Teşhis" : "Diagnosis", severity: tr ? "Şiddet" : "Severity", treatment: tr ? "Tedavi" : "Treatment", notes: tr ? "Notlar" : "Notes" }
+            : { placement: tr ? "Konum" : "Placement", waterFrequency: tr ? "Sulama" : "Watering", sunlight: tr ? "Işık" : "Sunlight", temperature: tr ? "Sıcaklık" : "Temperature", humidity: tr ? "Nem" : "Humidity", soilType: tr ? "Toprak" : "Soil", fertilizer: tr ? "Gübre" : "Fertilizer", notes: tr ? "Notlar" : "Notes" }
+        )) {
+          const val = (analysis as any)[key];
+          if (val) lines.push(`- ${label}: ${val}`);
+        }
+        const text = lines.join("\n");
+        setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: text } : m)));
+
+        const plants = user ? await fetchUserPlants(user.id) : [];
+        const match = findMatchingPlant(plants, analysis);
+        if (currentMode === "disease" && match) {
+          setSuggestion({ kind: "note", analysis, plant: match });
+        } else if (!match) {
+          setSuggestion({ kind: "add", analysis });
+        } else {
+          setSuggestion({ kind: "known", analysis, plant: match });
+        }
+        setIsLoading(false);
+      } catch (e: any) {
+        console.error("photo analysis failed", e);
+        const msg = e?.message === "Failed to fetch" ? "Bağlantı hatası, lütfen tekrar deneyin" : (e?.message || "Analiz başarısız");
+        toast({ title: "AI Error", description: msg, variant: "destructive" });
+        setMessages(prev => prev.map((m, i) => (i === prev.length - 1 && !m.content ? { ...m, content: "❌ " + msg } : m)));
+        setIsLoading(false);
+      }
+      return;
+    }
 
     let assistantSoFar = "";
     try {
@@ -185,6 +228,30 @@ const AIAssistantPage = () => {
       setIsLoading(false);
     }
   };
+
+  const handleAddToMyPlants = (analysis: PlantAnalysis) => {
+    setSuggestion(null);
+    navigate("/add-plant", { state: { aiAnalysis: analysis } });
+  };
+
+  const handleSaveDiagnosisToNotes = async (plant: PlantRow, analysis: PlantAnalysis) => {
+    const tr = i18n.language === "tr";
+    const stamp = new Date().toLocaleDateString(tr ? "tr-TR" : "en-US");
+    const entry = [
+      `[${stamp}] ${tr ? "AI hastalık analizi" : "AI disease analysis"}`,
+      analysis.diagnosis && `${tr ? "Teşhis" : "Diagnosis"}: ${analysis.diagnosis}`,
+      analysis.severity && `${tr ? "Şiddet" : "Severity"}: ${analysis.severity}`,
+      analysis.treatment && `${tr ? "Tedavi" : "Treatment"}: ${analysis.treatment}`,
+    ].filter(Boolean).join("\n");
+    try {
+      await updatePlant(plant.id, { notes: `${plant.notes ? plant.notes + "\n\n" : ""}${entry}` });
+      toast({ title: "✅", description: tr ? `${plant.name} notlarına kaydedildi` : `Saved to ${plant.name}'s notes` });
+      setSuggestion(null);
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    }
+  };
+
 
 
   const sendMessage = async () => {
