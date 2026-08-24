@@ -11,9 +11,32 @@ import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserPlants, updatePlant, type PlantRow } from "@/lib/plantService";
 
 
+type Suggestion =
+  | { kind: "add"; analysis: PlantAnalysis }
+  | { kind: "note"; analysis: PlantAnalysis; plant: PlantRow }
+  | { kind: "known"; analysis: PlantAnalysis; plant: PlantRow };
+
+const norm = (s?: string | null) =>
+  (s || "").toLocaleLowerCase("tr").replace(/[^\p{L}\p{N} ]/gu, "").trim();
+
+function findMatchingPlant(plants: PlantRow[], analysis: PlantAnalysis): PlantRow | null {
+  const candidates = [norm(analysis.name), norm(analysis.scientificName)].filter(Boolean);
+  if (!candidates.length) return null;
+  return (
+    plants.find(p =>
+      candidates.some(c => {
+        const n = norm(p.name);
+        const sn = norm(p.scientific_name);
+        return (n && (n === c || n.includes(c) || c.includes(n))) || (sn && (sn === c || sn.includes(c) || c.includes(sn)));
+      }),
+    ) || null
+  );
+}
+
 const AIAssistantPage = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<AiMessage[]>([
     { role: "assistant", content: t("ai.welcome") },
@@ -21,11 +44,13 @@ const AIAssistantPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [pendingMode, setPendingMode] = useState<string>("chat");
   const recognitionRef = useRef<any>(null);
+
 
   const displayFeatures = [
     { icon: Leaf, title: t("ai.plantRecognition"), desc: t("ai.plantRecognitionDesc"), color: "bg-primary/10 text-primary", mode: "identify" },
