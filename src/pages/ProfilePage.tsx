@@ -173,18 +173,33 @@ const ProfilePage = () => {
 
   const handleDeleteAccount = async () => {
     if (!user) return;
-    const confirm1 = confirm(i18n.language === "tr" ? "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz." : "Are you sure you want to delete your account? This cannot be undone.");
-    if (!confirm1) return;
-    const confirm2 = confirm(i18n.language === "tr" ? "Tüm verileriniz silinecek. Devam edilsin mi?" : "All your data will be deleted. Continue?");
-    if (!confirm2) return;
+    const tr = i18n.language === "tr";
+    if (deleteReason.trim().length < 3) {
+      toast({ title: "❌", description: tr ? "Lütfen silme nedenini yazın." : "Please provide a reason.", variant: "destructive" });
+      return;
+    }
+    if (!deletePassword) {
+      toast({ title: "❌", description: tr ? "Lütfen şifrenizi girin." : "Please enter your password.", variant: "destructive" });
+      return;
+    }
+    setDeleting(true);
     try {
-      await supabase.from("profiles" as any).update({ account_status: "deletion_requested", deletion_requested_at: new Date().toISOString() } as any).eq("user_id", user.id);
-      toast({ title: "🗑️", description: i18n.language === "tr" ? "Hesap silme talebiniz alındı" : "Deletion request received" });
+      const { data, error } = await supabase.functions.invoke("delete-account", {
+        body: { password: deletePassword, reason: deleteReason.trim() },
+      });
+      const errMsg = (error as any)?.context ? await (error as any).context.json?.().then((b: any) => b?.error).catch(() => null) : null;
+      if (error) throw new Error(errMsg || error.message);
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "🗑️", description: tr ? "Hesabınız silindi." : "Your account has been deleted." });
+      setShowDeleteModal(false);
       await signOut();
     } catch (e: any) {
-      toast({ title: "❌", description: e.message, variant: "destructive" });
+      toast({ title: "❌", description: e.message || (tr ? "Hesap silinemedi." : "Could not delete account."), variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   };
+
 
   const handleDeletePlant = async (plantId: string, plantName: string) => {
     if (!confirm(t("profile.confirmDelete", { name: plantName }))) return;
