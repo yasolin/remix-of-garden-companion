@@ -375,7 +375,7 @@ const ProfilePage = () => {
                 <p className="text-[11px] text-muted-foreground">{i18n.language === "tr" ? "Geçici olarak hesabı pasifleştir" : "Temporarily disable your account"}</p>
               </div>
             </button>
-            <button onClick={handleDeleteAccount}
+            <button onClick={() => { setDeleteReason(""); setDeletePassword(""); setShowDeleteModal(true); }}
               className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-destructive/5 text-left">
               <Trash2 className="w-5 h-5 text-destructive" />
               <div className="flex-1">
@@ -384,6 +384,38 @@ const ProfilePage = () => {
               </div>
             </button>
           </div>
+
+          {showDeleteModal && (
+            <div className="fixed inset-0 z-50 bg-foreground/50 flex items-end sm:items-center justify-center p-4"
+              onClick={() => !deleting && setShowDeleteModal(false)}>
+              <div className="w-full max-w-sm bg-card rounded-2xl border border-border p-4 space-y-3"
+                onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-base font-bold text-destructive">{i18n.language === "tr" ? "Hesabı Sil" : "Delete Account"}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {i18n.language === "tr"
+                    ? "Bu işlem geri alınamaz. Devam etmek için silme nedenini ve mevcut şifrenizi girin."
+                    : "This cannot be undone. Enter your reason and current password to continue."}
+                </p>
+                <textarea value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)}
+                  rows={3} maxLength={500}
+                  placeholder={i18n.language === "tr" ? "Silme nedeniniz" : "Reason for deletion"}
+                  className="w-full rounded-lg bg-secondary p-3 text-sm text-foreground outline-none resize-none placeholder:text-muted-foreground" />
+                <input type="password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder={i18n.language === "tr" ? "Mevcut şifreniz" : "Current password"}
+                  className="w-full rounded-lg bg-secondary p-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <div className="flex gap-2 pt-1">
+                  <button disabled={deleting} onClick={() => setShowDeleteModal(false)}
+                    className="flex-1 p-3 rounded-lg bg-secondary text-sm font-semibold text-foreground disabled:opacity-50">
+                    {i18n.language === "tr" ? "Vazgeç" : "Cancel"}
+                  </button>
+                  <button disabled={deleting} onClick={handleDeleteAccount}
+                    className="flex-1 p-3 rounded-lg bg-destructive text-sm font-semibold text-destructive-foreground disabled:opacity-50">
+                    {deleting ? (i18n.language === "tr" ? "Siliniyor..." : "Deleting...") : (i18n.language === "tr" ? "Kalıcı Sil" : "Delete")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <button onClick={handleLogout}
             className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-destructive/5 transition-colors">
@@ -395,6 +427,7 @@ const ProfilePage = () => {
             </div>
           </button>
         </div>
+
       </div>
     );
   }
