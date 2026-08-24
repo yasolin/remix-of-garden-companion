@@ -365,7 +365,7 @@ const AIAssistantPage = () => {
             ) : msg.content}
           </motion.div>
         ))}
-        {isLoading && messages[messages.length - 1]?.role === "user" && (
+        {isLoading && !messages[messages.length - 1]?.content && (
           <div className="max-w-[85%] p-3 rounded-2xl bg-secondary rounded-bl-md">
             <div className="flex gap-1">
               <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" />
@@ -374,7 +374,60 @@ const AIAssistantPage = () => {
             </div>
           </div>
         )}
+
+        {suggestion && !isLoading && (
+          <div className="bg-card border border-border rounded-2xl p-3 space-y-2">
+            {suggestion.kind === "add" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {i18n.language === "tr"
+                    ? `"${suggestion.analysis.name}" bitkilerin arasında yok. Bitkilerime eklemek ister misin?`
+                    : `"${suggestion.analysis.name}" is not in your plants. Add it to My Plants?`}
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleAddToMyPlants(suggestion.analysis)}
+                    className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
+                    <Plus className="w-3.5 h-3.5" />
+                    {i18n.language === "tr" ? "Bitkilerime ekle" : "Add to My Plants"}
+                  </button>
+                  <button onClick={() => setSuggestion(null)}
+                    className="p-2 px-3 rounded-lg bg-secondary text-xs font-semibold text-foreground">
+                    {i18n.language === "tr" ? "Hayır" : "No"}
+                  </button>
+                </div>
+              </>
+            )}
+            {suggestion.kind === "note" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {i18n.language === "tr"
+                    ? `Bu bitki "${suggestion.plant.name}" kaydınla eşleşti. Analizi bitki notlarına kaydedeyim mi?`
+                    : `Matched with "${suggestion.plant.name}". Save this analysis to its notes?`}
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleSaveDiagnosisToNotes(suggestion.plant, suggestion.analysis)}
+                    className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
+                    <NotebookPen className="w-3.5 h-3.5" />
+                    {i18n.language === "tr" ? "Notlara kaydet" : "Save to notes"}
+                  </button>
+                  <button onClick={() => setSuggestion(null)}
+                    className="p-2 px-3 rounded-lg bg-secondary text-xs font-semibold text-foreground">
+                    {i18n.language === "tr" ? "Hayır" : "No"}
+                  </button>
+                </div>
+              </>
+            )}
+            {suggestion.kind === "known" && (
+              <button onClick={() => navigate(`/plant/${suggestion.plant.id}`)}
+                className="w-full flex items-center justify-center gap-1 p-2 rounded-lg bg-secondary text-xs font-semibold text-foreground">
+                <Leaf className="w-3.5 h-3.5 text-primary" />
+                {i18n.language === "tr" ? `"${suggestion.plant.name}" kaydını aç` : `Open "${suggestion.plant.name}"`}
+              </button>
+            )}
+          </div>
+        )}
         <div ref={messagesEndRef} />
+
       </div>
 
       {/* Input */}
