@@ -1,5 +1,5 @@
 import { ArrowLeft, Camera, PenLine, Sparkles, Save } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -50,6 +50,30 @@ const AddPlantPage = () => {
   useEffect(() => {
     if (userId) fetchUserLocations(userId).then(setLocations).catch(() => {});
   }, [userId]);
+
+  // Prefill from an AI analysis handed over by the AI Assistant page
+  const routeState = useLocation().state as { aiAnalysis?: Record<string, string> } | null;
+  useEffect(() => {
+    const a = routeState?.aiAnalysis;
+    if (!a) return;
+    setMode("manual");
+    setForm(prev => ({
+      ...prev,
+      name: a.name || prev.name,
+      scientificName: a.scientificName || prev.scientificName,
+      placement: a.placement || prev.placement,
+      waterFrequency: a.waterFrequency || prev.waterFrequency,
+      sunlight: a.sunlight || prev.sunlight,
+      windSensitivity: a.windSensitivity || prev.windSensitivity,
+      temperature: a.temperature || prev.temperature,
+      humidity: a.humidity || prev.humidity,
+      soilType: a.soilType || prev.soilType,
+      fertilizer: a.fertilizer || prev.fertilizer,
+      notes: a.notes || prev.notes,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const stageLabels: Record<string, string> = Object.fromEntries(
     stages.map(s => [s, t(`stages.${s}`)])

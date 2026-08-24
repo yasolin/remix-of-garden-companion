@@ -1,16 +1,42 @@
 import { fileToCompressedDataUrl } from "@/lib/imageUtils";
-import { ArrowLeft, Send, Scan, Leaf, MapPin, Image, Mic, MicOff, Volume2 } from "lucide-react";
+import { ArrowLeft, Send, Scan, Leaf, MapPin, Image, Mic, MicOff, Volume2, Plus, NotebookPen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
-import { streamPlantAI, type AiMessage } from "@/lib/plantAI";
+import { streamPlantAI, analyzePlantPhoto, type AiMessage, type PlantAnalysis } from "@/lib/plantAI";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchUserPlants, updatePlant, type PlantRow } from "@/lib/plantService";
+
+
+type Suggestion =
+  | { kind: "add"; analysis: PlantAnalysis }
+  | { kind: "note"; analysis: PlantAnalysis; plant: PlantRow }
+  | { kind: "known"; analysis: PlantAnalysis; plant: PlantRow };
+
+const norm = (s?: string | null) =>
+  (s || "").toLocaleLowerCase("tr").replace(/[^\p{L}\p{N} ]/gu, "").trim();
+
+function findMatchingPlant(plants: PlantRow[], analysis: PlantAnalysis): PlantRow | null {
+  const candidates = [norm(analysis.name), norm(analysis.scientificName)].filter(Boolean);
+  if (!candidates.length) return null;
+  return (
+    plants.find(p =>
+      candidates.some(c => {
+        const n = norm(p.name);
+        const sn = norm(p.scientific_name);
+        return (n && (n === c || n.includes(c) || c.includes(n))) || (sn && (sn === c || sn.includes(c) || c.includes(sn)));
+      }),
+    ) || null
+  );
+}
 
 const AIAssistantPage = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<AiMessage[]>([
     { role: "assistant", content: t("ai.welcome") },
@@ -18,11 +44,13 @@ const AIAssistantPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [pendingMode, setPendingMode] = useState<string>("chat");
   const recognitionRef = useRef<any>(null);
+
 
   const displayFeatures = [
     { icon: Leaf, title: t("ai.plantRecognition"), desc: t("ai.plantRecognitionDesc"), color: "bg-primary/10 text-primary", mode: "identify" },
@@ -157,9 +185,52 @@ const AIAssistantPage = () => {
     // Add a placeholder assistant message immediately so streaming can update in place
     setMessages(prev => [...prev, userMsg, { role: "assistant", content: "" }]);
     setIsLoading(true);
+    setSuggestion(null);
 
     const currentMode = pendingMode;
     setPendingMode("chat"); // reset
+
+    // Structured flow for identify / disease so we can match with the user's plants
+    if (currentMode === "identify" || currentMode === "disease") {
+      try {
+        const analysis = await analyzePlantPhoto(
+          base64,
+          i18n.language,
+          currentMode === "disease" ? "analyze_disease" : "analyze_plant",
+        );
+        const tr = i18n.language === "tr";
+        const lines: string[] = [`**${analysis.name || (tr ? "Bitki" : "Plant")}**`];
+        if (analysis.scientificName) lines.push(`_${analysis.scientificName}_`);
+        for (const [key, label] of Object.entries(
+          currentMode === "disease"
+            ? { diagnosis: tr ? "Teşhis" : "Diagnosis", severity: tr ? "Şiddet" : "Severity", treatment: tr ? "Tedavi" : "Treatment", notes: tr ? "Notlar" : "Notes" }
+            : { placement: tr ? "Konum" : "Placement", waterFrequency: tr ? "Sulama" : "Watering", sunlight: tr ? "Işık" : "Sunlight", temperature: tr ? "Sıcaklık" : "Temperature", humidity: tr ? "Nem" : "Humidity", soilType: tr ? "Toprak" : "Soil", fertilizer: tr ? "Gübre" : "Fertilizer", notes: tr ? "Notlar" : "Notes" }
+        )) {
+          const val = (analysis as any)[key];
+          if (val) lines.push(`- ${label}: ${val}`);
+        }
+        const text = lines.join("\n");
+        setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: text } : m)));
+
+        const plants = user ? await fetchUserPlants(user.id) : [];
+        const match = findMatchingPlant(plants, analysis);
+        if (currentMode === "disease" && match) {
+          setSuggestion({ kind: "note", analysis, plant: match });
+        } else if (!match) {
+          setSuggestion({ kind: "add", analysis });
+        } else {
+          setSuggestion({ kind: "known", analysis, plant: match });
+        }
+        setIsLoading(false);
+      } catch (e: any) {
+        console.error("photo analysis failed", e);
+        const msg = e?.message === "Failed to fetch" ? "Bağlantı hatası, lütfen tekrar deneyin" : (e?.message || "Analiz başarısız");
+        toast({ title: "AI Error", description: msg, variant: "destructive" });
+        setMessages(prev => prev.map((m, i) => (i === prev.length - 1 && !m.content ? { ...m, content: "❌ " + msg } : m)));
+        setIsLoading(false);
+      }
+      return;
+    }
 
     let assistantSoFar = "";
     try {
@@ -182,6 +253,30 @@ const AIAssistantPage = () => {
       setIsLoading(false);
     }
   };
+
+  const handleAddToMyPlants = (analysis: PlantAnalysis) => {
+    setSuggestion(null);
+    navigate("/add-plant", { state: { aiAnalysis: analysis } });
+  };
+
+  const handleSaveDiagnosisToNotes = async (plant: PlantRow, analysis: PlantAnalysis) => {
+    const tr = i18n.language === "tr";
+    const stamp = new Date().toLocaleDateString(tr ? "tr-TR" : "en-US");
+    const entry = [
+      `[${stamp}] ${tr ? "AI hastalık analizi" : "AI disease analysis"}`,
+      analysis.diagnosis && `${tr ? "Teşhis" : "Diagnosis"}: ${analysis.diagnosis}`,
+      analysis.severity && `${tr ? "Şiddet" : "Severity"}: ${analysis.severity}`,
+      analysis.treatment && `${tr ? "Tedavi" : "Treatment"}: ${analysis.treatment}`,
+    ].filter(Boolean).join("\n");
+    try {
+      await updatePlant(plant.id, { notes: `${plant.notes ? plant.notes + "\n\n" : ""}${entry}` });
+      toast({ title: "✅", description: tr ? `${plant.name} notlarına kaydedildi` : `Saved to ${plant.name}'s notes` });
+      setSuggestion(null);
+    } catch (e: any) {
+      toast({ title: "❌", description: e.message, variant: "destructive" });
+    }
+  };
+
 
 
   const sendMessage = async () => {
@@ -270,7 +365,7 @@ const AIAssistantPage = () => {
             ) : msg.content}
           </motion.div>
         ))}
-        {isLoading && messages[messages.length - 1]?.role === "user" && (
+        {isLoading && !messages[messages.length - 1]?.content && (
           <div className="max-w-[85%] p-3 rounded-2xl bg-secondary rounded-bl-md">
             <div className="flex gap-1">
               <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" />
@@ -279,7 +374,60 @@ const AIAssistantPage = () => {
             </div>
           </div>
         )}
+
+        {suggestion && !isLoading && (
+          <div className="bg-card border border-border rounded-2xl p-3 space-y-2">
+            {suggestion.kind === "add" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {i18n.language === "tr"
+                    ? `"${suggestion.analysis.name}" bitkilerin arasında yok. Bitkilerime eklemek ister misin?`
+                    : `"${suggestion.analysis.name}" is not in your plants. Add it to My Plants?`}
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleAddToMyPlants(suggestion.analysis)}
+                    className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
+                    <Plus className="w-3.5 h-3.5" />
+                    {i18n.language === "tr" ? "Bitkilerime ekle" : "Add to My Plants"}
+                  </button>
+                  <button onClick={() => setSuggestion(null)}
+                    className="p-2 px-3 rounded-lg bg-secondary text-xs font-semibold text-foreground">
+                    {i18n.language === "tr" ? "Hayır" : "No"}
+                  </button>
+                </div>
+              </>
+            )}
+            {suggestion.kind === "note" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {i18n.language === "tr"
+                    ? `Bu bitki "${suggestion.plant.name}" kaydınla eşleşti. Analizi bitki notlarına kaydedeyim mi?`
+                    : `Matched with "${suggestion.plant.name}". Save this analysis to its notes?`}
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleSaveDiagnosisToNotes(suggestion.plant, suggestion.analysis)}
+                    className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
+                    <NotebookPen className="w-3.5 h-3.5" />
+                    {i18n.language === "tr" ? "Notlara kaydet" : "Save to notes"}
+                  </button>
+                  <button onClick={() => setSuggestion(null)}
+                    className="p-2 px-3 rounded-lg bg-secondary text-xs font-semibold text-foreground">
+                    {i18n.language === "tr" ? "Hayır" : "No"}
+                  </button>
+                </div>
+              </>
+            )}
+            {suggestion.kind === "known" && (
+              <button onClick={() => navigate(`/plant/${suggestion.plant.id}`)}
+                className="w-full flex items-center justify-center gap-1 p-2 rounded-lg bg-secondary text-xs font-semibold text-foreground">
+                <Leaf className="w-3.5 h-3.5 text-primary" />
+                {i18n.language === "tr" ? `"${suggestion.plant.name}" kaydını aç` : `Open "${suggestion.plant.name}"`}
+              </button>
+            )}
+          </div>
+        )}
         <div ref={messagesEndRef} />
+
       </div>
 
       {/* Input */}
