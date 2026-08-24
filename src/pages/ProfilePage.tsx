@@ -40,6 +40,10 @@ const ProfilePage = () => {
   const [plantSortBy, setSortBy] = useState<"name" | "date" | "harvest">(() => {
     return (localStorage.getItem("gardenPotPlantSort") as any) || "name";
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
