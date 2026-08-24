@@ -1,5 +1,5 @@
 import { ArrowLeft, Camera, PenLine, Sparkles, Save } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
