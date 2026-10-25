@@ -7,14 +7,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserLocations, createLocation, deleteLocation, type LocationRow } from "@/lib/locationService";
 import { fetchUserPlants } from "@/lib/plantService";
+import { LOCATION_CATEGORIES, inferLocationCategory, locationCategoryLabel } from "@/lib/locationCategories";
 import { toast } from "@/hooks/use-toast";
 
-const CATEGORIES = ["indoor", "balcony", "garden", "window", "greenhouse", "other"] as const;
+const CATEGORIES = LOCATION_CATEGORIES;
 const DIRECTIONS = ["Kuzey", "Güney", "Doğu", "Batı", "Kuzeydoğu", "Kuzeybatı", "Güneydoğu", "Güneybatı"] as const;
 
 const LocationsPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
@@ -23,12 +24,12 @@ const LocationsPage = () => {
 
   const { data: locations = [] } = useQuery({
     queryKey: ["locations", user?.id],
-    queryFn: () => fetchUserLocations(user!.id),
+    queryFn: () => user ? fetchUserLocations(user.id) : Promise.resolve([]),
     enabled: !!user,
   });
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
-    queryFn: () => fetchUserPlants(user!.id),
+    queryFn: () => user ? fetchUserPlants(user.id) : Promise.resolve([]),
     enabled: !!user,
   });
 
@@ -104,8 +105,8 @@ const LocationsPage = () => {
                 onClick={() => { setChooserOpen(false); navigate("/location-analysis"); }}
                 className="w-full flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-3 text-left active:scale-[0.99] transition-transform"
               >
-                <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4 text-violet-500" />
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{t("locations.addWithAi")}</p>
@@ -136,7 +137,7 @@ const LocationsPage = () => {
                     <button key={c} onClick={() => setForm({ ...form, category: c })}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
                         form.category === c ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
-                      }`}>{t(`locations.categories.${c}`)}</button>
+                      }`}>{locationCategoryLabel(c, i18n.language)}</button>
                   ))}
                 </div>
               </div>
@@ -152,7 +153,7 @@ const LocationsPage = () => {
                 </div>
                 <button
                   onClick={() => navigate("/location-analysis")}
-                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-violet-500"
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary"
                 >
                   <Sparkles className="w-3.5 h-3.5" /> {t("locations.detectDirection")}
                 </button>
@@ -176,7 +177,10 @@ const LocationsPage = () => {
             </button>
           </div>
         ) : (
-          locations.map((loc, i) => {
+          LOCATION_CATEGORIES.map(group => {
+            const grouped = locations.filter(loc => (loc.category === "indoor" ? inferLocationCategory(loc.name) : loc.category || inferLocationCategory(loc.name)) === group);
+            if (!grouped.length) return null;
+            return <section key={group} className="space-y-3"><h2 className="font-bold text-foreground flex justify-between">{locationCategoryLabel(group, i18n.language)}<span className="text-muted-foreground text-sm">{grouped.length}</span></h2>{grouped.map((loc, i) => {
             const linked = plantsFor(loc.id);
             return (
               <motion.div key={loc.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
@@ -188,7 +192,7 @@ const LocationsPage = () => {
                   <div className="flex-1">
                     <h3 className="font-bold text-foreground">{loc.name}</h3>
                     <p className="text-[11px] text-muted-foreground">
-                      {loc.category ? t(`locations.categories.${loc.category}`) : "—"}
+                      {loc.category ? locationCategoryLabel(loc.category, i18n.language) : "—"}
                       {loc.direction && ` • ${loc.direction}`}
                     </p>
                   </div>
@@ -198,7 +202,7 @@ const LocationsPage = () => {
                 </div>
 
                 {!loc.ai_analyzed && (
-                  <button onClick={() => navigate("/location-analysis")}
+                  <button onClick={() => navigate("/location-analysis", { state: { locationId: loc.id } })}
                     className="w-full mt-3 flex items-center gap-2 bg-accent/10 text-accent px-3 py-2 rounded-xl text-xs font-semibold">
                     <Sparkles className="w-4 h-4" /> {t("locations.analyzeCta")}
                   </button>
@@ -226,7 +230,7 @@ const LocationsPage = () => {
                 )}
               </motion.div>
             );
-          })
+          })}</section>; })
         )}
       </div>
     </div>

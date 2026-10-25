@@ -9,6 +9,7 @@ export interface WateringPlanInput {
   intervalDays: number;
   amountMl?: number;
   startDate?: Date; // last watered or first scheduled
+  lastWateredAt?: string | null;
   occurrences?: number; // how many future events to plan
 }
 
@@ -55,7 +56,7 @@ export async function generateWateringPlan(input: WateringPlanInput): Promise<Wa
     .update({
       watering_interval_days: intervalDays,
       watering_amount_ml: amountMl ?? null,
-      last_watered_at: startDate.toISOString(),
+      last_watered_at: input.lastWateredAt === undefined ? startDate.toISOString() : input.lastWateredAt,
       next_watering_at: nextDate,
     })
     .eq("id", plantId);
