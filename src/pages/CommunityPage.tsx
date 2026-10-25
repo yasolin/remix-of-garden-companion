@@ -1,3 +1,5 @@
+import SeedExchange from "@/components/SeedExchange";
+import { Button } from "@/components/ui/button";
 import { getAccessToken } from "@/lib/aiAuth";
 import { ArrowLeft, Heart, MessageCircle, Share2, Plus, Send, Image, X, Trash2, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +31,7 @@ const CommunityPage = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [section, setSection] = useState<"community" | "seeds">("community");
   const [showNewPost, setShowNewPost] = useState(false);
   const [newContent, setNewContent] = useState("");
   const [newImage, setNewImage] = useState<File | null>(null);
@@ -51,7 +54,7 @@ const CommunityPage = () => {
 
   const { data: comments = [] } = useQuery({
     queryKey: ["community-comments", expandedComments],
-    queryFn: () => fetchComments(expandedComments!),
+    queryFn: () => expandedComments ? fetchComments(expandedComments) : Promise.resolve([]),
     enabled: !!expandedComments,
   });
 
@@ -224,12 +227,17 @@ const CommunityPage = () => {
           <h1 className="text-xl font-bold text-foreground">{t("community.title")}</h1>
           <p className="text-sm text-muted-foreground">{t("community.subtitle")}</p>
         </div>
-        <button onClick={() => setShowNewPost(!showNewPost)}
+        <button hidden={section === "seeds"} onClick={() => setShowNewPost(!showNewPost)}
           className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
           <Plus className="w-5 h-5 text-primary-foreground" />
         </button>
       </div>
 
+      <div className="px-4 py-3 flex gap-2">
+        <Button variant={section === "community" ? "default" : "secondary"} onClick={() => setSection("community")}>{t("community.title")}</Button>
+        <Button variant={section === "seeds" ? "default" : "secondary"} onClick={() => { setSection("seeds"); setShowNewPost(false); }}>{i18n.language.startsWith("tr") ? "Ata tohumu" : "Heirloom seeds"} <span className="text-[10px]">Premium</span></Button>
+      </div>
+      {section === "seeds" ? <SeedExchange /> : <>
       {/* Category filters */}
       <div className="px-4 flex gap-2 overflow-x-auto pb-2">
         {categories.map(cat => (
@@ -393,6 +401,7 @@ const CommunityPage = () => {
           ))
         )}
       </div>
+      </>}
     </div>
   );
 };

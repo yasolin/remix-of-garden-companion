@@ -1,3 +1,4 @@
+import { fileToCompressedDataUrl } from "@/lib/imageUtils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
@@ -100,9 +101,10 @@ export async function deletePlant(id: string): Promise<void> {
 }
 
 export async function uploadPlantPhoto(userId: string, file: File): Promise<string> {
-  const ext = file.name.split(".").pop() || "jpg";
-  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("plant-photos").upload(path, file);
+  const dataUrl = await fileToCompressedDataUrl(file, 1600, 0.82);
+  const blob = await (await fetch(dataUrl)).blob();
+  const path = `${userId}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from("plant-photos").upload(path, blob, { contentType: "image/jpeg" });
   if (error) throw error;
   const { data } = supabase.storage.from("plant-photos").getPublicUrl(path);
   return data.publicUrl;

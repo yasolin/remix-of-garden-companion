@@ -1,17 +1,23 @@
-import { ArrowLeft, Camera, PenLine, Sparkles, Save } from "lucide-react";
+import { ArrowLeft, Camera, PenLine, Sparkles, Save, MapPin, Compass, Loader2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { stages, stageIndex, insertPlant, uploadPlantPhoto } from "@/lib/plantService";
-import { ALL_CATEGORIES, getLifecycle, stageLabel, categoryLabel } from "@/lib/plantLifecycles";
+import { insertPlant, uploadPlantPhoto } from "@/lib/plantService";
+import { getLifecycle, inferCategoryFromName } from "@/lib/plantLifecycles";
 
 import { generateWateringPlan, frequencyToDays } from "@/lib/wateringService";
 import { analyzePlantPhoto } from "@/lib/plantAI";
 import { fetchUserLocations, createLocation } from "@/lib/locationService";
 import { toast } from "@/hooks/use-toast";
+
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import PlantTypePicker from "@/components/PlantTypePicker";
+import { inferLocationCategory } from "@/lib/locationCategories";
+import { fileToCompressedDataUrl } from "@/lib/imageUtils";
 
 type AddMode = "select" | "manual" | "ai";
 
@@ -20,15 +26,13 @@ const AddPlantPage = () => {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<AddMode>("select");
-  const [userId, setUserId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const [saving, setSaving] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id || null));
-  }, []);
 
   const [form, setForm] = useState({
     name: "", scientificName: "", placement: "", waterFrequency: "",
@@ -39,6 +43,9 @@ const AddPlantPage = () => {
     neverWatered: false,
     locationId: "" as string,
     category: "" as string,
+    direction: "",
+    sunExposure: "",
+    locationAnalyzed: false,
   });
 
 
@@ -52,8 +59,15 @@ const AddPlantPage = () => {
   }, [userId]);
 
   // Prefill from an AI analysis handed over by the AI Assistant page
-  const routeState = useLocation().state as { aiAnalysis?: Record<string, string> } | null;
+  const routeState = useLocation().state as { aiAnalysis?: Record<string, string>; draft?: { form: typeof form; photoFile: File | null; photoPreview: string; newLocationName: string }; locationResult?: { direction: string; sunExposure: string } } | null;
   useEffect(() => {
+    if (routeState?.draft) {
+      const draft = routeState.draft;
+      const result = routeState.locationResult;
+      setForm({ ...draft.form, ...(result ? { direction: result.direction, sunExposure: result.sunExposure, locationAnalyzed: true } : {}) });
+      setPhotoFile(draft.photoFile); setPhotoPreview(draft.photoPreview); setNewLocationName(draft.newLocationName); setMode("manual");
+      return;
+    }
     const a = routeState?.aiAnalysis;
     if (!a) return;
     setMode("manual");
@@ -70,14 +84,12 @@ const AddPlantPage = () => {
       soilType: a.soilType || prev.soilType,
       fertilizer: a.fertilizer || prev.fertilizer,
       notes: a.notes || prev.notes,
+      category: inferCategoryFromName(a.name) || "",
+      currentStage: getLifecycle(inferCategoryFromName(a.name)).stages[0]?.key || "planted",
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  const stageLabels: Record<string, string> = Object.fromEntries(
-    stages.map(s => [s, t(`stages.${s}`)])
-  );
 
   const handlePhotoSelected = (file: File) => {
     setPhotoFile(file);
@@ -91,68 +103,41 @@ const AddPlantPage = () => {
     setAiAnalyzing(true);
     setMode("ai");
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        try {
-          const result = await analyzePlantPhoto(base64, i18n.language);
-          setForm(prev => ({
-            ...prev,
-            name: result.name || "",
-            scientificName: result.scientificName || "",
-            placement: result.placement || "",
-            waterFrequency: result.waterFrequency || "",
-            sunlight: result.sunlight || "",
-            windSensitivity: result.windSensitivity || "",
-            currentStage: result.currentStage || "planted",
-            temperature: result.temperature || "",
-            humidity: result.humidity || "",
-            soilType: result.soilType || "",
-            fertilizer: result.fertilizer || "",
-            notes: result.notes || "",
-          }));
-          setMode("manual");
-        } catch (e: any) {
-          toast({ title: "AI Error", description: e.message, variant: "destructive" });
-          setMode("manual");
-        }
-        setAiAnalyzing(false);
-      };
-      reader.readAsDataURL(file);
-    } catch {
-      setAiAnalyzing(false);
-      setMode("manual");
-    }
+      const base64 = await fileToCompressedDataUrl(file);
+      const result = await analyzePlantPhoto(base64, i18n.language);
+      const category = inferCategoryFromName(result.name) || "";
+      setForm(prev => ({ ...prev, name: result.name || "", scientificName: result.scientificName || "", placement: result.placement || "", waterFrequency: result.waterFrequency || "", sunlight: result.sunlight || "", windSensitivity: result.windSensitivity || "", temperature: result.temperature || "", humidity: result.humidity || "", soilType: result.soilType || "", fertilizer: result.fertilizer || "", notes: result.notes || "", category, currentStage: getLifecycle(category).stages[0]?.key || "planted" }));
+    } catch (e) {
+      toast({ title: i18n.language.startsWith("tr") ? "Analiz yapılamadı" : "Analysis failed", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
+    } finally { setAiAnalyzing(false); setMode("manual"); }
   };
 
   const handleSave = async () => {
+    if (saving) return;
     if (!userId) {
-      toast({ title: "⚠️", description: "Please sign in to save plants", variant: "destructive" });
+      toast({ title: "⚠️", description: i18n.language.startsWith("tr") ? "Bitki kaydetmek için giriş yapın." : "Please sign in to save plants", variant: "destructive" });
       return;
     }
     if (!form.name.trim() || form.name.trim().length < 2) {
       toast({ title: "❌", description: t("add.invalidName"), variant: "destructive" });
       return;
     }
+    setSaving(true);
     try {
       let photoUrl = "";
       if (photoFile) {
         photoUrl = await uploadPlantPhoto(userId, photoFile);
       }
 
-      // If user typed a brand-new location, create it now
       let locationId: string | null = form.locationId || null;
-      let createdNewLocation = false;
-      if (!locationId && newLocationName.trim()) {
-        try {
-          const loc = await createLocation({
-            user_id: userId,
-            name: newLocationName.trim(),
-            category: "indoor",
-          });
+      const locationName = (newLocationName || form.placement).trim();
+      if (!locationId && locationName) {
+        const existing = locations.find(l => l.name.toLocaleLowerCase("tr") === locationName.toLocaleLowerCase("tr"));
+        if (existing) locationId = existing.id;
+        else {
+          const loc = await createLocation({ user_id: userId, name: locationName, category: inferLocationCategory(locationName), direction: form.direction || null, sun_exposure: form.sunExposure || null, humidity: form.humidity || null, ai_analyzed: form.locationAnalyzed });
           locationId = loc.id;
-          createdNewLocation = true;
-        } catch (e) { console.error("location create failed", e); }
+        }
       }
 
       const intervalDays = frequencyToDays(form.waterFrequency);
@@ -168,13 +153,9 @@ const AddPlantPage = () => {
         water_frequency: form.waterFrequency,
         sunlight: form.sunlight,
         wind_sensitivity: form.windSensitivity,
-        current_stage: (() => {
-          const lc = getLifecycle(form.category);
-          const idx = lc.stages.findIndex((s) => s.key === form.currentStage);
-          return idx === -1 ? stageIndex(form.currentStage) : idx;
-        })(),
-
-        category: form.category || null,
+        current_stage: Math.max(0, getLifecycle(form.category).stages.findIndex(s => s.key === form.currentStage)),
+        category: form.category || inferCategoryFromName(form.name),
+        direction: form.direction || null,
         temperature: form.temperature,
 
         humidity: form.humidity,
@@ -196,9 +177,10 @@ const AddPlantPage = () => {
           intervalDays,
           startDate: lastWateredAt ? new Date(lastWateredAt) : new Date(),
           occurrences: 12,
+          lastWateredAt,
         });
       } catch (e) {
-        console.error("plan generation failed", e);
+        toast({ title: i18n.language.startsWith("tr") ? "Bitki kaydedildi, sulama planı oluşturulamadı" : "Plant saved; watering plan failed", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
       }
 
       queryClient.invalidateQueries({ queryKey: ["plants"] });
@@ -206,15 +188,10 @@ const AddPlantPage = () => {
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast({ title: "✅", description: t("add.savePlant") });
 
-      if (createdNewLocation) {
-        setTimeout(() => {
-          toast({ title: "💡", description: t("locations.analyzeReminder") });
-        }, 600);
-      }
-      navigate("/profile");
+      navigate(`/plant/${inserted.id}`);
     } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
+      toast({ title: i18n.language.startsWith("tr") ? "Bitki kaydedilemedi" : "Could not save plant", description: e.message, variant: "destructive" });
+    } finally { setSaving(false); }
   };
 
   const fields = [
@@ -324,7 +301,7 @@ const AddPlantPage = () => {
 
         {/* Location picker: saved locations + new location */}
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
-          <label className="text-sm font-semibold text-foreground flex items-center gap-1.5">📍 {t("add.placement")}</label>
+          <label className="text-sm font-semibold text-foreground flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {t("add.placement")}</label>
           {locations.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {locations.map((l: any) => (
@@ -347,9 +324,11 @@ const AddPlantPage = () => {
               className="w-full bg-secondary rounded-xl px-3 py-2 text-sm outline-none" />
           )}
           {/* Fallback free-text placement (kept in sync with location name) */}
-          <input value={form.placement} onChange={(e) => setForm({ ...form, placement: e.target.value })}
+          <input value={form.placement} onChange={(e) => { setNewLocationName(""); setForm({ ...form, placement: e.target.value, locationId: "" }); }}
             placeholder={t("add.placementPlaceholder")}
-            className="w-full bg-secondary rounded-xl px-3 py-2 text-sm outline-none opacity-80" />
+            className="w-full bg-secondary text-foreground rounded-xl px-3 py-2 text-sm outline-none" />
+          {form.direction && <p className="text-xs text-muted-foreground">{form.direction} · {form.sunExposure}</p>}
+          <Button type="button" variant="outline" className="w-full text-primary border-primary/30 whitespace-normal h-auto py-2" onClick={() => navigate("/location-analysis", { state: { returnTo: "/add-plant", draft: { form, photoFile, photoPreview, newLocationName } } })}><Compass />{i18n.language.startsWith("tr") ? "Konumunu analiz et" : "Analyze this location"}</Button>
         </div>
 
         <div>
@@ -358,7 +337,7 @@ const AddPlantPage = () => {
             className="w-full mt-1 bg-secondary rounded-xl px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
 
-        <div className="bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200/40 dark:border-blue-800/30 rounded-xl p-3 space-y-2">
+        <div className="bg-secondary/50 border border-border rounded-xl p-3 space-y-2">
           <label className="text-sm font-semibold text-foreground">💧 {t("add.lastWateredQ")}</label>
           <p className="text-[11px] text-muted-foreground">{t("add.lastWateredHint")}</p>
           <input type="date" disabled={form.neverWatered}
@@ -373,51 +352,7 @@ const AddPlantPage = () => {
           </label>
         </div>
 
-        {/* Plant category picker — drives the growth lifecycle roadmap */}
-        <div>
-          <label className="text-sm font-semibold text-foreground">
-            {i18n.language.startsWith("tr") ? "Bitki türü / yol haritası" : "Plant type / roadmap"}
-          </label>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            {i18n.language.startsWith("tr")
-              ? "Her bitki türünün kendi yaşam döngüsü vardır. Aşamalar bu seçime göre değişir."
-              : "Each plant type has its own life cycle. Stages update based on this choice."}
-          </p>
-          <div className="flex gap-1.5 mt-2 flex-wrap">
-            {ALL_CATEGORIES.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                onClick={() => {
-                  const first = c.stages[0]?.key || "planted";
-                  setForm({ ...form, category: c.key, currentStage: first });
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1 ${
-                  form.category === c.key ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                }`}
-              >
-                <span>{c.emoji}</span>
-                <span>{categoryLabel(c, i18n.language)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-sm font-semibold text-foreground">{t("add.growthStage")}</label>
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {getLifecycle(form.category).stages.map((stage) => (
-              <button key={stage.key} type="button" onClick={() => setForm({ ...form, currentStage: stage.key })}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1 ${
-                  form.currentStage === stage.key ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                }`}>
-                <span>{stage.emoji}</span>
-                <span>{stageLabel(stage, i18n.language)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
+        <PlantTypePicker category={form.category} stage={form.currentStage} name={form.name} lang={i18n.language} onChange={(category, currentStage) => setForm({ ...form, category, currentStage })} />
 
         <div>
           <label className="text-sm font-semibold text-foreground">{t("add.notesLabel")}</label>
@@ -426,10 +361,10 @@ const AddPlantPage = () => {
             className="w-full mt-1 bg-secondary rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
         </div>
 
-        <motion.button whileTap={{ scale: 0.97 }} onClick={handleSave}
+        <Button disabled={saving} onClick={handleSave}
           className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 mt-2">
-          <Save className="w-5 h-5" /> {t("add.savePlant")}
-        </motion.button>
+          {saving ? <Loader2 className="animate-spin" /> : <Save className="w-5 h-5" />} {saving ? (i18n.language.startsWith("tr") ? "Kaydediliyor…" : "Saving…") : t("add.savePlant")}
+        </Button>
       </div>
     </div>
   );

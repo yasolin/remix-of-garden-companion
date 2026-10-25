@@ -1,11 +1,13 @@
 import { ArrowLeft, Compass, Sun, Wind, MapPin, Globe, Check, ChevronDown } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUserPlants, updatePlant } from "@/lib/plantService";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { updateLocation } from "@/lib/locationService";
 import { toast } from "@/hooks/use-toast";
 
 const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
@@ -49,6 +51,10 @@ const countries: Record<string, { label: Record<string, string>; states: Record<
 
 const LocationAnalysisPage = () => {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const entry = useLocation().state as { returnTo?: string; draft?: unknown; locationId?: string } | null;
+  const [saving, setSaving] = useState(false);
+  const returnToDraft = () => navigate("/add-plant", { state: { draft: entry?.draft } });
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const lang = i18n.language === "en" ? "en" : "tr";
@@ -67,7 +73,7 @@ const LocationAnalysisPage = () => {
 
   const { data: plants = [] } = useQuery({
     queryKey: ["plants", user?.id],
-    queryFn: () => fetchUserPlants(user!.id),
+    queryFn: () => user ? fetchUserPlants(user.id) : Promise.resolve([]),
     enabled: !!user,
   });
 
@@ -154,15 +160,26 @@ const LocationAnalysisPage = () => {
   };
 
   const handleSaveLocation = async () => {
-    if (!selectedPlantId || !currentDir) return;
-    try {
-      const dirText = dirLabels[lang][currentDir];
-      const locationData = `${dirText}${selectedCountry ? ` - ${countries[selectedCountry]?.label[lang]}` : ""}${selectedState ? `, ${selectedState}` : ""}`;
-      await updatePlant(selectedPlantId, { placement: locationData, direction: dirText } as any);
-      toast({ title: "✅", description: t("location.locationSaved") });
-    } catch (e: any) {
-      toast({ title: "❌", description: e.message, variant: "destructive" });
+    if (!currentDir || saving) return;
+    const dirText = dirLabels[lang][currentDir];
+    const sunExposure = getSunExposure(currentDir);
+    if (entry?.draft) {
+      navigate("/add-plant", { state: { draft: entry.draft, locationResult: { direction: dirText, sunExposure } } });
+      return;
     }
+    setSaving(true);
+    try {
+      if (entry?.locationId) await updateLocation(entry.locationId, { direction: dirText, sun_exposure: sunExposure, ai_analyzed: true });
+      else if (selectedPlantId) {
+        const plant = plants.find(p => p.id === selectedPlantId);
+        await updatePlant(selectedPlantId, { direction: dirText });
+        if (plant?.location_id) await updateLocation(plant.location_id, { direction: dirText, sun_exposure: sunExposure, ai_analyzed: true });
+      } else return;
+      await qc.invalidateQueries({ queryKey: ["plants"] });
+      await qc.invalidateQueries({ queryKey: ["locations"] });
+      toast({ title: "✅", description: t("location.locationSaved") });
+    } catch (e: any) { toast({ title: "❌", description: e.message, variant: "destructive" }); }
+    finally { setSaving(false); }
   };
 
   const statesForCountry = selectedCountry ? countries[selectedCountry]?.states || [] : [];
@@ -175,7 +192,7 @@ const LocationAnalysisPage = () => {
       {/* Hero header with gradient */}
       <div className="relative overflow-hidden bg-gradient-to-br from-primary/90 via-primary to-primary/70 text-primary-foreground px-4 pt-4 pb-8 rounded-b-3xl">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-lg hover:bg-white/10">
+          <button onClick={() => entry?.draft ? returnToDraft() : navigate(-1)} className="p-2 -ml-2 rounded-lg hover:bg-primary-foreground/10">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
@@ -186,18 +203,18 @@ const LocationAnalysisPage = () => {
 
         {/* Detected city + sun times summary */}
         <div className="mt-4 flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur px-3 py-1.5 rounded-full text-xs font-semibold">
+          <div className="flex items-center gap-1.5 bg-primary-foreground/15 backdrop-blur px-3 py-1.5 rounded-full text-xs font-semibold">
             <MapPin className="w-3.5 h-3.5" />
             {detectedCity || t("location.detectingCity") || "…"}
           </div>
-          <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur px-3 py-1.5 rounded-full text-xs font-semibold">
+          <div className="flex items-center gap-1.5 bg-primary-foreground/15 backdrop-blur px-3 py-1.5 rounded-full text-xs font-semibold">
             <Sun className="w-3.5 h-3.5" /> {sunrise} · {sunset}
           </div>
         </div>
       </div>
 
       {/* Plant selector - overlapping card */}
-      <div className="px-4 -mt-4 relative z-10">
+      {!entry?.draft && !entry?.locationId && <div className="px-4 -mt-4 relative z-10">
         <div className="bg-card rounded-2xl p-4 border border-border shadow-lg">
           <label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wide">{t("location.selectPlant")}</label>
           <div className="relative">
@@ -213,6 +230,7 @@ const LocationAnalysisPage = () => {
         </div>
       </div>
 
+      }
       {/* Compass */}
       <div className="px-4 mt-6 flex flex-col items-center">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -350,12 +368,11 @@ const LocationAnalysisPage = () => {
           </motion.div>
 
           {/* Save button */}
-          {selectedPlantId && (
-            <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              onClick={handleSaveLocation}
+          {(selectedPlantId || entry?.draft || entry?.locationId) && (
+            <Button disabled={saving} onClick={handleSaveLocation}
               className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl flex items-center justify-center gap-2">
-              <Check className="w-5 h-5" /> {t("location.saveToPlant")}
-            </motion.button>
+              <Check className="w-5 h-5" /> {entry?.draft ? (lang === "tr" ? "Konumu kullan ve bitkiye dön" : "Use location and return") : t("location.saveToPlant")}
+            </Button>
           )}
         </div>
       )}

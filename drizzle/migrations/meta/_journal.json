@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792943466915,
+      "tag": "0000_plant_category_and_premium_seed_exchange",
+      "breakpoints": true
+    }
+  ]
+}
