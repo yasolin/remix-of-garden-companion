@@ -195,55 +195,71 @@ const AuthPage = () => {
           </div>
 
           {mode === "signup" && (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input value={displayName} onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder={isTr ? "Adınız" : "First Name"}
-                    className="w-full bg-secondary rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
-                </div>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input value={surname} onChange={(e) => setSurname(e.target.value)}
-                    placeholder={isTr ? "Soyadınız" : "Last Name"}
-                    className="w-full bg-secondary rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
-                </div>
+            <div className="bg-card border border-border rounded-2xl p-4 space-y-4 shadow-sm">
+              <div>
+                <h2 className="text-base font-bold text-foreground">{isTr ? "Hesabınızı oluşturun" : "Create your account"}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">{isTr ? "Size özel bakım önerileri için birkaç bilgi" : "A few details for personalized care tips"}</p>
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input value={age} onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))}
-                    placeholder={isTr ? "Yaş" : "Age"} maxLength={3}
-                    className="w-full bg-secondary rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
+              <section className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{isTr ? "Kişisel bilgiler" : "Personal details"}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { v: displayName, s: setDisplayName, l: isTr ? "Ad" : "First name", I: User },
+                    { v: surname, s: setSurname, l: isTr ? "Soyad" : "Last name", I: User },
+                  ].map(({ v, s, l, I }) => (
+                    <label key={l} className="block">
+                      <span className="text-xs font-medium text-foreground">{l}</span>
+                      <div className="relative mt-1">
+                        <I className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <input value={v} onChange={(e) => s(e.target.value)} placeholder={l}
+                          className="w-full bg-secondary border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
+                      </div>
+                    </label>
+                  ))}
+                  <label className="block">
+                    <span className="text-xs font-medium text-foreground">{isTr ? "Yaş" : "Age"}</span>
+                    <div className="relative mt-1">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input value={age} onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))} inputMode="numeric" maxLength={3} placeholder="30"
+                        className="w-full bg-secondary border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-medium text-foreground">{isTr ? "Cinsiyet" : "Gender"}</span>
+                    <div className="relative mt-1">
+                      <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <select value={gender} onChange={(e) => setGender(e.target.value)}
+                        className="w-full bg-secondary border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30 appearance-none">
+                        <option value="">{isTr ? "Seçin" : "Select"}</option>
+                        <option value="male">{isTr ? "Erkek" : "Male"}</option>
+                        <option value="female">{isTr ? "Kadın" : "Female"}</option>
+                        <option value="other">{isTr ? "Diğer" : "Other"}</option>
+                      </select>
+                    </div>
+                  </label>
                 </div>
-                <div className="relative">
-                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <select value={gender} onChange={(e) => setGender(e.target.value)}
-                    className="w-full bg-secondary rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30 appearance-none">
-                    <option value="">{isTr ? "Cinsiyet" : "Gender"}</option>
-                    <option value="male">{isTr ? "Erkek" : "Male"}</option>
-                    <option value="female">{isTr ? "Kadın" : "Female"}</option>
-                    <option value="other">{isTr ? "Diğer" : "Other"}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input value={occupation} onChange={(e) => setOccupation(e.target.value)}
-                  placeholder={isTr ? "Mesleğiniz" : "Occupation"}
-                  className="w-full bg-secondary rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input value={phone} onChange={(e) => setPhone(e.target.value)}
-                  type="tel" placeholder={isTr ? "Telefon numarası" : "Phone number"}
-                  className="w-full bg-secondary rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-            </>
+              </section>
+              <section className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{isTr ? "İletişim ve meslek" : "Contact & occupation"}</p>
+                <label className="block">
+                  <span className="text-xs font-medium text-foreground">{isTr ? "Meslek" : "Occupation"}</span>
+                  <div className="relative mt-1">
+                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input value={occupation} onChange={(e) => setOccupation(e.target.value)} placeholder={isTr ? "Örn. Öğretmen" : "e.g. Teacher"}
+                      className="w-full bg-secondary border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                </label>
+                <label className="block">
+                  <span className="text-xs font-medium text-foreground">{isTr ? "Telefon" : "Phone"}</span>
+                  <div className="relative mt-1">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="05XX XXX XX XX"
+                      className="w-full bg-secondary border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                </label>
+              </section>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground -mb-2">{isTr ? "Giriş bilgileri" : "Sign-in details"}</p>
+            </div>
           )}
 
           <div className="relative">
