@@ -18,6 +18,47 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+/** Runs outside the auth-state callback (see note there) to avoid the auth-lock deadlock. */
+async function syncProfileFromMetadata(u: User) {
+  const meta = u.user_metadata || {};
+  try {
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("display_name, avatar_url")
+      .eq("user_id", u.id)
+      .maybeSingle();
+    const updates: any = {};
+    if (!existing?.display_name && meta.display_name) updates.display_name = meta.display_name;
+    if (!existing?.avatar_url && meta.avatar_url) updates.avatar_url = meta.avatar_url;
+    const hasPii = !!(meta.surname || meta.age || meta.gender || meta.occupation || meta.phone);
+    if (hasPii) updates.kvkk_accepted = true;
+    if (Object.keys(updates).length > 0) {
+      await supabase.from("profiles").update(updates).eq("user_id", u.id);
+    }
+    const { data: account } = await supabase
+      .from("profiles")
+      .select("account_status")
+      .eq("user_id", u.id)
+      .maybeSingle();
+    if (account?.account_status === "frozen") {
+      await supabase.from("profiles").update({
+        account_status: "active",
+        frozen_at: null,
+      }).eq("user_id", u.id);
+    }
+    if (hasPii) {
+      await supabase.from("profiles_private" as any).upsert({
+        user_id: u.id,
+        surname: meta.surname ?? null,
+        age: meta.age ?? null,
+        gender: meta.gender ?? null,
+        occupation: meta.occupation ?? null,
+        phone: meta.phone ?? null,
+      } as any, { onConflict: "user_id" } as any);
+    }
+  } catch {}
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
