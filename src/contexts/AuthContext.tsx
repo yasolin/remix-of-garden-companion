@@ -18,57 +18,65 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+/** Runs outside the auth-state callback (see note there) to avoid the auth-lock deadlock. */
+async function syncProfileFromMetadata(u: User) {
+  const meta = u.user_metadata || {};
+  try {
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("display_name, avatar_url")
+      .eq("user_id", u.id)
+      .maybeSingle();
+    const updates: any = {};
+    if (!existing?.display_name && meta.display_name) updates.display_name = meta.display_name;
+    if (!existing?.avatar_url && meta.avatar_url) updates.avatar_url = meta.avatar_url;
+    const hasPii = !!(meta.surname || meta.age || meta.gender || meta.occupation || meta.phone);
+    if (hasPii) updates.kvkk_accepted = true;
+    if (Object.keys(updates).length > 0) {
+      await supabase.from("profiles").update(updates).eq("user_id", u.id);
+    }
+    const { data: account } = await supabase
+      .from("profiles")
+      .select("account_status")
+      .eq("user_id", u.id)
+      .maybeSingle();
+    if (account?.account_status === "frozen") {
+      await supabase.from("profiles").update({
+        account_status: "active",
+        frozen_at: null,
+      }).eq("user_id", u.id);
+    }
+    if (hasPii) {
+      await supabase.from("profiles_private" as any).upsert({
+        user_id: u.id,
+        surname: meta.surname ?? null,
+        age: meta.age ?? null,
+        gender: meta.gender ?? null,
+        occupation: meta.occupation ?? null,
+        phone: meta.phone ?? null,
+      } as any, { onConflict: "user_id" } as any);
+    }
+  } catch {}
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
 
-      // Sync auth metadata to profiles row on sign-in
+      // Sync auth metadata to profiles row on sign-in.
+      // IMPORTANT: never await supabase calls inside this callback — it runs
+      // while the auth lock is held, so awaiting client calls here deadlocks
+      // every later getSession/query. Defer to a macrotask instead.
       if (_event === "SIGNED_IN" && session?.user) {
-        const meta = session.user.user_metadata || {};
-        try {
-          const { data: existing } = await supabase
-            .from("profiles")
-            .select("display_name, avatar_url")
-            .eq("user_id", session.user.id)
-            .maybeSingle();
-          const updates: any = {};
-          if (!existing?.display_name && meta.display_name) updates.display_name = meta.display_name;
-          if (!existing?.avatar_url && meta.avatar_url) updates.avatar_url = meta.avatar_url;
-          const hasPii = !!(meta.surname || meta.age || meta.gender || meta.occupation || meta.phone);
-          if (hasPii) updates.kvkk_accepted = true;
-          if (Object.keys(updates).length > 0) {
-            await supabase.from("profiles").update(updates).eq("user_id", session.user.id);
-          }
-           const { data: account } = await supabase
-             .from("profiles")
-             .select("account_status")
-             .eq("user_id", session.user.id)
-             .maybeSingle();
-           if (account?.account_status === "frozen") {
-             await supabase.from("profiles").update({
-               account_status: "active",
-               frozen_at: null,
-             }).eq("user_id", session.user.id);
-           }
-          if (hasPii) {
-            await supabase.from("profiles_private" as any).upsert({
-              user_id: session.user.id,
-              surname: meta.surname ?? null,
-              age: meta.age ?? null,
-              gender: meta.gender ?? null,
-              occupation: meta.occupation ?? null,
-              phone: meta.phone ?? null,
-            } as any, { onConflict: "user_id" } as any);
-          }
-        } catch {}
-
+        const u = session.user;
+        setTimeout(() => { void syncProfileFromMetadata(u); }, 0);
       }
     });
 
