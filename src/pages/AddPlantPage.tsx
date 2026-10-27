@@ -10,7 +10,7 @@ import { getLifecycle, inferCategoryFromName } from "@/lib/plantLifecycles";
 
 import { generateWateringPlan, frequencyToDays } from "@/lib/wateringService";
 import { analyzePlantPhoto } from "@/lib/plantAI";
-import { fetchUserLocations, createLocation } from "@/lib/locationService";
+import { fetchUserLocations, createLocation, updateLocation } from "@/lib/locationService";
 import { toast } from "@/hooks/use-toast";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,7 +53,7 @@ const AddPlantPage = () => {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [newLocationName, setNewLocationName] = useState("");
 
-  const [locations, setLocations] = useState<any[]>([]);
+  const [locations, setLocations] = useState<Awaited<ReturnType<typeof fetchUserLocations>>>([]);
   useEffect(() => {
     if (userId) fetchUserLocations(userId).then(setLocations).catch(() => {});
   }, [userId]);
@@ -132,12 +132,21 @@ const AddPlantPage = () => {
       let locationId: string | null = form.locationId || null;
       const locationName = (newLocationName || form.placement).trim();
       if (!locationId && locationName) {
-        const existing = locations.find(l => l.name.toLocaleLowerCase("tr") === locationName.toLocaleLowerCase("tr"));
+        // Fetch at save time too: the initial location request may still be loading.
+        const savedLocations = await fetchUserLocations(userId);
+        const existing = savedLocations.find(l => l.name.trim().toLocaleLowerCase("tr") === locationName.toLocaleLowerCase("tr"));
         if (existing) locationId = existing.id;
         else {
           const loc = await createLocation({ user_id: userId, name: locationName, category: inferLocationCategory(locationName), direction: form.direction || null, sun_exposure: form.sunExposure || null, humidity: form.humidity || null, ai_analyzed: form.locationAnalyzed });
           locationId = loc.id;
         }
+      }
+      if (locationId && form.locationAnalyzed) {
+        await updateLocation(locationId, {
+          direction: form.direction || null,
+          sun_exposure: form.sunExposure || null,
+          ai_analyzed: true,
+        });
       }
 
       const intervalDays = frequencyToDays(form.waterFrequency);
@@ -306,7 +315,7 @@ const AddPlantPage = () => {
             <div className="flex flex-wrap gap-1.5">
               {locations.map((l: any) => (
                 <button key={l.id} type="button"
-                  onClick={() => { setForm({ ...form, locationId: l.id, placement: l.name }); setNewLocationName(""); setShowLocationPicker(false); }}
+                  onClick={() => { setForm({ ...form, locationId: l.id, placement: l.name, direction: l.direction || "", sunExposure: l.sun_exposure || "", locationAnalyzed: false }); setNewLocationName(""); setShowLocationPicker(false); }}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
                     form.locationId === l.id ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground"
                   }`}>{l.name}</button>
@@ -321,7 +330,7 @@ const AddPlantPage = () => {
             <input value={newLocationName}
               onChange={(e) => { setNewLocationName(e.target.value); setForm({ ...form, locationId: "", placement: e.target.value }); }}
               placeholder={t("locations.namePlaceholder")}
-              className="w-full bg-secondary rounded-xl px-3 py-2 text-sm outline-none" />
+              className="w-full bg-secondary text-foreground placeholder:text-muted-foreground rounded-xl px-3 py-2 text-sm outline-none" />
           )}
           {/* Fallback free-text placement (kept in sync with location name) */}
           <input value={form.placement} onChange={(e) => { setNewLocationName(""); setForm({ ...form, placement: e.target.value, locationId: "" }); }}
