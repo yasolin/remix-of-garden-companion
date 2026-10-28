@@ -1,4 +1,5 @@
-import { ArrowLeft, MapPin, Plus, Trash2, Sparkles, Leaf, X } from "lucide-react";
+import { ArrowLeft, MapPin, Plus, Trash2, Sparkles, Leaf, X, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
@@ -177,55 +178,72 @@ const LocationsPage = () => {
             </button>
           </div>
         ) : (
-          LOCATION_CATEGORIES.map(group => {
-            const grouped = locations.filter(loc => (loc.category === "indoor" ? inferLocationCategory(loc.name) : loc.category || inferLocationCategory(loc.name)) === group);
+          (["indoor", "outdoor"] as const).map(zone => {
+            const tr = i18n.language.startsWith("tr");
+            const catOf = (loc: LocationRow) => loc.category === "indoor" ? inferLocationCategory(loc.name) : loc.category || inferLocationCategory(loc.name);
+            const isOutdoor = (c: string) => ["balcony", "garden", "greenhouse"].includes(c);
+            const grouped = locations.filter(loc => (zone === "outdoor") === isOutdoor(catOf(loc)));
             if (!grouped.length) return null;
-            return <section key={group} className="space-y-3"><h2 className="font-bold text-foreground flex justify-between">{locationCategoryLabel(group, i18n.language)}<span className="text-muted-foreground text-sm">{grouped.length}</span></h2>{grouped.map((loc, i) => {
+            return <section key={zone} className="space-y-3">
+              <h2 className="text-xs font-bold tracking-wide uppercase text-muted-foreground pt-1">
+                {zone === "indoor" ? (tr ? "İç mekan" : "Indoor") : (tr ? "Dış mekan" : "Outdoor")}
+              </h2>
+              {grouped.map((loc, i) => {
             const linked = plantsFor(loc.id);
+            const desc = loc.notes || [locationCategoryLabel(catOf(loc), i18n.language), loc.direction].filter(Boolean).join(" • ");
             return (
               <motion.div key={loc.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                className="bg-card rounded-2xl p-4 border border-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                className="bg-card rounded-2xl p-4 border border-border shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <MapPin className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-foreground">{loc.name}</h3>
-                    <p className="text-[11px] text-muted-foreground">
-                      {loc.category ? locationCategoryLabel(loc.category, i18n.language) : "—"}
-                      {loc.direction && ` • ${loc.direction}`}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-foreground leading-tight">{loc.name}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{desc}</p>
                   </div>
-                  <button onClick={() => handleDelete(loc)} className="p-2 rounded-lg hover:bg-destructive/10">
-                    <Trash2 className="w-4 h-4 text-destructive/60" />
-                  </button>
+                  <span className="min-w-6 h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">{linked.length}</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="p-1 rounded-lg hover:bg-secondary" aria-label="menu">
+                      <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => navigate("/location-analysis", { state: { locationId: loc.id } })}>
+                        <Sparkles className="w-4 h-4 mr-2" /> {t("locations.analyzeCta")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(loc)} className="text-destructive">
+                        <Trash2 className="w-4 h-4 mr-2" /> {tr ? "Sil" : "Delete"}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
-                {!loc.ai_analyzed && (
-                  <button onClick={() => navigate("/location-analysis", { state: { locationId: loc.id } })}
-                    className="w-full mt-3 flex items-center gap-2 bg-accent/10 text-accent px-3 py-2 rounded-xl text-xs font-semibold">
-                    <Sparkles className="w-4 h-4" /> {t("locations.analyzeCta")}
+                <p className="text-xs font-semibold text-foreground mt-3 mb-2">{t("locations.plantsHere")}</p>
+                {linked.length === 0 ? (
+                  <button onClick={() => navigate("/add-plant")}
+                    className="w-full text-left bg-secondary rounded-xl px-4 py-2.5 text-xs text-muted-foreground">
+                    {tr ? "Henüz bitki yok" : "No plants yet"}
                   </button>
-                )}
-
-                {linked.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <p className="text-[11px] font-semibold text-muted-foreground mb-2">{t("locations.plantsHere")} ({linked.length})</p>
-                    <div className="flex gap-2 overflow-x-auto">
-                      {linked.map((p: any) => (
-                        <button key={p.id} onClick={() => navigate(`/plant/${p.id}`)}
-                          className="shrink-0 flex flex-col items-center gap-1">
-                          {p.photo_url ? (
-                            <img src={p.photo_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
-                              <Leaf className="w-5 h-5 text-muted-foreground/40" />
-                            </div>
-                          )}
-                          <span className="text-[10px] font-medium text-foreground max-w-[52px] truncate">{p.name}</span>
-                        </button>
-                      ))}
-                    </div>
+                ) : (
+                  <div className="flex gap-3 overflow-x-auto pb-1">
+                    {linked.map((p: any) => (
+                      <button key={p.id} onClick={() => navigate(`/plant/${p.id}`)} className="shrink-0 w-14 flex flex-col items-start gap-1">
+                        {p.photo_url ? (
+                          <img src={p.photo_url} alt="" className="w-14 h-14 rounded-xl object-cover" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Leaf className="w-5 h-5 text-primary" />
+                          </div>
+                        )}
+                        <span className="text-[11px] text-foreground leading-tight line-clamp-2 text-left">{p.name}</span>
+                      </button>
+                    ))}
+                    <button onClick={() => navigate("/add-plant")} className="shrink-0 w-14 flex flex-col items-start gap-1">
+                      <div className="w-14 h-14 rounded-xl border border-dashed border-primary/50 flex items-center justify-center">
+                        <Plus className="w-5 h-5 text-primary" />
+                      </div>
+                      <span className="text-[11px] font-semibold text-primary leading-tight">{tr ? "Bitki ekle" : "Add plant"}</span>
+                    </button>
                   </div>
                 )}
               </motion.div>
