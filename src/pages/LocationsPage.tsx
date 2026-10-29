@@ -1,7 +1,9 @@
-import { ArrowLeft, MapPin, Plus, Trash2, Sparkles, Leaf, X, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, MapPin, Plus, Trash2, Sparkles, Leaf, X, MoreHorizontal, Compass, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,19 +13,22 @@ import { fetchUserPlants } from "@/lib/plantService";
 import { LOCATION_CATEGORIES, inferLocationCategory, locationCategoryLabel } from "@/lib/locationCategories";
 import { toast } from "@/hooks/use-toast";
 
-const CATEGORIES = LOCATION_CATEGORIES;
-const DIRECTIONS = ["Kuzey", "Güney", "Doğu", "Batı", "Kuzeydoğu", "Kuzeybatı", "Güneydoğu", "Güneybatı"] as const;
+const DIRECTIONS = ["Kuzeybatı", "Kuzey", "Kuzeydoğu", "Batı", "", "Doğu", "Güneybatı", "Güney", "Güneydoğu"];
+const EN_DIRECTIONS = ["Northwest", "North", "Northeast", "West", "", "East", "Southwest", "South", "Southeast"];
+const ROOM_FILTERS = [["Salon", "Living room"], ["Yatak odası", "Bedroom"], ["Banyo", "Bathroom"], ["Ofis", "Office"]];
+const initialForm = { name: "", category: "indoor", direction: "", notes: "" };
 
 const LocationsPage = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const tr = i18n.language.startsWith("tr");
   const { user } = useAuth();
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
-  const [chooserOpen, setChooserOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", category: "indoor", direction: "", notes: "" });
-
-  const { data: locations = [] } = useQuery({
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState<string | null>(null);
+  const [form, setForm] = useState(initialForm);
+  const { data: locations = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["locations", user?.id],
     queryFn: () => user ? fetchUserLocations(user.id) : Promise.resolve([]),
     enabled: !!user,
@@ -33,226 +38,96 @@ const LocationsPage = () => {
     queryFn: () => user ? fetchUserPlants(user.id) : Promise.resolve([]),
     enabled: !!user,
   });
-
-  const plantsFor = (locId: string) => plants.filter((p: any) => p.location_id === locId);
+  const plantsFor = (locId: string) => plants.filter(p => p.location_id === locId);
+  const categoryOf = (loc: LocationRow) => !loc.category || loc.category === "indoor" ? inferLocationCategory(loc.name) : loc.category;
+  const visibleLocations = filter ? locations.filter(loc => loc.name.toLocaleLowerCase(i18n.language).includes(filter.toLocaleLowerCase(i18n.language))) : locations;
 
   const handleSave = async () => {
-    if (!user || !form.name.trim()) return;
+    if (!user || !form.name.trim() || saving) return;
+    setSaving(true);
     try {
-      await createLocation({
-        user_id: user.id,
-        name: form.name.trim(),
-        category: form.category,
-        direction: form.direction || null,
-        notes: form.notes || null,
-      });
-      qc.invalidateQueries({ queryKey: ["locations"] });
-      setForm({ name: "", category: "indoor", direction: "", notes: "" });
+      await createLocation({ user_id: user.id, name: form.name.trim(), category: form.category, direction: form.direction || null, notes: form.notes || null });
+      await qc.invalidateQueries({ queryKey: ["locations"] });
+      setForm(initialForm);
+      setFilter(null);
       setAddOpen(false);
-      toast({ title: "✅", description: t("locations.save") });
-    } catch (e: any) {
-      toast({ title: "❌", description: e.message, variant: "destructive" });
-    }
+      toast({ title: tr ? "Konum kaydedildi" : "Location saved" });
+    } catch (e) {
+      toast({ title: tr ? "Konum kaydedilemedi" : "Unable to save location", description: e instanceof Error ? e.message : t("common.error"), variant: "destructive" });
+    } finally { setSaving(false); }
   };
-
   const handleDelete = async (loc: LocationRow) => {
     if (!confirm(t("locations.confirmDelete"))) return;
     try {
       await deleteLocation(loc.id);
       qc.invalidateQueries({ queryKey: ["locations"] });
       qc.invalidateQueries({ queryKey: ["plants"] });
-    } catch (e: any) {
-      toast({ title: "❌", description: e.message, variant: "destructive" });
+    } catch (e) {
+      toast({ title: tr ? "Konum silinemedi" : "Unable to delete location", description: e instanceof Error ? e.message : t("common.error"), variant: "destructive" });
     }
   };
 
   return (
-    <div className="pb-24 max-w-lg mx-auto">
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          <h1 className="text-xl font-bold text-foreground">{t("locations.title")}</h1>
+    <div className="locations-reference min-h-screen max-w-lg mx-auto px-4 pt-4 pb-24">
+      <header className="flex items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2 min-w-0">
+          <Button variant="ghost" size="icon" className="-ml-2 shrink-0 hover:bg-secondary hover:text-foreground" aria-label={tr ? "Geri" : "Back"} onClick={() => addOpen ? setAddOpen(false) : navigate(-1)}><ArrowLeft /></Button>
+          <h1 className="text-xl font-bold text-foreground">{addOpen ? (tr ? "Yeni oda" : "New room") : t("locations.title")}</h1>
         </div>
-        <button onClick={() => setChooserOpen(true)} className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-          <Plus className="w-5 h-5 text-primary-foreground" />
-        </button>
-      </div>
+        <Button size="icon" variant={addOpen ? "ghost" : "default"} className="rounded-full shrink-0" aria-label={addOpen ? (tr ? "Kapat" : "Close") : (tr ? "Konum ekle" : "Add location")} onClick={() => setAddOpen(!addOpen)}>{addOpen ? <X /> : <Plus className="!size-6" />}</Button>
+      </header>
 
-      {/* How do you want to add the location? */}
-      <AnimatePresence>
-        {chooserOpen && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-            className="px-4 overflow-hidden">
-            <div className="bg-card rounded-2xl p-4 border border-border space-y-2 mt-2">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-bold text-foreground text-sm">{t("locations.howToAdd")}</h3>
-                <button onClick={() => setChooserOpen(false)} className="p-1 rounded hover:bg-secondary"><X className="w-4 h-4" /></button>
-              </div>
-              <button
-                onClick={() => { setChooserOpen(false); setAddOpen(true); }}
-                className="w-full flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-3 text-left active:scale-[0.99] transition-transform"
-              >
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Plus className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{t("locations.addManual")}</p>
-                  <p className="text-[11px] text-muted-foreground">{t("locations.addManualDesc")}</p>
-                </div>
-              </button>
-              <button
-                onClick={() => { setChooserOpen(false); navigate("/location-analysis"); }}
-                className="w-full flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-3 text-left active:scale-[0.99] transition-transform"
-              >
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{t("locations.addWithAi")}</p>
-                  <p className="text-[11px] text-muted-foreground">{t("locations.addWithAiDesc")}</p>
-                </div>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {addOpen && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-            className="px-4 overflow-hidden">
-            <div className="bg-card rounded-2xl p-4 border border-border space-y-3 mt-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-foreground">{t("locations.newLocation")}</h3>
-                <button onClick={() => setAddOpen(false)} className="p-1 rounded hover:bg-secondary"><X className="w-4 h-4" /></button>
-              </div>
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                placeholder={t("locations.namePlaceholder")}
-                className="w-full bg-secondary rounded-xl px-4 py-2.5 text-sm outline-none" />
-              <div>
-                <p className="text-xs font-semibold text-foreground mb-1.5">{t("locations.categoryLabel")}</p>
-                <div className="flex gap-1.5 flex-wrap">
-                  {CATEGORIES.map(c => (
-                    <button key={c} onClick={() => setForm({ ...form, category: c })}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                        form.category === c ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
-                      }`}>{locationCategoryLabel(c, i18n.language)}</button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-foreground mb-1.5">{t("locations.directionLabel")}</p>
-                <div className="flex gap-1.5 flex-wrap">
-                  {DIRECTIONS.map(d => (
-                    <button key={d} onClick={() => setForm({ ...form, direction: form.direction === d ? "" : d })}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                        form.direction === d ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
-                      }`}>{d}</button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => navigate("/location-analysis")}
-                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary"
-                >
-                  <Sparkles className="w-3.5 h-3.5" /> {t("locations.detectDirection")}
-                </button>
-              </div>
-              <button onClick={handleSave} disabled={!form.name.trim()}
-                className="w-full bg-primary text-primary-foreground font-bold py-2.5 rounded-xl disabled:opacity-50">
-                {t("locations.save")}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="px-4 mt-4 space-y-3">
-        {locations.length === 0 ? (
-          <div className="bg-card rounded-2xl p-6 border border-border text-center">
-            <MapPin className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">{t("locations.empty")}</p>
-            <button onClick={() => setChooserOpen(true)} className="mt-3 bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-medium">
-              {t("locations.addFirst")}
-            </button>
+      {addOpen ? (
+        <form onSubmit={e => { e.preventDefault(); void handleSave(); }} className="space-y-5">
+          <Input aria-label={tr ? "Oda adı" : "Room name"} placeholder={t("locations.namePlaceholder")} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-11 bg-secondary border-transparent text-sm" autoFocus />
+          <div className="flex flex-wrap gap-2">
+            {LOCATION_CATEGORIES.map(c => <Button type="button" key={c} size="sm" variant="outline" className={`rounded-full text-xs h-8 px-3 hover:bg-secondary hover:text-foreground ${form.category === c ? "bg-primary border-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : "bg-card"}`} aria-pressed={form.category === c} onClick={() => setForm({ ...form, category: c })}>{locationCategoryLabel(c, i18n.language)}</Button>)}
           </div>
-        ) : (
-          (["indoor", "outdoor"] as const).map(zone => {
-            const tr = i18n.language.startsWith("tr");
-            const catOf = (loc: LocationRow) => loc.category === "indoor" ? inferLocationCategory(loc.name) : loc.category || inferLocationCategory(loc.name);
-            const isOutdoor = (c: string) => ["balcony", "garden", "greenhouse"].includes(c);
-            const grouped = locations.filter(loc => (zone === "outdoor") === isOutdoor(catOf(loc)));
-            if (!grouped.length) return null;
-            return <section key={zone} className="space-y-3">
-              <h2 className="text-xs font-bold tracking-wide uppercase text-muted-foreground pt-1">
-                {zone === "indoor" ? (tr ? "İç mekan" : "Indoor") : (tr ? "Dış mekan" : "Outdoor")}
-              </h2>
-              {grouped.map((loc, i) => {
-            const linked = plantsFor(loc.id);
-            const desc = loc.notes || [locationCategoryLabel(catOf(loc), i18n.language), loc.direction].filter(Boolean).join(" • ");
-            return (
-              <motion.div key={loc.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                className="bg-card rounded-2xl p-4 border border-border shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <MapPin className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground leading-tight">{loc.name}</h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{desc}</p>
-                  </div>
-                  <span className="min-w-6 h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">{linked.length}</span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="p-1 rounded-lg hover:bg-secondary" aria-label="menu">
-                      <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => navigate("/location-analysis", { state: { locationId: loc.id } })}>
-                        <Sparkles className="w-4 h-4 mr-2" /> {t("locations.analyzeCta")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(loc)} className="text-destructive">
-                        <Trash2 className="w-4 h-4 mr-2" /> {tr ? "Sil" : "Delete"}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                <p className="text-xs font-semibold text-foreground mt-3 mb-2">{t("locations.plantsHere")}</p>
-                {linked.length === 0 ? (
-                  <button onClick={() => navigate("/add-plant")}
-                    className="w-full text-left bg-secondary rounded-xl px-4 py-2.5 text-xs text-muted-foreground">
-                    {tr ? "Henüz bitki yok" : "No plants yet"}
-                  </button>
-                ) : (
-                  <div className="flex gap-3 overflow-x-auto pb-1">
-                    {linked.map((p: any) => (
-                      <button key={p.id} onClick={() => navigate(`/plant/${p.id}`)} className="shrink-0 w-14 flex flex-col items-start gap-1">
-                        {p.photo_url ? (
-                          <img src={p.photo_url} alt="" className="w-14 h-14 rounded-xl object-cover" />
-                        ) : (
-                          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <Leaf className="w-5 h-5 text-primary" />
-                          </div>
-                        )}
-                        <span className="text-[11px] text-foreground leading-tight line-clamp-2 text-left">{p.name}</span>
-                      </button>
-                    ))}
-                    <button onClick={() => navigate("/add-plant")} className="shrink-0 w-14 flex flex-col items-start gap-1">
-                      <div className="w-14 h-14 rounded-xl border border-dashed border-primary/50 flex items-center justify-center">
-                        <Plus className="w-5 h-5 text-primary" />
+          <fieldset>
+            <legend className="text-sm font-semibold mb-2">{t("locations.directionLabel")}</legend>
+            <div className="grid grid-cols-3 gap-2">
+              {DIRECTIONS.map((d, index) => d ? <Button type="button" variant="outline" key={d} className={`text-xs h-10 px-1 hover:bg-secondary hover:text-foreground ${form.direction === d ? "border-primary bg-primary/10 text-primary" : "bg-card"}`} aria-pressed={form.direction === d} onClick={() => setForm({ ...form, direction: form.direction === d ? "" : d })}>{tr ? d : EN_DIRECTIONS[index]}</Button> : <div key="compass" className="flex items-center justify-center text-muted-foreground"><Compass className="size-5" /></div>)}
+            </div>
+            <Button type="button" variant="ghost" className="text-primary px-0 mt-2 text-xs hover:bg-transparent hover:text-primary" onClick={() => navigate("/location-analysis")}><Sparkles />{t("locations.detectDirection")}</Button>
+          </fieldset>
+          <Button type="submit" disabled={!form.name.trim() || saving} className="w-full h-11 font-semibold">{saving && <Loader2 className="animate-spin" />}{saving ? (tr ? "Kaydediliyor…" : "Saving…") : t("locations.save")}</Button>
+        </form>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-2 mb-5" aria-label={tr ? "Oda filtresi" : "Room filter"}>
+            {ROOM_FILTERS.map(names => { const label = names[tr ? 0 : 1]; return <Button key={names[0]} variant="outline" size="sm" aria-pressed={filter === label} onClick={() => setFilter(filter === label ? null : label)} className={`h-8 px-3 rounded-full text-xs font-medium hover:bg-secondary hover:text-foreground ${filter === label ? "bg-primary border-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : "bg-card"}`}>{label}</Button>; })}
+          </div>
+          {isLoading ? <div className="flex justify-center py-12" role="status"><Loader2 className="size-6 animate-spin text-primary" /><span className="sr-only">{tr ? "Yükleniyor" : "Loading"}</span></div> : isError ? <div className="py-8 text-center"><p className="text-sm text-muted-foreground mb-3">{tr ? "Konumlar yüklenemedi." : "Unable to load locations."}</p><Button variant="outline" onClick={() => refetch()}>{tr ? "Tekrar dene" : "Try again"}</Button></div> : visibleLocations.length === 0 ? <div className="py-10 text-center"><MapPin className="size-9 text-muted-foreground mx-auto mb-3" /><p className="text-sm text-muted-foreground">{filter ? (tr ? "Bu odada henüz konum yok" : "No locations in this room") : t("locations.empty")}</p><Button className="mt-4" onClick={() => { setForm({ ...initialForm, name: filter || "" }); setAddOpen(true); }}><Plus />{t("locations.addFirst")}</Button></div> : (
+            <div className="space-y-5">
+              {(["indoor", "outdoor"] as const).map(zone => {
+                const grouped = visibleLocations.filter(loc => (zone === "outdoor") === ["balcony", "garden", "greenhouse", "outdoor"].includes(categoryOf(loc)));
+                if (!grouped.length) return null;
+                return <section key={zone} className="space-y-3">
+                  <h2 className="text-[11px] uppercase font-bold text-muted-foreground">{zone === "indoor" ? (tr ? "İç mekan" : "Indoor") : (tr ? "Dış mekan" : "Outdoor")}</h2>
+                  {grouped.map((loc, index) => {
+                    const linked = plantsFor(loc.id);
+                    const desc = loc.notes || [loc.sun_exposure, loc.direction].filter(Boolean).join(" · ") || locationCategoryLabel(categoryOf(loc), i18n.language);
+                    return <motion.article key={loc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, delay: index * 0.03 }} className="bg-card border border-border rounded-2xl p-3 shadow-sm">
+                      <div className="flex items-start gap-2.5">
+                        <span className="size-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MapPin className="size-4 text-primary" /></span>
+                        <div className="flex-1 min-w-0 pt-0.5"><h3 className="text-sm font-bold leading-tight break-words">{loc.name}</h3><p className="text-[11px] text-muted-foreground leading-tight mt-1 line-clamp-2">{desc}</p></div>
+                        <span aria-label={`${linked.length} ${tr ? "bitki" : "plants"}`} className="min-w-5 h-5 rounded-full px-1.5 bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center mt-1">{linked.length}</span>
+                        <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="size-7 text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label={`${loc.name} ${tr ? "seçenekleri" : "options"}`}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate("/location-analysis", { state: { locationId: loc.id } })}><Sparkles className="size-4 mr-2" />{t("locations.analyzeCta")}</DropdownMenuItem><DropdownMenuItem onClick={() => handleDelete(loc)} className="text-destructive"><Trash2 className="size-4 mr-2" />{tr ? "Sil" : "Delete"}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
                       </div>
-                      <span className="text-[11px] font-semibold text-primary leading-tight">{tr ? "Bitki ekle" : "Add plant"}</span>
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}</section>; })
-        )}
-      </div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mt-3 mb-2">{t("locations.plantsHere")}</p>
+                      {linked.length ? <div className="flex flex-wrap gap-3">
+                        {linked.map(p => <Button key={p.id} variant="ghost" onClick={() => navigate(`/plant/${p.id}`)} className="h-auto w-[58px] p-0 flex-col items-start gap-1 whitespace-normal hover:bg-transparent hover:text-foreground"><span className="size-[58px] bg-primary/10 rounded-xl flex items-center justify-center"><Leaf className="!size-6 text-primary" /></span><span className="text-[10px] leading-tight text-left font-normal break-words line-clamp-2">{p.name}</span></Button>)}
+                        <Button variant="ghost" onClick={() => navigate("/add-plant")} className="h-auto w-[58px] p-0 flex-col items-start gap-1 whitespace-normal hover:bg-transparent hover:text-primary"><span className="size-[58px] border border-dashed border-primary/40 rounded-xl flex items-center justify-center"><Plus className="!size-5 text-primary" /></span><span className="text-[10px] text-primary font-semibold leading-tight">{tr ? "Bitki ekle" : "Add plant"}</span></Button>
+                      </div> : <Button variant="secondary" onClick={() => navigate("/add-plant")} className="w-full justify-start h-9 text-[11px] text-muted-foreground font-normal rounded-lg">{tr ? "Henüz bitki yok" : "No plants yet"}</Button>}
+                    </motion.article>;
+                  })}
+                </section>;
+              })}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
-
 export default LocationsPage;
