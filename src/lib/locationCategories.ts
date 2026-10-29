@@ -9,6 +9,6 @@ export function inferLocationCategory(name: string): string {
   return "indoor";
 }
 export function locationCategoryLabel(key: string, lang: string) {
-  const names: Record<string, [string, string]> = { balcony: ["Balkon / Teras", "Balcony / Terrace"], livingRoom: ["Salon", "Living room"], indoor: ["İç mekan", "Indoors"], garden: ["Bahçe", "Garden"], window: ["Pencere önü", "Windowsill"], greenhouse: ["Sera", "Greenhouse"], other: ["Diğer", "Other"] };
+  const names: Record<string, [string, string]> = { balcony: ["Balkon / Teras", "Balcony / Terrace"], livingRoom: ["Salon", "Living room"], indoor: ["İç mekan", "Indoors"], garden: ["Bahçe", "Garden"], window: ["Pencere önü", "Windowsill"], greenhouse: ["Sera", "Greenhouse"], outdoor: ["Dış mekan", "Outdoors"], other: ["Diğer", "Other"] };
   return names[key]?.[lang.startsWith("tr") ? 0 : 1] ?? key;
 }
