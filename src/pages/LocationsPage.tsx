@@ -16,7 +16,15 @@ import { toast } from "@/hooks/use-toast";
 const DIRECTIONS = ["Kuzeybatı", "Kuzey", "Kuzeydoğu", "Batı", "", "Doğu", "Güneybatı", "Güney", "Güneydoğu"];
 const EN_DIRECTIONS = ["Northwest", "North", "Northeast", "West", "", "East", "Southwest", "South", "Southeast"];
 const ROOM_FILTERS = [["Salon", "Living room"], ["Yatak odası", "Bedroom"], ["Banyo", "Bathroom"], ["Ofis", "Office"]];
-const initialForm = { name: "", category: "indoor", direction: "", notes: "" };
+type Zone = "indoor" | "outdoor";
+const ROOMS: Record<Zone, [string, string, string][]> = {
+  indoor: [["Salon", "Living room", "livingRoom"], ["Mutfak", "Kitchen", "indoor"], ["Yatak odası", "Bedroom", "indoor"], ["Banyo", "Bathroom", "indoor"], ["Ofis", "Office", "indoor"], ["Koridor", "Hallway", "indoor"], ["Diğer", "Other", "indoor"]],
+  outdoor: [["Balkon", "Balcony", "balcony"], ["Teras", "Terrace", "balcony"], ["Bahçe", "Garden", "garden"], ["Sera", "Greenhouse", "greenhouse"], ["Avlu", "Courtyard", "garden"], ["Diğer", "Other", "outdoor"]],
+};
+const SHAPES = [["rectangle", "Dikdörtgen", "Rectangle"], ["square", "Kare", "Square"], ["l-shape", "L şekli", "L-shaped"]];
+const initialForm = { zone: "indoor" as Zone, room: "", name: "", shape: "rectangle", directions: [] as string[] };
+const withTimeout = <T,>(p: Promise<T>, ms: number, msg: string) => Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error(msg)), ms))]);
+const chip = (active: boolean) => `rounded-full h-10 px-4 text-sm hover:bg-secondary hover:text-foreground ${active ? "bg-primary border-primary text-primary-foreground font-semibold hover:bg-primary/90 hover:text-primary-foreground" : "bg-card"}`;
 
 const LocationsPage = () => {
   const navigate = useNavigate();
