@@ -10,6 +10,7 @@ export interface LocationRow {
   humidity: string | null;
   notes: string | null;
   ai_analyzed: boolean;
+  shape?: string | null;
   created_at: string;
   updated_at: string;
 }
