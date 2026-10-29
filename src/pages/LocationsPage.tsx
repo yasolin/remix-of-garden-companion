@@ -50,16 +50,25 @@ const LocationsPage = () => {
   const categoryOf = (loc: LocationRow) => !loc.category || loc.category === "indoor" ? inferLocationCategory(loc.name) : loc.category;
   const visibleLocations = filter ? locations.filter(loc => loc.name.toLocaleLowerCase(i18n.language).includes(filter.toLocaleLowerCase(i18n.language))) : locations;
 
-  const handleSave = async () => {
-    if (!user || !form.name.trim() || saving) return;
+  const handleSave = async (next: "map" | "list") => {
+    if (!user || saving) return;
+    const name = form.name.trim();
+    if (!name) {
+      toast({ title: tr ? "Oda adı gerekli" : "Room name required", description: tr ? "Bir oda seçin veya adını yazın." : "Pick a room or type its name.", variant: "destructive" });
+      return;
+    }
+    const room = ROOMS[form.zone].find(r => r[0] === form.room);
+    const inferred = inferLocationCategory(name);
+    const category = room && room[0] !== "Diğer" ? room[2] : form.zone === "outdoor" ? (["balcony", "garden", "greenhouse"].includes(inferred) ? inferred : "outdoor") : (inferred === "indoor" || inferred === "livingRoom" || inferred === "window" ? inferred : "indoor");
     setSaving(true);
     try {
-      await createLocation({ user_id: user.id, name: form.name.trim(), category: form.category, direction: form.direction || null, notes: form.notes || null });
+      const created = await withTimeout(createLocation({ user_id: user.id, name, category, direction: form.directions.join(", ") || null, shape: form.shape }), 15000, tr ? "Bağlantı zaman aşımına uğradı, tekrar deneyin." : "Connection timed out, please try again.");
       await qc.invalidateQueries({ queryKey: ["locations"] });
       setForm(initialForm);
       setFilter(null);
       setAddOpen(false);
       toast({ title: tr ? "Konum kaydedildi" : "Location saved" });
+      if (next === "map") navigate("/location-analysis", { state: { locationId: created.id } });
     } catch (e) {
       toast({ title: tr ? "Konum kaydedilemedi" : "Unable to save location", description: e instanceof Error ? e.message : t("common.error"), variant: "destructive" });
     } finally { setSaving(false); }
@@ -74,31 +83,54 @@ const LocationsPage = () => {
       toast({ title: tr ? "Konum silinemedi" : "Unable to delete location", description: e instanceof Error ? e.message : t("common.error"), variant: "destructive" });
     }
   };
+  const toggleDirection = (d: string) => setForm(f => ({ ...f, directions: f.directions.includes(d) ? f.directions.filter(x => x !== d) : [...f.directions, d] }));
+  const Label = ({ title, hint }: { title: string; hint?: string }) => <p className="text-sm font-bold text-foreground mb-2">{title}{hint && <span className="ml-2 text-xs font-normal text-muted-foreground">{hint}</span>}</p>;
 
   return (
     <div className="locations-reference min-h-screen max-w-lg mx-auto px-4 pt-4 pb-24">
       <header className="flex items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-2 min-w-0">
-          <Button variant="ghost" size="icon" className="-ml-2 shrink-0 hover:bg-secondary hover:text-foreground" aria-label={tr ? "Geri" : "Back"} onClick={() => addOpen ? setAddOpen(false) : navigate(-1)}><ArrowLeft /></Button>
-          <h1 className="text-xl font-bold text-foreground">{addOpen ? (tr ? "Yeni oda" : "New room") : t("locations.title")}</h1>
+          {!addOpen && <Button variant="ghost" size="icon" className="-ml-2 shrink-0 hover:bg-secondary hover:text-foreground" aria-label={tr ? "Geri" : "Back"} onClick={() => navigate(-1)}><ArrowLeft /></Button>}
+          <h1 className={`${addOpen ? "text-2xl" : "text-xl"} font-bold text-foreground`}>{addOpen ? (tr ? "Yeni oda" : "New room") : t("locations.title")}</h1>
         </div>
-        <Button size="icon" variant={addOpen ? "ghost" : "default"} className="rounded-full shrink-0" aria-label={addOpen ? (tr ? "Kapat" : "Close") : (tr ? "Konum ekle" : "Add location")} onClick={() => setAddOpen(!addOpen)}>{addOpen ? <X /> : <Plus className="!size-6" />}</Button>
+        <Button size="icon" variant={addOpen ? "ghost" : "default"} className="rounded-full shrink-0 hover:bg-secondary hover:text-foreground" aria-label={addOpen ? (tr ? "Kapat" : "Close") : (tr ? "Konum ekle" : "Add location")} onClick={() => { setAddOpen(!addOpen); setForm(initialForm); }}>{addOpen ? <X className="!size-6" /> : <Plus className="!size-6" />}</Button>
       </header>
 
       {addOpen ? (
-        <form onSubmit={e => { e.preventDefault(); void handleSave(); }} className="space-y-5">
-          <Input aria-label={tr ? "Oda adı" : "Room name"} placeholder={t("locations.namePlaceholder")} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-11 bg-secondary border-transparent text-sm" autoFocus />
-          <div className="flex flex-wrap gap-2">
-            {LOCATION_CATEGORIES.map(c => <Button type="button" key={c} size="sm" variant="outline" className={`rounded-full text-xs h-8 px-3 hover:bg-secondary hover:text-foreground ${form.category === c ? "bg-primary border-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : "bg-card"}`} aria-pressed={form.category === c} onClick={() => setForm({ ...form, category: c })}>{locationCategoryLabel(c, i18n.language)}</Button>)}
+        <form onSubmit={e => { e.preventDefault(); void handleSave("map"); }} className="space-y-5">
+          <div>
+            <Label title={tr ? "Mekan" : "Space"} />
+            <div className="grid grid-cols-2 rounded-xl border border-border overflow-hidden bg-card" role="radiogroup">
+              {(["indoor", "outdoor"] as Zone[]).map(z => <button type="button" role="radio" aria-checked={form.zone === z} key={z} onClick={() => setForm(f => ({ ...f, zone: z, room: "", name: ROOMS[z].some(r => r[0] === f.room) ? "" : f.name }))} className={`h-12 text-sm transition-colors ${form.zone === z ? "bg-primary text-primary-foreground font-semibold" : "text-foreground"}`}>{z === "indoor" ? (tr ? "İç mekan" : "Indoor") : (tr ? "Dış mekan" : "Outdoor")}</button>)}
+            </div>
+          </div>
+          <div>
+            <Label title={tr ? "Oda" : "Room"} hint={tr ? "hızlı seç" : "quick pick"} />
+            <div className="flex flex-wrap gap-2">
+              {ROOMS[form.zone].map(r => <Button type="button" key={r[0]} variant="outline" aria-pressed={form.room === r[0]} className={chip(form.room === r[0])} onClick={() => setForm(f => ({ ...f, room: r[0], name: r[0] === "Diğer" ? "" : (tr ? r[0] : r[1]) }))}>{tr ? r[0] : r[1]}</Button>)}
+            </div>
+          </div>
+          <div>
+            <Label title={tr ? "Oda adı" : "Room name"} hint={tr ? "istersen kendin yaz" : "or type your own"} />
+            <Input aria-label={tr ? "Oda adı" : "Room name"} placeholder={t("locations.namePlaceholder")} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-12 bg-secondary border-transparent text-base" />
+          </div>
+          <div>
+            <Label title={tr ? "Oda şekli" : "Room shape"} hint={tr ? "haritada kullanılır" : "used for the map"} />
+            <div className="flex flex-wrap gap-2">
+              {SHAPES.map(s => <Button type="button" key={s[0]} variant="outline" aria-pressed={form.shape === s[0]} className={chip(form.shape === s[0])} onClick={() => setForm({ ...form, shape: s[0] })}>{tr ? s[1] : s[2]}</Button>)}
+            </div>
           </div>
           <fieldset>
-            <legend className="text-sm font-semibold mb-2">{t("locations.directionLabel")}</legend>
+            <legend><Label title={tr ? "Pencere yönü" : "Window direction"} hint={tr ? "birden fazla seçebilirsin" : "pick one or more"} /></legend>
             <div className="grid grid-cols-3 gap-2">
-              {DIRECTIONS.map((d, index) => d ? <Button type="button" variant="outline" key={d} className={`text-xs h-10 px-1 hover:bg-secondary hover:text-foreground ${form.direction === d ? "border-primary bg-primary/10 text-primary" : "bg-card"}`} aria-pressed={form.direction === d} onClick={() => setForm({ ...form, direction: form.direction === d ? "" : d })}>{tr ? d : EN_DIRECTIONS[index]}</Button> : <div key="compass" className="flex items-center justify-center text-muted-foreground"><Compass className="size-5" /></div>)}
+              {DIRECTIONS.map((d, index) => d ? <Button type="button" variant="outline" key={d} className={`text-sm h-11 px-1 rounded-xl hover:bg-secondary hover:text-foreground ${form.directions.includes(d) ? "border-primary bg-primary/10 text-primary font-semibold" : "bg-card"}`} aria-pressed={form.directions.includes(d)} onClick={() => toggleDirection(d)}>{tr ? d : EN_DIRECTIONS[index]}</Button> : <div key="compass" className="flex items-center justify-center text-muted-foreground"><Compass className="size-6" /></div>)}
             </div>
-            <Button type="button" variant="ghost" className="text-primary px-0 mt-2 text-xs hover:bg-transparent hover:text-primary" onClick={() => navigate("/location-analysis")}><Sparkles />{t("locations.detectDirection")}</Button>
+            <Button type="button" variant="ghost" className="text-primary px-0 mt-2 text-sm font-semibold hover:bg-transparent hover:text-primary" onClick={() => navigate("/location-analysis")}><Sparkles />{t("locations.detectDirection")}</Button>
           </fieldset>
-          <Button type="submit" disabled={!form.name.trim() || saving} className="w-full h-11 font-semibold">{saving && <Loader2 className="animate-spin" />}{saving ? (tr ? "Kaydediliyor…" : "Saving…") : t("locations.save")}</Button>
+          <div className="pt-4 space-y-2">
+            <Button type="submit" disabled={saving} className="w-full h-12 rounded-xl text-base font-semibold">{saving && <Loader2 className="animate-spin" />}{saving ? (tr ? "Kaydediliyor…" : "Saving…") : (tr ? "Kaydet ve haritaya geç" : "Save and open map")}</Button>
+            <Button type="button" variant="ghost" disabled={saving} onClick={() => void handleSave("list")} className="w-full h-11 text-sm font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">{tr ? "Haritayı sonra çizerim" : "I'll draw the map later"}</Button>
+          </div>
         </form>
       ) : (
         <>
