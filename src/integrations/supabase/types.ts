@@ -122,6 +122,7 @@ export type Database = {
           direction: string | null
           humidity: string | null
           id: string
+          map_data: Json
           name: string
           notes: string | null
           shape: string | null
@@ -136,6 +137,7 @@ export type Database = {
           direction?: string | null
           humidity?: string | null
           id?: string
+          map_data?: Json
           name: string
           notes?: string | null
           shape?: string | null
@@ -150,6 +152,7 @@ export type Database = {
           direction?: string | null
           humidity?: string | null
           id?: string
+          map_data?: Json
           name?: string
           notes?: string | null
           shape?: string | null

@@ -1,0 +1,2 @@
+ALTER TABLE public.locations ADD COLUMN IF NOT EXISTS map_data jsonb NOT NULL DEFAULT '{}'::jsonb;
+COMMENT ON COLUMN public.locations.map_data IS 'Owner-scoped room map: windows, normalized plant positions, custom outline, grid visibility and sketch order; protected by existing locations RLS.';

@@ -1,4 +1,5 @@
 # Requested updates
+- [ ] Add and verify saved room maps, windows, plant placement and editable home sketch from oda-haritasi-ve-kroki.jpg.
 - [x] Match My Locations to the uploaded reference and verify the screen.
 - [x] Professional registration form and dark-theme readability.
 - [x] Repair AI plant saving and add reference-style lifecycle picker.

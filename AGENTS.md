@@ -4,3 +4,4 @@
 - Keep plant draft data in navigation state when opening location analysis so unsaved photos and fields survive the return.
 - Use a shared grouped plant-type picker and category-specific lifecycle definitions for plant entry.
 - Link new plants to owner-scoped categorized locations; reuse matching locations instead of creating duplicates.
+- Persist room geometry, windows, plant positions and home-sketch ordering in each owner-scoped location's map_data; render maps from linked plants so deleted or moved plants never remain as stale markers.
