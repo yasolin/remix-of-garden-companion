@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { RoomMapData } from "@/lib/roomMap";
 
 export interface LocationRow {
   id: string;
@@ -11,6 +12,7 @@ export interface LocationRow {
   notes: string | null;
   ai_analyzed: boolean;
   shape?: string | null;
+  map_data?: Partial<RoomMapData>;
   created_at: string;
   updated_at: string;
 }
