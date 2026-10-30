@@ -35,6 +35,15 @@
     --ring: 142 71% 45%;
 
     --radius: 1rem;
+    --map-wall: 220 14% 64%;
+    --map-window: 214 95% 68%;
+    --map-window-bg: 214 100% 90%;
+    --map-window-text: 219 55% 30%;
+    --map-light-low: 220 12% 92%;
+    --map-light-bright: 48 100% 66%;
+    --map-note: 48 100% 90%;
+    --map-note-text: 220 20% 20%;
+    --map-grid: 220 15% 63%;
 
     --gradient-harvest: linear-gradient(135deg, hsl(142, 71%, 45%), hsl(160, 60%, 40%));
     --gradient-market: linear-gradient(135deg, hsl(300, 60%, 65%), hsl(330, 70%, 60%));
@@ -108,6 +117,9 @@
     --muted: 210 6% 21%; --muted-foreground: 210 6% 72%;
     --border: 210 6% 29%; --input: 210 6% 29%;
     --accent: 38 92% 62%; --accent-foreground: 210 8% 9%;
+    --map-light-low: 210 8% 20%; --map-light-bright: 48 48% 38%;
+    --map-note: 48 35% 20%; --map-note-text: 48 65% 90%;
+    --map-window-bg: 214 40% 25%; --map-window-text: 214 90% 87%;
     --gradient-watering: linear-gradient(135deg, hsl(195 30% 19%), hsl(170 22% 19%));
     --gradient-planting: linear-gradient(135deg, hsl(45 25% 20%), hsl(35 22% 18%));
     --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
@@ -116,3 +128,33 @@
   input::placeholder, textarea::placeholder { color: hsl(var(--muted-foreground)); opacity: 1; }
   option { background: hsl(var(--popover)); color: hsl(var(--popover-foreground)); }
 }
+
+.room-step { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-weight: 700; }
+.room-map-board { position: relative; aspect-ratio: 1 / 1; isolation: isolate; }
+.room-map-square { aspect-ratio: 1 / 1; }
+.room-map-board:not(.room-map-square) { aspect-ratio: 1 / 1.08; }
+.room-map-canvas { width: 100%; height: 100%; overflow: visible; cursor: crosshair; touch-action: manipulation; }
+.room-outline { stroke: hsl(var(--map-wall)); }
+.room-grid-line { stroke: hsl(var(--map-grid) / .45); }
+.room-window-line { stroke: hsl(var(--map-window)); stroke-linecap: round; }
+.room-drawing-dot { fill: hsl(var(--primary)); }
+.room-light-low { stop-color: hsl(var(--map-light-low)); }
+.room-light-bright { stop-color: hsl(var(--map-light-bright)); }
+.room-wall-control { position: absolute; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; border: 1px dashed hsl(var(--map-wall)); background: hsl(var(--map-window-bg)); color: hsl(var(--map-window-text)); z-index: 3; }
+.room-wall-active { border: 2px solid hsl(var(--map-window)); }
+.room-plant-marker { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 3px; padding: 0; height: auto; width: 66px; white-space: normal; z-index: 2; }
+.room-plant-icon { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: hsl(var(--card)); border: 1px solid hsl(var(--border)); box-shadow: var(--shadow-card); flex-shrink: 0; }
+.room-plant-label { font-size: 10px; line-height: 1.1; font-weight: 700; background: hsl(var(--card)); color: hsl(var(--card-foreground)); border-radius: 4px; padding: 2px 4px; max-width: 66px; overflow-wrap: anywhere; }
+.room-plant-selected .room-plant-icon { outline: 2px solid hsl(var(--primary)); }
+.room-window-label { padding: 3px 9px; border-radius: 5px; font-size: 11px; font-weight: 700; background: hsl(var(--map-window-bg)); color: hsl(var(--map-window-text)); }
+.room-light-note { background: hsl(var(--map-note)); color: hsl(var(--map-note-text)); border-radius: 8px; padding: 12px; font-size: 12px; }
+.home-sketch-room { position: relative; border: 2px solid hsl(var(--map-wall)); min-height: 150px; background: hsl(var(--card)); border-radius: 4px; }
+.home-sketch-outdoor { border-style: dashed; background: hsl(var(--primary) / .05); }
+.home-sketch-selected { border-color: hsl(var(--primary)); }
+.home-sketch-window { position: absolute; background: hsl(var(--map-window)); border-radius: 4px; pointer-events: none; }
+.home-sketch-window-north, .home-sketch-window-south { width: 36%; height: 5px; left: 32%; }
+.home-sketch-window-north { top: -3px; } .home-sketch-window-south { bottom: -3px; }
+.home-sketch-window-east, .home-sketch-window-west { height: 36%; width: 5px; top: 32%; }
+.home-sketch-window-east { right: -3px; } .home-sketch-window-west { left: -3px; }
+.room-window-key { width: 14px; height: 4px; border-radius: 4px; background: hsl(var(--map-window)); }
+.room-outdoor-key { width: 14px; border-top: 2px dashed hsl(var(--map-wall)); }
