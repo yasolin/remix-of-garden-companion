@@ -1,4 +1,6 @@
-import { ArrowLeft, MapPin, Plus, Trash2, Sparkles, Leaf, X, MoreHorizontal, Compass, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Map, Plus, Trash2, Sparkles, Leaf, X, MoreHorizontal, Compass, Loader2 } from "lucide-react";
+import RoomMapView from "@/components/RoomMapView";
+import HomeSketch from "@/components/HomeSketch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +38,8 @@ const LocationsPage = () => {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<string | null>(null);
   const [form, setForm] = useState(initialForm);
+  const [mapId, setMapId] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "sketch">("list");
   const { data: locations = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["locations", user?.id],
     queryFn: () => user ? fetchUserLocations(user.id) : Promise.resolve([]),
@@ -68,7 +72,7 @@ const LocationsPage = () => {
       setFilter(null);
       setAddOpen(false);
       toast({ title: tr ? "Konum kaydedildi" : "Location saved" });
-      if (next === "map") navigate("/location-analysis", { state: { locationId: created.id } });
+      if (next === "map") setMapId(created.id);
     } catch (e) {
       toast({ title: tr ? "Konum kaydedilemedi" : "Unable to save location", description: e instanceof Error ? e.message : t("common.error"), variant: "destructive" });
     } finally { setSaving(false); }
@@ -85,6 +89,9 @@ const LocationsPage = () => {
   };
   const toggleDirection = (d: string) => setForm(f => ({ ...f, directions: f.directions.includes(d) ? f.directions.filter(x => x !== d) : [...f.directions, d] }));
   const Label = ({ title, hint }: { title: string; hint?: string }) => <p className="text-sm font-bold text-foreground mb-2">{title}{hint && <span className="ml-2 text-xs font-normal text-muted-foreground">{hint}</span>}</p>;
+  const selectedLocation = locations.find(loc => loc.id === mapId);
+  const refreshLocations = async () => { await qc.invalidateQueries({ queryKey: ["locations"] }); };
+  if (selectedLocation) return <div className="locations-reference min-h-screen max-w-lg mx-auto px-4 pt-4 pb-24"><RoomMapView key={selectedLocation.id} location={selectedLocation} plants={plantsFor(selectedLocation.id)} tr={tr} onBack={() => setMapId(null)} onSaved={refreshLocations} /></div>;
 
   return (
     <div className="locations-reference min-h-screen max-w-lg mx-auto px-4 pt-4 pb-24">
@@ -134,6 +141,8 @@ const LocationsPage = () => {
         </form>
       ) : (
         <>
+          <div className="flex gap-1 mb-4" role="tablist" aria-label={tr ? "Konum görünümü" : "Location view"}>{(["sketch", "list"] as const).map(mode => <Button key={mode} role="tab" aria-selected={view === mode} size="sm" variant={view === mode ? "default" : "outline"} onClick={() => { setView(mode); setFilter(null); }}>{mode === "sketch" ? (tr ? "Kroki" : "Sketch") : (tr ? "Liste" : "List")}</Button>)}</div>
+          {view === "sketch" && !isLoading && !isError && locations.length > 0 ? <HomeSketch key={locations.map(l => l.id).join(",")} locations={locations} plants={plants} tr={tr} onOpen={setMapId} onSaved={refreshLocations} /> : <>
           <div className="flex flex-wrap gap-2 mb-5" aria-label={tr ? "Oda filtresi" : "Room filter"}>
             {ROOM_FILTERS.map(names => { const label = names[tr ? 0 : 1]; return <Button key={names[0]} variant="outline" size="sm" aria-pressed={filter === label} onClick={() => setFilter(filter === label ? null : label)} className={`h-8 px-3 rounded-full text-xs font-medium hover:bg-secondary hover:text-foreground ${filter === label ? "bg-primary border-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : "bg-card"}`}>{label}</Button>; })}
           </div>
@@ -152,19 +161,21 @@ const LocationsPage = () => {
                         <span className="size-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MapPin className="size-4 text-primary" /></span>
                         <div className="flex-1 min-w-0 pt-0.5"><h3 className="text-sm font-bold leading-tight break-words">{loc.name}</h3><p className="text-[11px] text-muted-foreground leading-tight mt-1 line-clamp-2">{desc}</p></div>
                         <span aria-label={`${linked.length} ${tr ? "bitki" : "plants"}`} className="min-w-5 h-5 rounded-full px-1.5 bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center mt-1">{linked.length}</span>
-                        <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="size-7 text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label={`${loc.name} ${tr ? "seçenekleri" : "options"}`}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate("/location-analysis", { state: { locationId: loc.id } })}><Sparkles className="size-4 mr-2" />{t("locations.analyzeCta")}</DropdownMenuItem><DropdownMenuItem onClick={() => handleDelete(loc)} className="text-destructive"><Trash2 className="size-4 mr-2" />{tr ? "Sil" : "Delete"}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+                        <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="size-7 text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label={`${loc.name} ${tr ? "seçenekleri" : "options"}`}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => setMapId(loc.id)}><Map className="size-4 mr-2" />{tr ? "Oda haritasını aç" : "Open room map"}</DropdownMenuItem><DropdownMenuItem onClick={() => navigate("/location-analysis", { state: { locationId: loc.id } })}><Sparkles className="size-4 mr-2" />{t("locations.analyzeCta")}</DropdownMenuItem><DropdownMenuItem onClick={() => handleDelete(loc)} className="text-destructive"><Trash2 className="size-4 mr-2" />{tr ? "Sil" : "Delete"}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
                       </div>
                       <p className="text-[10px] font-semibold text-muted-foreground mt-3 mb-2">{t("locations.plantsHere")}</p>
                       {linked.length ? <div className="flex flex-wrap gap-3">
                         {linked.map(p => <Button key={p.id} variant="ghost" onClick={() => navigate(`/plant/${p.id}`)} className="h-auto w-[58px] p-0 flex-col items-start gap-1 whitespace-normal hover:bg-transparent hover:text-foreground"><span className="size-[58px] bg-primary/10 rounded-xl flex items-center justify-center"><Leaf className="!size-6 text-primary" /></span><span className="text-[10px] leading-tight text-left font-normal break-words line-clamp-2">{p.name}</span></Button>)}
                         <Button variant="ghost" onClick={() => navigate("/add-plant")} className="h-auto w-[58px] p-0 flex-col items-start gap-1 whitespace-normal hover:bg-transparent hover:text-primary"><span className="size-[58px] border border-dashed border-primary/40 rounded-xl flex items-center justify-center"><Plus className="!size-5 text-primary" /></span><span className="text-[10px] text-primary font-semibold leading-tight">{tr ? "Bitki ekle" : "Add plant"}</span></Button>
                       </div> : <Button variant="secondary" onClick={() => navigate("/add-plant")} className="w-full justify-start h-9 text-[11px] text-muted-foreground font-normal rounded-lg">{tr ? "Henüz bitki yok" : "No plants yet"}</Button>}
+                      <Button variant="outline" size="sm" className="mt-3 w-full text-xs" onClick={() => setMapId(loc.id)}><Map />{tr ? "Oda haritasını aç" : "Open room map"}</Button>
                     </motion.article>;
                   })}
                 </section>;
               })}
             </div>
           )}
+          </>}
         </>
       )}
     </div>
